@@ -4,7 +4,6 @@ import { transcribeAudio } from "@/lib/transcribe"
 export async function POST(req: NextRequest) {
   const formData = await req.formData()
   const audioFile = formData.get("audio") as File | null
-  const apiKey = (formData.get("apiKey") as string) || ""
   const duration = parseInt((formData.get("duration") as string) || "0", 10)
 
   if (!audioFile) {
@@ -15,7 +14,7 @@ export async function POST(req: NextRequest) {
     const buffer = await audioFile.arrayBuffer()
     const blob = new Blob([buffer], { type: audioFile.type })
 
-    const result = await transcribeAudio(blob, duration, apiKey || undefined)
+    const result = await transcribeAudio(blob, duration)
 
     return Response.json(result)
   } catch (err: any) {

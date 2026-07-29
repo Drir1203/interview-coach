@@ -5,79 +5,77 @@ export interface QAPair {
   userAnswer: string
 }
 
-// Mock 转写
-function mockTranscribe(audioDuration: number): { transcript: string; qas: QAPair[] } {
-  const mockTranscripts = [
-    "面试官：请先做个自我介绍。\n我：我是XX大学毕业，有3年后端开发经验...\n面试官：你为什么想来我们公司？\n我：因为贵公司在技术栈和业务方向上都很匹配...\n面试官：讲一个你最有成就感的项目。\n我：我在上一家公司负责了一个高并发系统的重构...",
-    "面试官：介绍一下你最近做的项目。\n我：最近在做的是一个电商订单系统...\n面试官：你们系统是怎么处理高并发的？\n我：主要用了消息队列和缓存...\n面试官：如果让你设计一个秒杀系统，你怎么做？\n我：首先从流量入口做限流...",
-  ]
-
-  const idx = Math.floor(Math.random() * mockTranscripts.length)
-  const transcript = mockTranscripts[idx]
-
-  // 模拟提取 QA
-  const qas: QAPair[] = [
-    {
-      questionText: "请做自我介绍",
-      userAnswer: "我是XX大学计算机专业毕业，有3年后端开发经验，熟悉Java和Go语言，参与过多个高并发项目的开发。",
-    },
-    {
-      questionText: "你为什么想来我们公司？",
-      userAnswer: "因为贵公司在技术栈上使用Java和微服务架构，和我的技术背景很匹配，而且业务发展方向我也很看好。",
-    },
-    {
-      questionText: "讲一个你最有成就感的项目",
-      userAnswer: "我在上一家公司负责了一个高并发系统的重构，将系统从单机架构升级为分布式架构，支持了QPS从1000提升到50000。",
-    },
-  ]
-
-  return { transcript, qas }
-}
-
 export async function transcribeAudio(
   audioBlob: Blob,
-  duration: number,
-  apiKey?: string
+  duration: number
 ): Promise<{ transcript: string; qas: QAPair[] }> {
-  // Mock 模式
+  const apiKey = process.env.DASHSCOPE_API_KEY || process.env.OPENAI_API_KEY
+
+  // 无 API Key → 平台尚未配置语音转写
   if (!apiKey) {
-    await new Promise((r) => setTimeout(r, 2000))
-    return mockTranscribe(duration)
+    throw new Error("语音转写服务暂未配置，请手动录入面试问题")
   }
 
-  // 调用 Whisper API
+  // 优先使用阿里云 Qwen3-ASR-Flash（国内平台）
+  if (process.env.DASHSCOPE_API_KEY) {
+    const transcript = await transcribeWithQwenASR(audioBlob, apiKey)
+    const qas = await extractQAFromTranscript(transcript)
+    return { transcript, qas }
+  }
+
+  // 回退到 Whisper API
+  const whisperResult = await transcribeWithWhisper(audioBlob, duration, apiKey)
+  return whisperResult
+}
+
+async function transcribeWithQwenASR(audioBlob: Blob, apiKey: string): Promise<string> {
+  const formData = new FormData()
+  formData.append("file", audioBlob, "recording.webm")
+  formData.append("model", "qwen3-asr-flash")
+
+  const response = await fetch("https://dashscope.aliyuncs.com/api/v1/services/audio/transcription/asr", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}` },
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`语音转写失败: ${error}`)
+  }
+
+  const data = await response.json()
+  return data?.output?.text || data?.text || data?.result?.text || ""
+}
+
+async function transcribeWithWhisper(audioBlob: Blob, duration: number, apiKey: string): Promise<{ transcript: string; qas: QAPair[] }> {
   const formData = new FormData()
   formData.append("file", audioBlob, "recording.webm")
   formData.append("model", "whisper-1")
   formData.append("language", "zh")
 
-  const response = await fetch(
-    "https://api.openai.com/v1/audio/transcriptions",
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: formData,
-    }
-  )
+  const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}` },
+    body: formData,
+  })
 
   if (!response.ok) {
     const error = await response.text()
-    throw new Error(`Whisper API 调用失败: ${error}`)
+    throw new Error(`语音转写失败: ${error}`)
   }
 
   const data = await response.json()
   const transcript = data.text || ""
-
-  // 用 Claude 从转写中提取 QA 对
-  const qas = await extractQAFromTranscript(transcript, apiKey)
-
+  const qas = await extractQAFromTranscript(transcript)
   return { transcript, qas }
 }
 
-async function extractQAFromTranscript(
-  transcript: string,
-  apiKey: string
-): Promise<QAPair[]> {
+async function extractQAFromTranscript(transcript: string): Promise<QAPair[]> {
+  const aiKey = process.env.ANTHROPIC_API_KEY
+  const baseUrl = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com"
+  const model = process.env.AI_MODEL || "claude-sonnet-4-20250514"
+
   const prompt = `你是一个面试记录助手。请从以下面试对话转写中，提取面试官的问题和候选人的回答。
 
 返回 JSON 数组，格式：
@@ -90,37 +88,33 @@ async function extractQAFromTranscript(
 转写内容：
 ${transcript}`
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2048,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  })
+  if (aiKey) {
+    try {
+      const response = await fetch(`${baseUrl}/v1/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": aiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 2048,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      })
 
-  if (!response.ok) {
-    // 失败时简单解析
-    return simpleExtractQA(transcript)
-  }
-
-  const data = await response.json()
-  const content = data.content?.[0]?.text
-
-  if (!content) return simpleExtractQA(transcript)
-
-  try {
-    const jsonMatch = content.match(/\[[\s\S]*\]/)
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]) as QAPair[]
+      if (response.ok) {
+        const data = await response.json()
+        const content = data.content?.[0]?.text
+        if (content) {
+          const jsonMatch = content.match(/\[[\s\S]*\]/)
+          if (jsonMatch) return JSON.parse(jsonMatch[0]) as QAPair[]
+        }
+      }
+    } catch {
+      // fallback to simple extraction
     }
-  } catch {
-    // fallback
   }
 
   return simpleExtractQA(transcript)
@@ -133,13 +127,8 @@ function simpleExtractQA(transcript: string): QAPair[] {
 
   for (const line of lines) {
     if (line.includes("面试官：") || line.includes("面试官:")) {
-      if (current && current.questionText) {
-        qas.push(current)
-      }
-      current = {
-        questionText: line.replace(/面试官[：:]\s*/, ""),
-        userAnswer: "",
-      }
+      if (current?.questionText) qas.push(current)
+      current = { questionText: line.replace(/面试官[：:]\s*/, ""), userAnswer: "" }
     } else if (line.includes("我：") || line.includes("我:") || line.includes("候选人：")) {
       if (current) {
         current.userAnswer = (current.userAnswer + line.replace(/(我|候选人)[：:]\s*/, "")).trim()
@@ -147,9 +136,6 @@ function simpleExtractQA(transcript: string): QAPair[] {
     }
   }
 
-  if (current && current.questionText) {
-    qas.push(current)
-  }
-
+  if (current?.questionText) qas.push(current)
   return qas
 }

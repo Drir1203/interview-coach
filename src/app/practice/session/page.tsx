@@ -51,7 +51,6 @@ function SessionInner() {
   useEffect(() => {
     const load = async () => {
       try {
-        const apiKey = localStorage.getItem("anthropic_api_key") || ""
         const res = await fetch("/api/mock", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -60,7 +59,6 @@ function SessionInner() {
             company,
             position,
             roundType: "first",
-            apiKey,
           }),
         })
 
@@ -102,7 +100,6 @@ function SessionInner() {
     setMessages((prev) => [...prev, { role: "user", content: answer }])
 
     try {
-      const apiKey = localStorage.getItem("anthropic_api_key") || ""
       const res = await fetch("/api/mock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -110,7 +107,6 @@ function SessionInner() {
           action: "respond",
           sessionId,
           answer,
-          apiKey,
         }),
       })
 
@@ -151,11 +147,10 @@ function SessionInner() {
   const handleEnd = async () => {
     setPhase("waiting")
     try {
-      const apiKey = localStorage.getItem("anthropic_api_key") || ""
       const res = await fetch("/api/mock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "end", sessionId, apiKey }),
+        body: JSON.stringify({ action: "end", sessionId }),
       })
 
       if (!res.ok) throw new Error("请求失败")

@@ -21,7 +21,6 @@ export default function PracticePage() {
     setStarting(true)
 
     try {
-      const apiKey = localStorage.getItem("anthropic_api_key") || ""
       const res = await fetch("/api/mock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -30,7 +29,6 @@ export default function PracticePage() {
           company: company.trim() || "未知公司",
           position: position.trim(),
           roundType,
-          apiKey,
         }),
       })
 

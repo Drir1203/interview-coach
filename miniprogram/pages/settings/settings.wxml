@@ -16,15 +16,19 @@
   </block>
 
   <view class="card" style="padding:16px;">
-    <text style="font-size:14px;font-weight:600;display:block;margin-bottom:12px;">AI API Key</text>
-    <input class="input-field" type="text" placeholder="sk-ant-...（留空使用Mock）" value="{{ apiKey }}" bindinput="onApiKeyInput" style="margin-bottom:8px;" />
-    <button class="btn btn-primary btn-small" bindtap="saveApiKey">保存</button>
-  </view>
-
-  <view class="card" style="padding:16px;">
-    <text style="font-size:14px;font-weight:600;display:block;margin-bottom:12px;">服务器地址</text>
-    <input class="input-field" placeholder="http://localhost:3000" value="{{ baseUrl }}" bindinput="onBaseUrlInput" style="margin-bottom:8px;" />
-    <button class="btn btn-primary btn-small" bindtap="saveBaseUrl">更新</button>
+    <text style="font-size:14px;font-weight:600;display:block;margin-bottom:8px;">服务状态</text>
+    <view style="display:flex;justify-content:space-between;margin-bottom:8px;">
+      <text style="font-size:13px;color:var(--muted-foreground);">AI 复盘</text>
+      <text class="badge badge-default">平台已配置</text>
+    </view>
+    <view style="display:flex;justify-content:space-between;margin-bottom:8px;">
+      <text style="font-size:13px;color:var(--muted-foreground);">语音转写</text>
+      <text class="badge badge-outline">即将上线</text>
+    </view>
+    <view style="display:flex;justify-content:space-between;">
+      <text style="font-size:13px;color:var(--muted-foreground);">数据存储</text>
+      <text class="badge badge-outline">云端</text>
+    </view>
   </view>
 
   <view class="card" style="padding:16px;">

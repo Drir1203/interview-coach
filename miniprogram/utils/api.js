@@ -46,32 +46,20 @@ module.exports = {
     request("/api/interviews/" + id, "PUT", { result }),
 
   // AI 复盘
-  review: (interviewId) => {
-    const apiKey = wx.getStorageSync("anthropic_api_key") || ""
-    return request("/api/review", "POST", { interviewId, apiKey })
-  },
+  review: (interviewId) =>
+    request("/api/review", "POST", { interviewId }),
 
   // 分析
   getAnalysis: () => request("/api/analysis"),
   getDeepAnalysis: () => request("/api/analysis/deep"),
 
   // 模拟面试
-  mockStart: (company, position, roundType) => {
-    const apiKey = wx.getStorageSync("anthropic_api_key") || ""
-    return request("/api/mock", "POST", {
-      action: "start", company, position, roundType, apiKey,
-    })
-  },
-  mockRespond: (sessionId, answer) => {
-    const apiKey = wx.getStorageSync("anthropic_api_key") || ""
-    return request("/api/mock", "POST", {
-      action: "respond", sessionId, answer, apiKey,
-    })
-  },
-  mockEnd: (sessionId) => {
-    const apiKey = wx.getStorageSync("anthropic_api_key") || ""
-    return request("/api/mock", "POST", {
-      action: "end", sessionId, apiKey,
-    })
-  },
+  mockStart: (company, position, roundType) =>
+    request("/api/mock", "POST", { action: "start", company, position, roundType }),
+
+  mockRespond: (sessionId, answer) =>
+    request("/api/mock", "POST", { action: "respond", sessionId, answer }),
+
+  mockEnd: (sessionId) =>
+    request("/api/mock", "POST", { action: "end", sessionId }),
 }

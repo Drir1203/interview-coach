@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const { action, sessionId, company, position, roundType, answer } = body
 
-  const apiKey = body.apiKey || ""
+  const apiKey = process.env.ANTHROPIC_API_KEY || ""
 
   if (action === "start") {
     return handleStart(company, position, roundType, apiKey)

@@ -76,11 +76,10 @@ export default function InterviewDetail() {
     setReviewing(true)
     setError(null)
     try {
-      const apiKey = localStorage.getItem("anthropic_api_key") || ""
       const res = await fetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ interviewId: params.id, apiKey }),
+        body: JSON.stringify({ interviewId: params.id }),
       })
       if (!res.ok) {
         const err = await res.json()

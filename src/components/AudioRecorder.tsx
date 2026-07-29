@@ -16,8 +16,6 @@ async function transcribeAudio(blob: Blob, filename: string, duration: number) {
   const formData = new FormData()
   formData.append("audio", blob, filename)
   formData.append("duration", String(duration))
-  const apiKey = localStorage.getItem("anthropic_api_key") || ""
-  formData.append("apiKey", apiKey)
 
   const res = await fetch("/api/transcribe", {
     method: "POST",

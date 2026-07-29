@@ -1,0 +1,73 @@
+# i面试 - Docker Compose
+# Full infrastructure: PostgreSQL, Next.js App, Nginx
+
+version: "3.9"
+
+services:
+  # --- PostgreSQL Database ---
+  postgres:
+    image: postgres:15-alpine
+    container_name: interview-postgres
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: interview_coach
+      POSTGRES_USER: interview
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_this_password}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U interview -d interview_coach"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - interview_network
+
+  # --- Next.js App ---
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: interview-app
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://interview:${POSTGRES_PASSWORD:-change_this_password}@postgres:5432/interview_coach?sslmode=disable
+      AUTH_SECRET: ${AUTH_SECRET}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://api.anthropic.com}
+      AI_MODEL: ${AI_MODEL:-claude-sonnet-4-20250514}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+    ports:
+      - "3000:3000"
+    networks:
+      - interview_network
+
+  # --- Nginx Reverse Proxy ---
+  nginx:
+    image: nginx:alpine
+    container_name: interview-nginx
+    restart: always
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/www:/var/www/html:ro
+    networks:
+      - interview_network
+
+volumes:
+  postgres_data:
+
+networks:
+  interview_network:
+    driver: bridge

@@ -105,19 +105,21 @@ function generateMockReview(input: AIReviewInput): AIReviewOutput {
 // ---- AI 复盘（支持 API Key 从参数传入） ----
 
 export async function aiReview(
-  input: AIReviewInput,
-  apiKey?: string
+  input: AIReviewInput
 ): Promise<AIReviewOutput> {
-  // 无 API Key → Mock 模式
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  const baseUrl = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com"
+  const model = process.env.AI_MODEL || "claude-sonnet-4-20250514"
+
+  // 无 API Key → Mock 模式（平台尚未配置）
   if (!apiKey) {
-    // 模拟延迟
     await new Promise((r) => setTimeout(r, 1500))
     return generateMockReview(input)
   }
 
   const prompt = buildReviewPrompt(input)
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetch(`${baseUrl}/v1/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -125,7 +127,7 @@ export async function aiReview(
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model,
       max_tokens: 4096,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: prompt }],

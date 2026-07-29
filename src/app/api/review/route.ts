@@ -4,7 +4,7 @@ import { aiReview } from "@/lib/ai-review"
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { interviewId, apiKey } = body
+  const { interviewId } = body
 
   if (!interviewId) {
     return Response.json({ error: "interviewId 必填" }, { status: 400 })
@@ -27,19 +27,16 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "没有面试问题，请先录入问题" }, { status: 400 })
   }
 
-  // 调用 AI 复盘（无 apiKey 时自动走 Mock）
-  const result = await aiReview(
-    {
-      company: interview.company.name,
-      position: interview.position,
-      roundType: interview.roundType,
-      questions: interview.questions.map((q) => ({
-        questionText: q.questionText,
-        userAnswer: q.userAnswer || undefined,
-      })),
-    },
-    apiKey || undefined
-  )
+  // 调用 AI 复盘（无 API Key 时自动走 Mock）
+  const result = await aiReview({
+    company: interview.company.name,
+    position: interview.position,
+    roundType: interview.roundType,
+    questions: interview.questions.map((q) => ({
+      questionText: q.questionText,
+      userAnswer: q.userAnswer || undefined,
+    })),
+  })
 
   // 保存 AI 复盘结果到数据库
   await prisma.interview.update({
