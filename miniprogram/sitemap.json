@@ -1,0 +1,9 @@
+{
+  "description": "面试复盘助手",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}

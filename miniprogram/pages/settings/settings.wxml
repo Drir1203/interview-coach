@@ -1,0 +1,39 @@
+<view class="container">
+  <text style="font-size:20px;font-weight:700;display:block;margin-bottom:16px;">设置</text>
+
+  <block wx:if="{{ user }}">
+    <view class="card" style="padding:16px;display:flex;align-items:center;gap:12px;">
+      <view style="width:40px;height:40px;border-radius:50%;background:rgba(24,24,27,0.1);display:flex;align-items:center;justify-content:center;">
+        <text style="font-weight:700;color:var(--primary);">
+          {{ (user.email || 'U')[0].toUpperCase() }}
+        </text>
+      </view>
+      <view>
+        <text style="font-weight:600;">{{ user.email }}</text>
+        <text style="display:block;font-size:12px;color:var(--muted-foreground);">已登录</text>
+      </view>
+    </view>
+  </block>
+
+  <view class="card" style="padding:16px;">
+    <text style="font-size:14px;font-weight:600;display:block;margin-bottom:12px;">AI API Key</text>
+    <input class="input-field" type="text" placeholder="sk-ant-...（留空使用Mock）" value="{{ apiKey }}" bindinput="onApiKeyInput" style="margin-bottom:8px;" />
+    <button class="btn btn-primary btn-small" bindtap="saveApiKey">保存</button>
+  </view>
+
+  <view class="card" style="padding:16px;">
+    <text style="font-size:14px;font-weight:600;display:block;margin-bottom:12px;">服务器地址</text>
+    <input class="input-field" placeholder="http://localhost:3000" value="{{ baseUrl }}" bindinput="onBaseUrlInput" style="margin-bottom:8px;" />
+    <button class="btn btn-primary btn-small" bindtap="saveBaseUrl">更新</button>
+  </view>
+
+  <view class="card" style="padding:16px;">
+    <text style="font-size:14px;font-weight:600;display:block;margin-bottom:8px;">关于</text>
+    <text style="font-size:12px;color:var(--muted-foreground);display:block;">i面试 v1.0</text>
+    <text style="font-size:12px;color:var(--muted-foreground);display:block;">你的 AI 面试教练</text>
+  </view>
+
+  <button class="btn btn-outline" bindtap="logout" style="margin-top:12px;color:var(--destructive);">
+    退出登录
+  </button>
+</view>

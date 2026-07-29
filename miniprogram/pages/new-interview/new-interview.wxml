@@ -1,0 +1,58 @@
+<view class="container">
+  <view style="margin-bottom:16px;">
+    <text style="font-size:20px;font-weight:700;">{{ isEdit ? '编辑面试' : '记录新面试' }}</text>
+  </view>
+
+  <!-- 基本信息 -->
+  <view class="card" style="padding:16px;">
+    <text style="font-size:14px;font-weight:600;display:block;margin-bottom:12px;">基本信息</text>
+
+    <view class="input-group">
+      <text class="input-label">公司名称</text>
+      <input class="input-field" placeholder="例：字节跳动" value="{{ companyName }}" bindinput="onCompanyInput" />
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">行业</text>
+      <input class="input-field" placeholder="例：互联网" value="{{ companyIndustry }}" bindinput="onIndustryInput" />
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">岗位</text>
+      <input class="input-field" placeholder="例：后端开发" value="{{ position }}" bindinput="onPositionInput" />
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">轮次</text>
+      <picker class="input-field" mode="selector" range="{{ roundTypes }}" range-key="label" value="{{ roundTypes.findIndex(r => r.value === roundType) }}" bindchange="onRoundChange" style="line-height:40px;">
+        {{ (roundTypes.find(r => r.value === roundType) || {}).label || '一面' }}
+      </picker>
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">备注</text>
+      <textarea class="textarea-field" placeholder="面试整体感觉..." value="{{ userNotes }}" bindinput="onNotesInput" />
+    </view>
+  </view>
+
+  <!-- 问题列表 -->
+  <view class="card" style="padding:16px;">
+    <view style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <text style="font-size:14px;font-weight:600;">面试问题</text>
+      <button class="btn btn-outline btn-small" bindtap="addQuestion">+ 添加</button>
+    </view>
+
+    <view wx:for="{{ questions }}" wx:key="order" style="border:1rpx solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;">
+      <view style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <text style="font-size:12px;color:var(--muted-foreground);">问题 {{ item.order }}</text>
+        <text style="font-size:20px;color:var(--destructive);" data-idx="{{ index }}" bindtap="removeQuestion">×</text>
+      </view>
+      <input class="input-field" placeholder="面试官问了什么？" value="{{ item.questionText }}" data-idx="{{ index }}" bindinput="onQuestionTextInput" style="margin-bottom:6px;" />
+      <textarea class="textarea-field" placeholder="你是怎么回答的？（选填）" value="{{ item.userAnswer }}" data-idx="{{ index }}" bindinput="onAnswerInput" />
+    </view>
+  </view>
+
+  <button class="btn btn-primary" bindtap="handleSave" disabled="{{ saving }}" style="margin-top:16px;">
+    {{ saving ? '保存中...' : '保存面试记录' }}
+  </button>
+</view>

@@ -1,0 +1,53 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/login/login",
+    "pages/interviews/interviews",
+    "pages/interview-detail/interview-detail",
+    "pages/new-interview/new-interview",
+    "pages/practice/practice",
+    "pages/practice-session/practice-session",
+    "pages/settings/settings"
+  ],
+  "window": {
+    "navigationBarTitleText": "i面试",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f5f5f5",
+    "backgroundTextStyle": "light"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#18181b",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "总览",
+        "iconPath": "images/dashboard.png",
+        "selectedIconPath": "images/dashboard-active.png"
+      },
+      {
+        "pagePath": "pages/interviews/interviews",
+        "text": "面试",
+        "iconPath": "images/interview.png",
+        "selectedIconPath": "images/interview-active.png"
+      },
+      {
+        "pagePath": "pages/practice/practice",
+        "text": "练习",
+        "iconPath": "images/practice.png",
+        "selectedIconPath": "images/practice-active.png"
+      },
+      {
+        "pagePath": "pages/settings/settings",
+        "text": "我的",
+        "iconPath": "images/settings.png",
+        "selectedIconPath": "images/settings-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

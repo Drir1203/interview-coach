@@ -1,0 +1,41 @@
+<view class="container" style="display:flex;flex-direction:column;justify-content:center;min-height:100vh;">
+  <view style="text-align:center;margin-bottom:32px;">
+    <text style="font-size:32px;font-weight:700;">面试复盘助手</text>
+    <text style="display:block;font-size:14px;color:var(--muted-foreground);margin-top:8px;">
+      {{ isRegister ? '创建账号' : '登录后多设备同步' }}
+    </text>
+  </view>
+
+  <view class="card" style="padding:24px;">
+    <block wx:if="{{ isRegister }}">
+      <view class="input-group">
+        <text class="input-label">昵称</text>
+        <input class="input-field" placeholder="你的昵称" value="{{name}}" bindinput="onNameInput" />
+      </view>
+    </block>
+
+    <view class="input-group">
+      <text class="input-label">邮箱</text>
+      <input class="input-field" type="email" placeholder="your@email.com" value="{{email}}" bindinput="onEmailInput" />
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">密码</text>
+      <input class="input-field" type="password" placeholder="至少6位" value="{{password}}" bindinput="onPasswordInput" />
+    </view>
+
+    <view wx:if="{{ error }}" style="color:var(--destructive);font-size:12px;margin-bottom:12px;">
+      {{ error }}
+    </view>
+
+    <button class="btn btn-primary" bindtap="handleSubmit" disabled="{{ loading }}">
+      <text wx:if="{{ loading }}">处理中...</text>
+      <text wx:else>{{ isRegister ? '注册' : '登录' }}</text>
+    </button>
+
+    <view style="text-align:center;margin-top:16px;font-size:13px;color:var(--muted-foreground);">
+      <text>{{ isRegister ? '已有账号？' : '还没有账号？' }}</text>
+      <text style="color:var(--foreground);margin-left:4px;" bindtap="switchMode">{{ isRegister ? '登录' : '注册' }}</text>
+    </view>
+  </view>
+</view>

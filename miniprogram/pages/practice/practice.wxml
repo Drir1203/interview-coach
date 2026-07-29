@@ -1,0 +1,48 @@
+<view class="container">
+  <view style="margin-bottom:16px;">
+    <text style="font-size:20px;font-weight:700;">模拟面试</text>
+    <text style="display:block;font-size:13px;color:var(--muted-foreground);margin-top:4px;">
+      AI 面试官模拟真实面试，结束后生成报告
+    </text>
+  </view>
+
+  <view class="stats-grid" style="margin-bottom:16px;">
+    <view class="stat-card">
+      <text style="font-size:24px;">🧠</text>
+      <text class="stat-label">AI 面试官</text>
+    </view>
+    <view class="stat-card">
+      <text style="font-size:24px;">🎯</text>
+      <text class="stat-label">薄弱项练习</text>
+    </view>
+    <view class="stat-card">
+      <text style="font-size:24px;">📊</text>
+      <text class="stat-label">面后报告</text>
+    </view>
+  </view>
+
+  <view class="card" style="padding:16px;">
+    <text style="font-size:14px;font-weight:600;display:block;margin-bottom:12px;">配置模拟面试</text>
+
+    <view class="input-group">
+      <text class="input-label">目标公司</text>
+      <input class="input-field" placeholder="例：字节跳动" value="{{ company }}" bindinput="onCompanyInput" />
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">岗位</text>
+      <input class="input-field" placeholder="例：后端开发" value="{{ position }}" bindinput="onPositionInput" />
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">模拟轮次</text>
+      <picker class="input-field" mode="selector" range="{{ roundTypes }}" range-key="label" bindchange="onRoundChange" style="line-height:40px;">
+        {{ (roundTypes.find(r => r.value === roundType) || {}).label || '一面' }}
+      </picker>
+    </view>
+
+    <button class="btn btn-primary" bindtap="startMock" disabled="{{ starting }}">
+      {{ starting ? '准备中...' : '开始模拟面试' }}
+    </button>
+  </view>
+</view>
