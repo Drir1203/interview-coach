@@ -8,6 +8,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma) as any,
   session: { strategy: "jwt" },
   trustHost: true,
+  // 显式指定，避免 .env 中 NEXTAUTH_URL 带路径（/interview）被 Auth.js 当成 basePath，
+  // 导致已剥掉 /interview 前缀的 /api/auth/session 请求解析失败（400 Bad request）
+  basePath: "/api/auth",
   pages: {
     signIn: "/auth/login",
     newUser: "/auth/register",

@@ -49,10 +49,14 @@ export async function GET(req: NextRequest) {
 
     const csv = "﻿" + header + rows.join("\n") // BOM for Excel
 
+    const datePart = new Date().toISOString().slice(0, 10)
+    const asciiName = `interviews_${datePart}.csv`
+    const utf8Name = `面试记录_${datePart}.csv`
     return new Response(csv, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="面试记录_${new Date().toISOString().slice(0, 10)}.csv"`,
+        // 中文文件名需用 RFC 5987 filename*（HTTP 头仅允许 ASCII）
+        "Content-Disposition": `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(utf8Name)}`,
       },
     })
   }

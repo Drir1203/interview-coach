@@ -10,7 +10,6 @@ interface CompanySummary {
   id: string
   name: string
   industry: string | null
-  _count: { interviews: number }
   interviews: {
     id: string
     position: string
@@ -87,7 +86,7 @@ export default function CompaniesPage() {
                       <Building2 className="size-4 text-primary" />
                       <CardTitle className="text-base">{company.name}</CardTitle>
                     </div>
-                    <Badge variant="outline">{company._count.interviews} 场</Badge>
+                    <Badge variant="outline">{company.interviews.length} 场</Badge>
                   </div>
                   {company.industry && (
                     <p className="text-xs text-muted-foreground">{company.industry}</p>

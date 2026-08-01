@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { PlusCircle, Briefcase, Search, Download } from "lucide-react"
+import { PlusCircle, Briefcase, Search, Download, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatDate } from "@/lib/utils"
 import { ROUND_TYPE_LABELS, INTERVIEW_STATUS_CONFIG } from "@/types"
+import { exportSummaryPdf } from "@/lib/pdf-export"
 
 interface InterviewSummary {
   id: string
@@ -28,6 +29,7 @@ export default function InterviewList() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [tab, setTab] = useState("all")
+  const [pdfLoading, setPdfLoading] = useState(false)
 
   useEffect(() => {
     fetch("/interview/api/interviews")
@@ -48,12 +50,36 @@ export default function InterviewList() {
     return matchSearch && matchTab
   })
 
+  const handleExportPdf = async () => {
+    setPdfLoading(true)
+    try {
+      await exportSummaryPdf(
+        filtered.map((i) => ({
+          company: i.company,
+          position: i.position,
+          roundType: i.roundType,
+          date: i.date,
+          overallScore: i.overallScore,
+          result: i.result,
+        }))
+      )
+    } catch (err) {
+      alert("PDF 导出失败：" + (err instanceof Error ? err.message : "未知错误"))
+    } finally {
+      setPdfLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">面试记录</h1>
         <div className="flex items-center gap-2">
-          <a href="/api/export?format=csv">
+          <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={pdfLoading} className="gap-2">
+            {pdfLoading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+            导出 PDF
+          </Button>
+          <a href="/interview/api/export?format=csv">
             <Button variant="outline" size="sm" className="gap-2">
               <Download className="size-4" />
               导出 CSV

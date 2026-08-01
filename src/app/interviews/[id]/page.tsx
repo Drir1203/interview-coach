@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  Download,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -19,6 +20,7 @@ import { Separator } from "@/components/ui/separator"
 import { formatDate, formatDateTime } from "@/lib/utils"
 import { ROUND_TYPE_LABELS, INTERVIEW_STATUS_CONFIG, INTERVIEW_RESULTS } from "@/types"
 import Link from "next/link"
+import { exportInterviewPdf } from "@/lib/pdf-export"
 
 interface Question {
   id: string
@@ -61,6 +63,7 @@ export default function InterviewDetail() {
   const [reviewResult, setReviewResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [showImproved, setShowImproved] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     fetch(`/interview/api/interviews/${params.id}`)
@@ -115,6 +118,18 @@ export default function InterviewDetail() {
       body: JSON.stringify({ result }),
     })
     setInterview((prev) => prev ? { ...prev, result } : prev)
+  }
+
+  const handleExportPdf = async () => {
+    if (!interview) return
+    setExporting(true)
+    try {
+      await exportInterviewPdf(interview)
+    } catch (err) {
+      alert("PDF 导出失败：" + (err instanceof Error ? err.message : "未知错误"))
+    } finally {
+      setExporting(false)
+    }
   }
 
   if (loading) {
@@ -191,6 +206,14 @@ export default function InterviewDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={exporting}>
+            {exporting ? (
+              <Loader2 className="mr-1 size-3 animate-spin" />
+            ) : (
+              <Download className="mr-1 size-3" />
+            )}
+            导出 PDF
+          </Button>
           <Link href={`/interviews/${interview.id}/edit`}>
             <Button variant="outline" size="sm">
               <Edit3 className="mr-1 size-3" />

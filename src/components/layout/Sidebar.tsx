@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useSession, signOut } from "next-auth/react"
+import { signOut } from "next-auth/react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { Logo } from "@/components/Logo"
+import { useAuth } from "@/hooks/useAuth"
 import { useState } from "react"
 
 const navItems = [
@@ -39,7 +40,7 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const { user: session } = useAuth()
   const [open, setOpen] = useState(false)
 
   const sidebarContent = (
@@ -97,17 +98,17 @@ export function Sidebar() {
           <DropdownMenu>
             <DropdownMenuTrigger className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-muted transition-colors">
               <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                {(session.user?.name || session.user?.email || "U")[0].toUpperCase()}
+                {(session?.name || session?.email || "U")[0].toUpperCase()}
               </div>
               <span className="truncate text-sm font-medium">
-                {session.user?.name || session.user?.email?.split("@")[0] || "用户"}
+                {session?.name || session?.email?.split("@")[0] || "用户"}
               </span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
               <DropdownMenuItem className="text-xs text-muted-foreground" disabled>
-                {session.user?.email}
+                {session?.email}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/auth/login" })}>
+              <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/interview/auth/login" })}>
                 <LogOut className="mr-2 size-4" />
                 退出登录
               </DropdownMenuItem>
