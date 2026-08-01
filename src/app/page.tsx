@@ -51,8 +51,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/interviews").then((r) => r.json()),
-      fetch("/api/analysis").then((r) => r.json()),
+      fetch("/interview/api/interviews").then((r) => r.json()),
+      fetch("/interview/api/analysis").then((r) => r.json()),
     ])
       .then(([interviewsData, analysisData]) => {
         setInterviews(interviewsData)

@@ -63,7 +63,7 @@ export default function InterviewDetail() {
   const [showImproved, setShowImproved] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch(`/api/interviews/${params.id}`)
+    fetch(`/interview/api/interviews/${params.id}`)
       .then((r) => r.json())
       .then((data) => {
         setInterview(data)
@@ -76,20 +76,24 @@ export default function InterviewDetail() {
     setReviewing(true)
     setError(null)
     try {
-      const res = await fetch("/api/review", {
+      const res = await fetch("/interview/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ interviewId: params.id }),
       })
       if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error || "AI 复盘失败")
+        let msg = "AI 复盘失败"
+        try {
+          const err = await res.json()
+          msg = err.error || msg
+        } catch { /* 非 JSON 响应 */ }
+        throw new Error(msg)
       }
       const result = await res.json()
       setReviewResult(result)
 
       // 刷新页面数据
-      const updated = await fetch(`/api/interviews/${params.id}`).then((r) => r.json())
+      const updated = await fetch(`/interview/api/interviews/${params.id}`).then((r) => r.json())
       setInterview(updated)
     } catch (err: any) {
       setError(err.message)
@@ -100,12 +104,12 @@ export default function InterviewDetail() {
 
   const handleDelete = async () => {
     if (!confirm("确定删除这条面试记录？")) return
-    await fetch(`/api/interviews/${params.id}`, { method: "DELETE" })
+    await fetch(`/interview/api/interviews/${params.id}`, { method: "DELETE" })
     router.push("/interviews")
   }
 
   const updateResult = async (result: string) => {
-    await fetch(`/api/interviews/${params.id}`, {
+    await fetch(`/interview/api/interviews/${params.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ result }),

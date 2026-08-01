@@ -66,7 +66,7 @@ export default function NewInterview() {
 
     setSaving(true)
     try {
-      const res = await fetch("/api/interviews", {
+      const res = await fetch("/interview/api/interviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

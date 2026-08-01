@@ -51,7 +51,7 @@ function SessionInner() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch("/api/mock", {
+        const res = await fetch("/interview/api/mock", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -100,7 +100,7 @@ function SessionInner() {
     setMessages((prev) => [...prev, { role: "user", content: answer }])
 
     try {
-      const res = await fetch("/api/mock", {
+      const res = await fetch("/interview/api/mock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -147,7 +147,7 @@ function SessionInner() {
   const handleEnd = async () => {
     setPhase("waiting")
     try {
-      const res = await fetch("/api/mock", {
+      const res = await fetch("/interview/api/mock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "end", sessionId }),

@@ -36,8 +36,7 @@ function LoginForm() {
         return
       }
 
-      router.push(searchParams.get("callbackUrl") || "/")
-      router.refresh()
+      window.location.href = searchParams.get("callbackUrl") || "/interview/"
     } catch {
       setError("登录失败，请重试")
       setLoading(false)

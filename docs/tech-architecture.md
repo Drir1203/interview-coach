@@ -14,153 +14,167 @@
 | ORM | Prisma | 5.22.0 |
 | 认证 | Auth.js (NextAuth) | 5.0.0-beta.32 |
 | 密码 | bcryptjs | — |
-| AI API | Anthropic Claude | — |
-| 语音 | OpenAI Whisper API | — |
-| 部署 | Vercel | — |
+| AI 引擎 | DeepSeek / DashScope Qwen / Anthropic Claude | — |
+| 语音转写 | DashScope Qwen3-ASR-Flash | — |
+| 浏览器压缩 | FFmpeg.wasm | 0.12.10 |
+| 部署 | Ubuntu + Nginx + PM2 | — |
 
-## 2. 架构图
+## 2. 生产环境架构
 
 ```
-┌──────────────────────────────────────────────────┐
-│               Browser (Next.js App)               │
-│                                                   │
-│  ┌──────────┐  ┌──────────┐  ┌────────────────┐  │
-│  │  Pages    │  │  API      │  │  Auth.js       │  │
-│  │ (RSC/CSR) │  │  Routes   │  │  (Session)     │  │
-│  └──────────┘  └─────┬─────┘  └────────────────┘  │
-│                      │                            │
-└──────────────────────┼────────────────────────────┘
-                       │
-          ┌────────────┼────────────┐
-          │            │            │
-   ┌──────┴──────┐ ┌───┴────┐ ┌───┴──────┐
-   │  Prisma +   │ │ Claude │ │ Whisper  │
-   │ PostgreSQL  │ │  API   │ │   API    │
-   └─────────────┘ └────────┘ └──────────┘
+外网用户 → http://47.116.138.61/interview/
+              │
+              ▼ Nginx（SSL 反向代理）
+         ┌────┴────┐
+         │         │
+   /interview/    /api/
+   localhost:3000  localhost:3000/interview
+   (i面试)        (i面试 API)
+         │
+         ├── PostgreSQL（本地）
+         ├── DeepSeek API（AI 复盘）
+         └── DashScope API（语音转写）
 ```
 
-## 3. 目录结构
+## 3. 部署详情
+
+| 组件 | 详情 |
+|------|------|
+| 服务器 | Ubuntu 24.04 LTS, 4GB RAM, 49GB disk |
+| 进程管理 | PM2（`ecosystem.config.cjs`） |
+| Web 服务器 | Nginx 1.24 |
+| 监听端口 | 80/443（Nginx）, 3000（Next.js）, 5432（PostgreSQL）|
+| 域名 | veyaship.com（SSL via Let's Encrypt）|
+| 路径 | `/interview/` basePath |
+| 代码路径 | `/opt/interview-coach` |
+| Git 仓库 | `github.com/Drir1203/interview-coach` |
+
+### Nginx 配置要点
+
+```
+IP 访问（47.116.138.61）:
+  /interview/ → localhost:3000（i面试页面）
+  /api/       → localhost:3000/interview（i面试 API，含 basePath）
+  /           → /var/www/veyaship（crossborder-ai 前端）
+
+域名访问（veyaship.com）:
+  /interview/ → localhost:3000（i面试页面）
+  /api/       → localhost:8000（crossborder-ai 后端）
+  /           → /var/www/veyaship（crossborder-ai 前端）
+```
+
+## 4. AI 服务链
+
+```
+AI 复盘：
+  DeepSeek API（sk-...）→ 成功则返回
+  ↓ 失败
+  DashScope Qwen  → 成功则返回
+  ↓ 失败
+  Anthropic Claude → 成功则返回
+  ↓ 失败
+  Mock 模式（本地模拟数据）
+
+语音转写：
+  DashScope Qwen3-ASR-Flash（DASHSCOPE_API_KEY）
+  → base64 → chat/completions 接口
+  → 60s 分段处理（FFmpeg.wasm 浏览器端分割）
+```
+
+## 5. 目录结构
 
 ```
 interview-coach/
-├── prisma/
-│   └── schema.prisma              # 数据模型
+├── prisma/schema.prisma           # 数据模型
 ├── src/
 │   ├── app/
 │   │   ├── page.tsx               # Dashboard
-│   │   ├── layout.tsx             # 根布局 + Providers
+│   │   ├── layout.tsx             # 根布局
 │   │   ├── providers.tsx          # SessionProvider
-│   │   ├── auth/
-│   │   │   ├── login/page.tsx     # 登录页
-│   │   │   └── register/page.tsx  # 注册页
-│   │   ├── interviews/
-│   │   │   ├── page.tsx           # 面试列表
-│   │   │   ├── new/page.tsx       # 新建面试
-│   │   │   └── [id]/
-│   │   │       ├── page.tsx       # 面试详情（AI复盘 + 结果标注）
-│   │   │       └── edit/page.tsx  # 编辑面试
-│   │   ├── companies/page.tsx     # 公司看板
-│   │   ├── practice/
-│   │   │   ├── page.tsx           # 模拟面试配置
-│   │   │   └── session/page.tsx   # 模拟面试对话
-│   │   ├── settings/page.tsx      # 设置
-│   │   └── api/
-│   │       ├── auth/
-│   │       │   ├── [...nextauth]/route.ts
-│   │       │   └── register/route.ts
-│   │       ├── interviews/route.ts & [id]/route.ts
-│   │       ├── review/route.ts
-│   │       ├── transcribe/route.ts
-│   │       ├── analysis/route.ts
-│   │       └── mock/route.ts
+│   │   ├── middleware.ts          # 空中间件（路由保护由页面自处理）
+│   │   ├── auth/login/ & register/
+│   │   ├── interviews/            # 列表/新建/详情/编辑
+│   │   ├── companies/             # 公司看板
+│   │   ├── analysis/              # 深入分析
+│   │   ├── practice/              # 模拟面试
+│   │   ├── settings/              # 设置
+│   │   └── api/                   # auth/interviews/review/transcribe/analysis/mock/ffmpeg-core
 │   ├── components/
-│   │   ├── ui/                    # shadcn 组件（14个）
-│   │   ├── layout/Sidebar.tsx     # 侧边导航
-│   │   ├── AudioRecorder.tsx      # 录音 + 文件上传
-│   │   ├── SkillRadar.tsx         # 雷达图
-│   │   └── ScoreTrend.tsx         # 趋势图
+│   │   ├── ui/                    # shadcn 组件
+│   │   ├── layout/Sidebar.tsx
+│   │   ├── AudioRecorder.tsx      # FFmpeg.wasm 压缩+分段
+│   │   ├── SkillRadar.tsx / ScoreTrend.tsx
+│   │   ├── InterviewCalendar.tsx
+│   │   ├── ThemeToggle.tsx
+│   │   └── Logo.tsx
 │   ├── lib/
-│   │   ├── db.ts                  # Prisma 客户端
-│   │   ├── auth.ts                # Auth.js 配置
-│   │   ├── ai-review.ts           # AI 复盘逻辑
-│   │   ├── ai-mock.ts             # 模拟面试逻辑
-│   │   ├── transcribe.ts          # 录音转写 + QA 提取
-│   │   └── utils.ts               # 工具函数
-│   │── middleware.ts              # 路由保护
-│   └── types/index.ts             # 类型定义
-├── .env                           # 环境变量
+│   │   ├── db.ts / auth.ts / utils.ts
+│   │   ├── ai-review.ts / ai-mock.ts
+│   │   └── transcribe.ts
+│   └── types/index.ts
+├── ecosystem.config.cjs           # PM2 配置
+├── next.config.ts                 # basePath: "/interview"
+├── docker-compose.yml / Dockerfile
+├── nginx/nginx.conf
+├── miniprogram/                   # 微信小程序
 └── docs/
-    ├── PRD.md
-    ├── product-specs.md
-    └── tech-architecture.md
 ```
 
-## 4. 核心数据流
-
-### 面试录入 + AI 复盘
-```
-用户填表 → POST /api/interviews → Prisma 写入 PG
-                                └→ 可选：POST /api/review
-                                       └→ Claude API / Mock
-                                       └→ 写回 AI 评分
-```
+## 6. 核心数据流
 
 ### 录音转写
+
 ```
-MediaRecorder / FileUpload → POST /api/transcribe
-                              └→ Whisper API / Mock
-                              └→ 提取 QA 对 → 填充问题列表
+浏览器上传/录制原始音频
+    │
+    ▼ FFmpeg.wasm（浏览器）
+压缩 16kHz mono 32kbps MP3
+分割 60 秒一段
+    │
+    ▼ POST /api/transcribe → 服务端
+逐段 base64 → DashScope chat/completions
+    │
+    ▼ 拼接转写结果
+    ▼ AI 提取 QA 对（DeepSeek → DashScope）
 ```
 
-### 模拟面试
+### AI 复盘
+
 ```
-配置信息 → POST /api/mock (start)
-           └→ 返回首题
-用户回答 → POST /api/mock (respond)
-           └→ AI 反馈 + 追问 / 下题
-用户结束 → POST /api/mock (end)
-           └→ 生成总结报告
+POST /api/review { interviewId }
+    │
+    ▼ 加载面试 + 问题列表
+    ▼ aiReview(input)
+       ├── reviewWithDeepSeek()
+       ├── reviewWithQwen()
+       ├── reviewWithAnthropic()
+       └── generateMockReview()
+    │
+    ▼ 保存评分到数据库
+    ▼ 未覆盖的问题补默认分值
 ```
 
-## 5. AI 调用方式
-
-### Mock 模式（无 API Key）
-- 所有 AI 功能内置本地 mock 数据
-- AI 复盘：返回预设评分和反馈
-- 录音转写：返回模拟 QA 对
-- 模拟面试：从题库出题 + 模拟评分
-
-### 真实模式（配置 API Key）
-- 复盘：调用 Claude Sonnet 4
-- 转写：调用 Whisper API + Claude 提取 QA
-- 模拟面试：Claude 多轮对话
-
-## 6. 成本估算
-
-| 操作 | Mock | Claude API | Whisper API |
-|------|------|-----------|-------------|
-| AI 复盘 | $0 | ~$0.01/次 | — |
-| 录音转写 | $0 | ~$0.005/次 | $0.006/分钟 |
-| 模拟面试 | $0 | ~$0.03/场 | — |
-
-## 7. 开发路线
-
-| Phase | 内容 | 状态 |
-|-------|------|------|
-| 0 | 项目初始化 + CRUD + shadcn/ui | ✅ |
-| 1 | AI 复盘（Mock + Claude） | ✅ |
-| 2 | 数据可视化（雷达图 + 趋势图） | ✅ |
-| 3 | 录音转写 + QA 提取 | ✅ |
-| 4 | PostgreSQL + 用户认证 | ✅ |
-| 5 | AI 模拟面试 | ✅ |
-| 6 | 面试结果标注 | ✅ |
-| 7 | 多端化（API 后端 / App / 小程序） | ❌ |
-| 8 | 数据分析深化（对比/追踪/下钻） | ❌ |
-| 9 | 体验完善（导出/日历/移动端/暗色） | ❌ |
-
-## 8. 环境变量
+## 7. 环境变量
 
 ```env
-DATABASE_URL="postgresql://crossborder@localhost:5432/interview_coach"
-AUTH_SECRET="your-secret-here"
+DATABASE_URL="postgresql://user:pass@localhost:5432/interview_coach"
+AUTH_SECRET="your-secret"
+DASHSCOPE_API_KEY="sk-..."      # 语音转写
+DEEPSEEK_API_KEY="sk-..."       # AI 复盘首选
+ANTHROPIC_API_KEY="sk-..."      # AI 复盘备选
+```
+
+## 8. 部署命令
+
+```bash
+# 首次部署
+npm install && npx prisma generate && npm run build
+pm2 start ecosystem.config.cjs
+
+# 更新
+git pull && npm install && npm run build && pm2 restart
+
+# 查看
+pm2 logs "i面试"
+pm2 ls
 ```

@@ -21,7 +21,7 @@ export default function PracticePage() {
     setStarting(true)
 
     try {
-      const res = await fetch("/api/mock", {
+      const res = await fetch("/interview/api/mock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

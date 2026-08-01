@@ -49,5 +49,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) session.user.id = token.id as string
       return session
     },
+    async redirect({ url, baseUrl }) {
+      // 确保登录后跳转到 /interview/（带 basePath）
+      if (url === baseUrl || url === `${baseUrl}/` || url === "/") {
+        return `${baseUrl}/interview/`
+      }
+      // 其他情况保持原 URL
+      return url
+    },
   },
 })

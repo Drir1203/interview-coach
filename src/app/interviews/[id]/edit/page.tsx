@@ -32,7 +32,7 @@ export default function EditInterview() {
   const [questions, setQuestions] = useState<QuestionEntry[]>([])
 
   useEffect(() => {
-    fetch(`/api/interviews/${params.id}`)
+    fetch(`/interview/api/interviews/${params.id}`)
       .then((r) => r.json())
       .then((data) => {
         setCompanyName(data.company.name)
@@ -73,7 +73,7 @@ export default function EditInterview() {
     setSaving(true)
 
     try {
-      const res = await fetch(`/api/interviews/${params.id}`, {
+      const res = await fetch(`/interview/api/interviews/${params.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

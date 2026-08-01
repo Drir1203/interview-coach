@@ -59,7 +59,20 @@ Pro Tier（¥29-49/月）
 | 多端 | 微信小程序 | 已开发：登录/总览/面试列表/详情/新建/模拟面试/设置，共 8 页 |
 | 多端 | 离线数据同步 | 暂不支持 |
 
-## 5. 用户旅程
+## 5. 技术栈
+
+| 层 | 技术 |
+|---|------|
+| 前端 | Next.js 16 + TypeScript + Tailwind 4 + shadcn/ui |
+| 后端 | Next.js API Routes |
+| 数据库 | PostgreSQL + Prisma ORM |
+| 认证 | Auth.js (NextAuth v5) + JWT |
+| AI 复盘 | DeepSeek → DashScope Qwen → Anthropic Claude → Mock |
+| 语音转写 | Qwen3-ASR-Flash (Aliyun DashScope) |
+| 浏览器压缩 | FFmpeg.wasm（分段 60s） |
+| 部署 | Ubuntu + Nginx + PM2 |
+
+## 6. 用户旅程
 
 ```
 注册/登录

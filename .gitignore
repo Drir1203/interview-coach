@@ -42,3 +42,11 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# 密钥文件（绝不提交）
+.env
+.env.local
+ecosystem.config.cjs
+
+# 运行时日志
+logs/

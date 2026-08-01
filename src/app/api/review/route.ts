@@ -3,12 +3,13 @@ import prisma from "@/lib/db"
 import { aiReview } from "@/lib/ai-review"
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const { interviewId } = body
+  try {
+    const body = await req.json()
+    const { interviewId } = body
 
-  if (!interviewId) {
-    return Response.json({ error: "interviewId 必填" }, { status: 400 })
-  }
+    if (!interviewId) {
+      return Response.json({ error: "interviewId 必填" }, { status: 400 })
+    }
 
   // 加载面试数据
   const interview = await prisma.interview.findUnique({
@@ -52,9 +53,11 @@ export async function POST(req: NextRequest) {
   })
 
   // 逐题更新 AI 评分
+  const reviewedIndices = new Set<number>()
   for (const qa of result.questions) {
     const question = interview.questions[qa.index]
     if (question) {
+      reviewedIndices.add(qa.index)
       await prisma.interviewQuestion.update({
         where: { id: question.id },
         data: {
@@ -68,5 +71,29 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // AI 未覆盖的问题补默认值
+  for (let i = 0; i < interview.questions.length; i++) {
+    if (!reviewedIndices.has(i)) {
+      const q = interview.questions[i]
+      await prisma.interviewQuestion.update({
+        where: { id: q.id },
+        data: {
+          aiScore: 5,
+          aiFeedback: q.userAnswer
+            ? "AI 未能分析该问题，建议补充更多细节后重新分析。"
+            : "未记录回答内容，AI 无法分析。",
+          aiCategory: "other",
+        },
+      })
+    }
+  }
+
   return Response.json(result)
+  } catch (err: any) {
+    console.error("AI 复盘失败:", err)
+    return Response.json(
+      { error: err?.message || "AI 复盘失败，请稍后重试" },
+      { status: 500 }
+    )
+  }
 }

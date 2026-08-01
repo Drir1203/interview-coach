@@ -1,4 +1,5 @@
 // 录音转写 + QA 提取
+// 浏览器端用 FFmpeg.wasm 压缩后，服务端 base64 → DashScope
 
 export interface QAPair {
   questionText: string
@@ -9,56 +10,34 @@ export async function transcribeAudio(
   audioBlob: Blob,
   duration: number
 ): Promise<{ transcript: string; qas: QAPair[] }> {
-  const apiKey = process.env.DASHSCOPE_API_KEY || process.env.OPENAI_API_KEY
+  const apiKey = process.env.DASHSCOPE_API_KEY
 
-  // 无 API Key → 平台尚未配置语音转写
   if (!apiKey) {
     throw new Error("语音转写服务暂未配置，请手动录入面试问题")
   }
 
-  // 优先使用阿里云 Qwen3-ASR-Flash（国内平台）
-  if (process.env.DASHSCOPE_API_KEY) {
-    const transcript = await transcribeWithQwenASR(audioBlob, apiKey)
-    const qas = await extractQAFromTranscript(transcript)
-    return { transcript, qas }
-  }
+  // base64
+  const buffer = Buffer.from(await audioBlob.arrayBuffer())
+  const base64 = buffer.toString("base64")
+  const dataUri = `data:audio/mp3;base64,${base64}`
 
-  // 回退到 Whisper API
-  const whisperResult = await transcribeWithWhisper(audioBlob, duration, apiKey)
-  return whisperResult
-}
-
-async function transcribeWithQwenASR(audioBlob: Blob, apiKey: string): Promise<string> {
-  const formData = new FormData()
-  formData.append("file", audioBlob, "recording.webm")
-  formData.append("model", "qwen3-asr-flash")
-
-  const response = await fetch("https://dashscope.aliyuncs.com/api/v1/services/audio/transcription/asr", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: formData,
-  })
-
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`语音转写失败: ${error}`)
-  }
-
-  const data = await response.json()
-  return data?.output?.text || data?.text || data?.result?.text || ""
-}
-
-async function transcribeWithWhisper(audioBlob: Blob, duration: number, apiKey: string): Promise<{ transcript: string; qas: QAPair[] }> {
-  const formData = new FormData()
-  formData.append("file", audioBlob, "recording.webm")
-  formData.append("model", "whisper-1")
-  formData.append("language", "zh")
-
-  const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: formData,
-  })
+  // DashScope chat/completions
+  const response = await fetch(
+    "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: "qwen3-asr-flash",
+        messages: [{
+          role: "user",
+          content: [{ type: "input_audio", input_audio: { data: dataUri } }],
+        }],
+        stream: false,
+        asr_options: { enable_itn: false },
+      }),
+    }
+  )
 
   if (!response.ok) {
     const error = await response.text()
@@ -66,76 +45,39 @@ async function transcribeWithWhisper(audioBlob: Blob, duration: number, apiKey: 
   }
 
   const data = await response.json()
-  const transcript = data.text || ""
+  const transcript = data?.choices?.[0]?.message?.content || ""
+
   const qas = await extractQAFromTranscript(transcript)
   return { transcript, qas }
 }
 
 async function extractQAFromTranscript(transcript: string): Promise<QAPair[]> {
-  const aiKey = process.env.ANTHROPIC_API_KEY
-  const baseUrl = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com"
-  const model = process.env.AI_MODEL || "claude-sonnet-4-20250514"
+  if (!transcript || transcript.trim().length < 20) return []
 
-  const prompt = `你是一个面试记录助手。请从以下面试对话转写中，提取面试官的问题和候选人的回答。
+  const keys = [
+    { key: process.env.DEEPSEEK_API_KEY, url: "https://api.deepseek.com/v1", model: "deepseek-chat" },
+    { key: process.env.DASHSCOPE_API_KEY, url: "https://dashscope.aliyuncs.com/compatible-mode/v1", model: "qwen-max" },
+  ]
 
-返回 JSON 数组，格式：
-[
-  { "questionText": "问题内容", "userAnswer": "回答内容" }
-]
+  const prompt = `从以下面试对话中提取问答对，返回 JSON [{"questionText":"问题","userAnswer":"回答"}]，无法分离返回[]。\n\n${transcript}`
 
-如果某段对话无法清晰分离出 QA 对，请忽略它。
-
-转写内容：
-${transcript}`
-
-  if (aiKey) {
+  for (const { key, url, model } of keys) {
+    if (!key) continue
     try {
-      const response = await fetch(`${baseUrl}/v1/messages`, {
+      const res = await fetch(`${url}/chat/completions`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": aiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 2048,
-          messages: [{ role: "user", content: prompt }],
-        }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], max_tokens: 2048 }),
       })
-
-      if (response.ok) {
-        const data = await response.json()
-        const content = data.content?.[0]?.text
+      if (res.ok) {
+        const data = await res.json()
+        const content = data?.choices?.[0]?.message?.content
         if (content) {
-          const jsonMatch = content.match(/\[[\s\S]*\]/)
-          if (jsonMatch) return JSON.parse(jsonMatch[0]) as QAPair[]
+          const m = content.match(/\[[\s\S]*?\]/)
+          if (m) return JSON.parse(m[0]) as QAPair[]
         }
       }
-    } catch {
-      // fallback to simple extraction
-    }
+    } catch {}
   }
-
-  return simpleExtractQA(transcript)
-}
-
-function simpleExtractQA(transcript: string): QAPair[] {
-  const lines = transcript.split("\n")
-  const qas: QAPair[] = []
-  let current: QAPair | null = null
-
-  for (const line of lines) {
-    if (line.includes("面试官：") || line.includes("面试官:")) {
-      if (current?.questionText) qas.push(current)
-      current = { questionText: line.replace(/面试官[：:]\s*/, ""), userAnswer: "" }
-    } else if (line.includes("我：") || line.includes("我:") || line.includes("候选人：")) {
-      if (current) {
-        current.userAnswer = (current.userAnswer + line.replace(/(我|候选人)[：:]\s*/, "")).trim()
-      }
-    }
-  }
-
-  if (current?.questionText) qas.push(current)
-  return qas
+  return []
 }

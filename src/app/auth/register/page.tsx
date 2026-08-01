@@ -29,7 +29,7 @@ export default function RegisterPage() {
     }
 
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch("/interview/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
@@ -44,17 +44,17 @@ export default function RegisterPage() {
       }
 
       // 自动登录
-      const signInRes = await fetch("/api/auth/callback/credentials", {
+      const signInRes = await fetch("/interview/api/auth/callback/credentials", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ email, password, csrfToken: "", callbackUrl: "/" }),
+        body: new URLSearchParams({ email, password, csrfToken: "", callbackUrl: "/interview/" }),
       })
 
       if (signInRes.ok || signInRes.redirected) {
-        router.push("/")
+        window.location.href = "/interview/"
         router.refresh()
       } else {
-        router.push("/auth/login")
+        window.location.href = "/auth/login"
       }
     } catch {
       setError("注册失败，请重试")

@@ -64,7 +64,7 @@ ${input.questions
 }`
 }
 
-// ---- Mock 模式：无 API Key 时使用，返回模拟数据 ----
+// ---- Mock 模式 ----
 
 function generateMockReview(input: AIReviewInput): AIReviewOutput {
   const questions = input.questions.map((q, i) => {
@@ -102,21 +102,129 @@ function generateMockReview(input: AIReviewInput): AIReviewOutput {
   }
 }
 
-// ---- AI 复盘（支持 API Key 从参数传入） ----
+// ---- AI 复盘（支持 DeepSeek / DashScope / Anthropic / Mock） ----
 
-export async function aiReview(
-  input: AIReviewInput
-): Promise<AIReviewOutput> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  const baseUrl = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com"
-  const model = process.env.AI_MODEL || "claude-sonnet-4-20250514"
-
-  // 无 API Key → Mock 模式（平台尚未配置）
-  if (!apiKey) {
-    await new Promise((r) => setTimeout(r, 1500))
-    return generateMockReview(input)
+export async function aiReview(input: AIReviewInput): Promise<AIReviewOutput> {
+  // 1. DeepSeek（用户首选）
+  const deepseekKey = process.env.DEEPSEEK_API_KEY
+  if (deepseekKey) {
+    try {
+      return await reviewWithOpenAICompatible(
+        input, deepseekKey, "https://api.deepseek.com/v1", "deepseek-chat"
+      )
+    } catch (err) {
+      console.error("DeepSeek 调用失败，尝试备用方案:", err)
+    }
   }
 
+  // 2. DashScope（Qwen）
+  const dashscopeKey = process.env.DASHSCOPE_API_KEY
+  if (dashscopeKey) {
+    try {
+      return await reviewWithOpenAICompatible(
+        input, dashscopeKey, "https://dashscope.aliyuncs.com/compatible-mode/v1", "qwen-max"
+      )
+    } catch (err) {
+      console.error("DashScope AI 调用失败，尝试备用方案:", err)
+    }
+  }
+
+  // 3. Anthropic
+  const anthropicKey = process.env.ANTHROPIC_API_KEY
+  if (anthropicKey) {
+    try {
+      return await reviewWithAnthropic(input, anthropicKey)
+    } catch (err) {
+      console.error("Anthropic AI 调用失败:", err)
+    }
+  }
+
+  // 无可用 Key → Mock 模式
+  await new Promise((r) => setTimeout(r, 1500))
+  return generateMockReview(input)
+}
+
+async function reviewWithOpenAICompatible(
+  input: AIReviewInput, apiKey: string, baseUrl: string, model: string
+): Promise<AIReviewOutput> {
+  const prompt = buildReviewPrompt(input)
+
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: prompt },
+      ],
+      max_tokens: 4096,
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`${model} 调用失败: ${error}`)
+  }
+
+  const data = await response.json()
+  const content = data?.choices?.[0]?.message?.content
+  if (!content) throw new Error("AI 返回内容为空")
+
+  const jsonMatch = content.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) throw new Error("AI 返回格式异常")
+
+  return JSON.parse(jsonMatch[0]) as AIReviewOutput
+}
+
+async function reviewWithDashScope(input: AIReviewInput, apiKey: string): Promise<AIReviewOutput> {
+  const model = process.env.AI_MODEL?.startsWith("qwen")
+    ? process.env.AI_MODEL
+    : "qwen-max"
+
+  const prompt = buildReviewPrompt(input)
+
+  const response = await fetch(
+    "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: prompt },
+        ],
+        max_tokens: 4096,
+      }),
+    }
+  )
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`DashScope API 调用失败: ${error}`)
+  }
+
+  const data = await response.json()
+  const content = data?.choices?.[0]?.message?.content || data?.output?.choices?.[0]?.message?.content
+
+  if (!content) throw new Error("AI 返回内容为空")
+
+  const jsonMatch = content.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) throw new Error("AI 返回格式异常")
+
+  return JSON.parse(jsonMatch[0]) as AIReviewOutput
+}
+
+async function reviewWithAnthropic(input: AIReviewInput, apiKey: string): Promise<AIReviewOutput> {
+  const baseUrl = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com"
+  const model = process.env.AI_MODEL || "claude-sonnet-4-20250514"
   const prompt = buildReviewPrompt(input)
 
   const response = await fetch(`${baseUrl}/v1/messages`, {
@@ -141,15 +249,10 @@ export async function aiReview(
 
   const data = await response.json()
   const content = data.content?.[0]?.text
-
-  if (!content) {
-    throw new Error("AI 返回内容为空")
-  }
+  if (!content) throw new Error("AI 返回内容为空")
 
   const jsonMatch = content.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) {
-    throw new Error("AI 返回格式异常，无法解析")
-  }
+  if (!jsonMatch) throw new Error("AI 返回格式异常")
 
   return JSON.parse(jsonMatch[0]) as AIReviewOutput
 }

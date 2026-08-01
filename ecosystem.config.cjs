@@ -1,3 +1,7 @@
+// 从 .env 加载密钥（.env 已被 gitignore，不会泄露）
+const dotenv = require("dotenv")
+const env = dotenv.config()?.parsed || {}
+
 module.exports = {
   apps: [{
     name: "i面试",
@@ -5,6 +9,7 @@ module.exports = {
     args: "start -p 3000",
     cwd: __dirname,
     env: {
+      ...env,
       NODE_ENV: "production",
     },
     instances: 1,

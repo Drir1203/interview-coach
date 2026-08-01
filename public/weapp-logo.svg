@@ -1,0 +1,17 @@
+<svg width="144" height="144" viewBox="0 0 144 144" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景圆 -->
+  <circle cx="72" cy="72" r="72" fill="#18181b"/>
+  <!-- 外圈光晕 -->
+  <circle cx="72" cy="72" r="66" stroke="#fafafa" stroke-opacity="0.08" stroke-width="1.5"/>
+  <!-- AI 聊天气泡 -->
+  <rect x="28" y="40" width="88" height="60" rx="16" fill="#fafafa" fill-opacity="0.95"/>
+  <!-- 气泡小尾巴 -->
+  <path d="M56 96L44 110V96H40" fill="#fafafa" fill-opacity="0.95"/>
+  <!-- 对勾 -->
+  <path d="M51 72L65 86L93 54" stroke="#18181b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- AI 信号点 (右上) -->
+  <circle cx="100" cy="34" r="6" fill="#22c55e"/>
+  <circle cx="100" cy="34" r="10" stroke="#22c55e" stroke-opacity="0.4" stroke-width="2"/>
+  <!-- 底部 "i" 字 -->
+  <text x="72" y="130" text-anchor="middle" fill="#fafafa" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" letter-spacing="1">i面试</text>
+</svg>

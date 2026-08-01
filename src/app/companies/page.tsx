@@ -25,7 +25,7 @@ export default function CompaniesPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/interviews")
+    fetch("/interview/api/interviews")
       .then((r) => r.json())
       .then((interviews: any[]) => {
         const grouped: Record<string, CompanySummary> = {}

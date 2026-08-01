@@ -24,3 +24,12 @@ export function formatDateTime(date: Date | string): string {
     minute: "2-digit",
   })
 }
+
+// 自动检测 basePath
+const basePath = typeof window !== "undefined" && window.location.pathname.startsWith("/interview")
+  ? "/interview" : ""
+
+// API 请求，自动添加 basePath 前缀
+export function apiUrl(path: string): string {
+  return `${basePath}${path}`
+}

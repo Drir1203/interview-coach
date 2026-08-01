@@ -30,7 +30,7 @@ export default function InterviewList() {
   const [tab, setTab] = useState("all")
 
   useEffect(() => {
-    fetch("/api/interviews")
+    fetch("/interview/api/interviews")
       .then((r) => r.json())
       .then((data) => {
         setInterviews(data)

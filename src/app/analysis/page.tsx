@@ -48,7 +48,7 @@ export default function AnalysisPage() {
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([])
 
   useEffect(() => {
-    fetch("/api/analysis/deep")
+    fetch("/interview/api/analysis/deep")
       .then((r) => r.json())
       .then((d) => {
         setData(d)
