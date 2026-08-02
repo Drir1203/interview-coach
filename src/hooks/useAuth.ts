@@ -15,7 +15,8 @@ export function useAuth() {
   const [status, setStatus] = useState<"loading" | "authenticated" | "unauthenticated">("loading")
 
   useEffect(() => {
-    fetch("/interview/api/auth/session")
+    // 走服务端 auth() 的 /api/me，复用已验证可靠的会话解析路径
+    fetch("/interview/api/me")
       .then((r) => r.json())
       .then((data) => {
         if (data?.user) {
