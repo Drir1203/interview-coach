@@ -12,6 +12,7 @@ import {
   XCircle,
   Clock,
   Download,
+  Sparkles,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -346,6 +347,20 @@ export default function InterviewDetail() {
                         </div>
                       ))}
                     </div>
+                  </div>
+                </>
+              )}
+
+              {/* AI 教练下一步建议(面试后闭环) */}
+              {reviewResult?.nextSteps && (
+                <>
+                  <Separator />
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                    <h3 className="mb-2 flex items-center gap-1.5 text-sm font-medium text-primary">
+                      <Sparkles className="size-4" />
+                      AI 教练建议 · 接下来练什么
+                    </h3>
+                    <p className="text-sm leading-relaxed">{reviewResult.nextSteps}</p>
                   </div>
                 </>
               )}

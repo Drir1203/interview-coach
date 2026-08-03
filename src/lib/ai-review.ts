@@ -44,6 +44,7 @@ ${input.questions
   "overallFeedback": "<总体评语，2-3句话>",
   "strengths": ["<优点1>", "<优点2>"],
   "improvementAreas": ["<改进方向1>", "<改进方向2>"],
+  "nextSteps": "<1-2句：基于本次复盘，接下来最该练什么、怎么练>",
   "questions": [
     {
       "index": 0,
@@ -93,6 +94,7 @@ function generateMockReview(input: AIReviewInput): AIReviewOutput {
       ? ["技术基础扎实", "回答有结构逻辑清晰"]
       : ["态度积极", "有基本的技术认知"],
     improvementAreas: ["建议使用 STAR 法则回答 Behavioral 问题", "项目经验需要准备更多量化数据"],
+    nextSteps: "接下来优先用 STAR 法则打磨 2 个最有代表性的项目案例,并每天练 1 道行为面试题口述录音。",
     questions,
     weaknessAreas: [
       { category: "technical", score: 6.5, description: "技术深度可以进一步加强" },

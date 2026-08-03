@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/db"
 import { aiReview } from "@/lib/ai-review"
+import { updateSkillProfile } from "@/lib/skill-profile"
 
 export async function POST(req: NextRequest) {
   try {
@@ -87,6 +88,9 @@ export async function POST(req: NextRequest) {
       })
     }
   }
+
+  // 自动更新能力画像(面试后闭环:复盘 → 画像更新)
+  await updateSkillProfile(interview.userId)
 
   return Response.json(result)
   } catch (err: any) {

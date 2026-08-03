@@ -56,6 +56,11 @@ model User {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  // 用户级简历（AI 复盘时作为分析背景）
+  resumeText       String?   @db.Text // 解析后的简历纯文本
+  resumeFileName   String?            // 原始 PDF 文件名，仅用于前端展示
+  resumeUpdatedAt  DateTime?          // 简历最后更新时间（手动维护）
+
   accounts       Account[]
   sessions       Session[]
   interviews     Interview[]

@@ -48,6 +48,7 @@ export interface AIReviewOutput {
   overallFeedback: string
   strengths: string[]
   improvementAreas: string[]
+  nextSteps?: string // AI 教练下一步练习建议(面试后自动闭环)
   questions: {
     index: number
     score: number
