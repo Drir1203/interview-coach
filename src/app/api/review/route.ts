@@ -29,6 +29,12 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "没有面试问题，请先录入问题" }, { status: 400 })
   }
 
+  // 取面试归属者的简历作为分析背景（用 interview.userId 而非 session，规避会话过期边界）
+  const owner = await prisma.user.findUnique({
+    where: { id: interview.userId },
+    select: { resumeText: true },
+  })
+
   // 调用 AI 复盘（无 API Key 时自动走 Mock）
   const result = await aiReview({
     company: interview.company.name,
@@ -38,6 +44,7 @@ export async function POST(req: NextRequest) {
       questionText: q.questionText,
       userAnswer: q.userAnswer || undefined,
     })),
+    resumeText: owner?.resumeText || undefined,
   })
 
   // 保存 AI 复盘结果到数据库
@@ -93,10 +100,10 @@ export async function POST(req: NextRequest) {
   await updateSkillProfile(interview.userId)
 
   return Response.json(result)
-  } catch (err: any) {
+  } catch (err) {
     console.error("AI 复盘失败:", err)
     return Response.json(
-      { error: err?.message || "AI 复盘失败，请稍后重试" },
+      { error: err instanceof Error ? err.message : "AI 复盘失败，请稍后重试" },
       { status: 500 }
     )
   }

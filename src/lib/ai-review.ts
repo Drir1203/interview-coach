@@ -16,6 +16,12 @@ const SYSTEM_PROMPT = `你是一位资深的技术面试官，在互联网行业
 - 优化回答要可操作，是该候选人真实能说出来的水平
 - 优先指出 1-2 个最关键改进点，而不是列一堆
 
+## 简历参照
+- 提供候选人简历时，将回答与其简历中的项目经历、技能、岗位背景对照评估
+- 若简历明确写了某技能/项目但回答完全未体现，在对应问题的 feedback 中指出"简历写了 X 但未展开"
+- 优化回答（improvedAnswer）必须贴合该候选人简历中的真实经历，不要编造简历之外的能力
+- 简历仅作为评分背景，不额外增加输出维度
+
 ## 输出格式
 返回合法的 JSON 对象，不要包含 Markdown 代码块标记。`
 
@@ -26,7 +32,7 @@ function buildReviewPrompt(input: AIReviewInput): string {
 - 公司：${input.company}
 - 岗位：${input.position}
 - 轮次：${input.roundType}
-
+${input.resumeText?.trim() ? `\n## 候选人简历背景\n${input.resumeText.trim()}\n` : ""}
 ## 面试问题与回答
 ${input.questions
   .map(

@@ -1,7 +1,8 @@
 #!/bin/bash
 # i面试 API 自动化测试
 
-BASE_URL="http://localhost:3000"
+# next.config 设了 basePath="/interview"，API 实际路径带此前缀
+BASE_URL="http://localhost:3000/interview"
 PASS=0
 FAIL=0
 
@@ -92,12 +93,52 @@ if [ -n "$IV_ID" ]; then
   test "更新面试结果" "PUT" "/api/interviews/$IV_ID" \
     '{"result":"pass"}' "200" ""
 
-  # AI 复盘
+  # ── 简历（用户级）: 先设置简历，AI 复盘会结合简历背景 ──
+  test "保存简历文本" "PUT" "/api/profile/resume" \
+    '{"resumeText":"张三，5年后端开发经验，精通Java和Go，主导过订单系统"}' "200" "resumeText"
+  test "获取简历" "GET" "/api/profile/resume" "" "200" "resumeText"
+
+  # 上传 PDF 简历并解析
+  RESUME_PDF="test-resume.pdf"
+  node -e "
+const fs = require('fs');
+const objs = [];
+objs[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+objs[2] = '<< /Type /Pages /Kids [3 0 R] /Count 1 >>';
+objs[3] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>';
+const stream = 'BT /F1 24 Tf 100 700 Td (Resume Test Content) Tj ET';
+objs[4] = '<< /Length ' + stream.length + ' >>\nstream\n' + stream + '\nendstream';
+objs[5] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+let pdf = '%PDF-1.4\n';
+const offsets = [0];
+for (let i = 1; i <= 5; i++) { offsets[i] = Buffer.byteLength(pdf, 'utf8'); pdf += i + ' 0 obj\n' + objs[i] + '\nendobj\n'; }
+const xrefPos = Buffer.byteLength(pdf, 'utf8');
+let xref = 'xref\n0 6\n0000000000 65535 f \n';
+for (let i = 1; i <= 5; i++) xref += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+pdf += xref + 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xrefPos + '\n%%EOF\n';
+fs.writeFileSync('$RESUME_PDF', pdf, 'utf8');
+console.log('OK');
+"
+  PDF_RESP=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/profile/resume" \
+    -F "resume=@$RESUME_PDF;type=application/pdf")
+  PDF_CODE=$(echo "$PDF_RESP" | tail -1)
+  PDF_BODY=$(echo "$PDF_RESP" | sed '$d')
+  rm -f "$RESUME_PDF"
+  if [ "$PDF_CODE" = "200" ] && echo "$PDF_BODY" | grep -q "Resume"; then
+    echo -e "  上传PDF简历解析: ${GREEN}✅${NC}"; PASS=$((PASS + 1))
+  else
+    echo -e "  上传PDF简历解析: ${RED}❌ (HTTP $PDF_CODE)${NC}"; FAIL=$((FAIL + 1))
+  fi
+
+  # AI 复盘（此时简历为测试内容，复盘会结合简历背景）
   test "AI 复盘" "POST" "/api/review" \
     "{\"interviewId\":\"$IV_ID\"}" "200" "overallScore"
 
   echo "  等待 AI 复盘完成..."
   sleep 1
+
+  # 清理测试简历（避免污染 default 用户，测试无 cookie 走 default）
+  test "清理测试简历" "PUT" "/api/profile/resume" '{"resumeText":""}' "200" ""
 
   # 数据分析
   test "数据分析" "GET" "/api/analysis" "" "200" ""

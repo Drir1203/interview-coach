@@ -41,6 +41,8 @@ export interface AIReviewInput {
     questionText: string
     userAnswer?: string
   }[]
+  // 候选人简历文本，作为评分背景；为空则不带入
+  resumeText?: string
 }
 
 export interface AIReviewOutput {
