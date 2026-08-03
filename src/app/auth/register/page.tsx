@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { signIn } from "next-auth/react"
 import { Loader2, AlertCircle } from "lucide-react"
 import { Logo } from "@/components/Logo"
 import { Button } from "@/components/ui/button"
@@ -43,19 +44,20 @@ export default function RegisterPage() {
         return
       }
 
-      // 自动登录
-      const signInRes = await fetch("/interview/api/auth/callback/credentials", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ email, password, csrfToken: "", callbackUrl: "/interview/" }),
+      // 自动登录（用 signIn 正确处理 CSRF token）
+      const signInRes = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
       })
 
-      if (signInRes.ok || signInRes.redirected) {
-        window.location.href = "/interview/"
-        router.refresh()
-      } else {
+      if (signInRes?.error) {
+        // 登录失败也跳登录页手动登录
         window.location.href = "/auth/login"
+        return
       }
+      window.location.href = "/interview/"
+      router.refresh()
     } catch {
       setError("注册失败，请重试")
       setLoading(false)
