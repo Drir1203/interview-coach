@@ -52,8 +52,8 @@ export default function RegisterPage() {
       })
 
       if (signInRes?.error) {
-        // 登录失败也跳登录页手动登录
-        window.location.href = "/auth/login"
+        // 登录失败也跳登录页手动登录（必须带 /interview 前缀，否则落到根路径=其他项目）
+        window.location.href = "/interview/auth/login"
         return
       }
       window.location.href = "/interview/"
