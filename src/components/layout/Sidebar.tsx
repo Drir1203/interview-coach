@@ -15,6 +15,7 @@ import {
   BarChart3,
   Menu,
   X,
+  Bot,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { signOut } from "next-auth/react"
@@ -31,6 +32,7 @@ import { useState } from "react"
 
 const navItems = [
   { href: "/", label: "总览", icon: LayoutDashboard },
+  { href: "/coach", label: "AI 教练", icon: Bot },
   { href: "/interviews", label: "面试记录", icon: Briefcase },
   { href: "/analysis", label: "深入分析", icon: BarChart3 },
   { href: "/companies", label: "公司看板", icon: Building2 },
