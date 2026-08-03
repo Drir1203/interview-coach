@@ -1,7 +1,7 @@
 import prisma from "@/lib/db"
 import { ROUND_TYPE_LABELS, INTERVIEW_RESULTS } from "@/types"
 
-interface CoachMessage {
+export interface CoachMessage {
   role: "user" | "assistant"
   content: string
 }
@@ -37,7 +37,7 @@ function truncate(s: string | null | undefined, max: number): string {
   return s.length > max ? s.slice(0, max) + "…" : s
 }
 
-async function buildUserContext(userId: string): Promise<string> {
+export async function buildUserContext(userId: string): Promise<string> {
   const [recent, profiles, stats] = await Promise.all([
     prisma.interview.findMany({
       where: { userId, status: "ai_reviewed" },
@@ -185,19 +185,23 @@ function mockCoachReply(messages: CoachMessage[]): string {
   return lines.join("\n")
 }
 
-// ────────── 主入口 ──────────
+// ────────── 多模型链通用入口(供教练/押题/报告复用) ──────────
 
-export async function coachChat(userId: string, messages: CoachMessage[]): Promise<string> {
-  const userContext = await buildUserContext(userId)
-  const system = `${COACH_SYSTEM_PROMPT}\n\n## 【用户数据】\n${userContext}`
+// 无 Key 时的兜底(由各功能提供自己的 mock 回复)
+type MockFn = (messages: CoachMessage[]) => string
 
+export async function chatWithFallback(
+  system: string,
+  messages: CoachMessage[],
+  mockFn?: MockFn
+): Promise<string> {
   // 1. DeepSeek(首选)
   const deepseekKey = process.env.DEEPSEEK_API_KEY
   if (deepseekKey) {
     try {
       return await callOpenAICompatible(system, messages, deepseekKey, "https://api.deepseek.com/v1", "deepseek-chat")
     } catch (err) {
-      console.error("DeepSeek 教练调用失败,尝试备用:", err)
+      console.error("DeepSeek 调用失败,尝试备用:", err)
     }
   }
 
@@ -209,7 +213,7 @@ export async function coachChat(userId: string, messages: CoachMessage[]): Promi
         system, messages, dashscopeKey, "https://dashscope.aliyuncs.com/compatible-mode/v1", "qwen-max"
       )
     } catch (err) {
-      console.error("DashScope 教练调用失败,尝试备用:", err)
+      console.error("DashScope 调用失败,尝试备用:", err)
     }
   }
 
@@ -219,11 +223,19 @@ export async function coachChat(userId: string, messages: CoachMessage[]): Promi
     try {
       return await callAnthropic(system, messages, anthropicKey)
     } catch (err) {
-      console.error("Anthropic 教练调用失败:", err)
+      console.error("Anthropic 调用失败:", err)
     }
   }
 
   // 无可用 Key → Mock 兜底
   await new Promise((r) => setTimeout(r, 800))
-  return mockCoachReply(messages)
+  return mockFn ? mockFn(messages) : "（当前未配置 AI API Key,无法生成内容。）"
+}
+
+// ────────── 主入口:教练对话 ──────────
+
+export async function coachChat(userId: string, messages: CoachMessage[]): Promise<string> {
+  const userContext = await buildUserContext(userId)
+  const system = `${COACH_SYSTEM_PROMPT}\n\n## 【用户数据】\n${userContext}`
+  return chatWithFallback(system, messages, mockCoachReply)
 }
