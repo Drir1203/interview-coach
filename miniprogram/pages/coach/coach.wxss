@@ -1,0 +1,28 @@
+/* AI 教练对话页：消息区 + 底部固定输入栏 */
+
+.chat-list {
+  padding-bottom: 160rpx;
+}
+
+.chat-waiting {
+  padding: 8rpx 12rpx;
+}
+
+.input-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 24rpx;
+  background: var(--brand-card);
+  border-top: 2rpx solid var(--brand-border);
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+.input-field {
+  flex: 1;
+}

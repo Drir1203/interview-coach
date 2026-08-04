@@ -49,6 +49,13 @@ Vant 主题通过 `--van-*` 变量映射（见 app.wxss），新增 Vant 组件�
 - 触发：`<van-field readonly is-link value="{{roundTypeLabel}}" bind:click="openRoundPicker" />` + `<van-popup show position="bottom"><van-picker columns="{{roundColumns}}" bind:confirm="onRoundConfirm" bind:cancel="closeRoundPicker" /></van-popup>`。
 - confirm 里用 `e.detail.index` 定位选项：`const rt = roundTypes[e.detail.index]`，更新 `roundType`/`roundTypeLabel`。
 
+## AI 功能页约定（coach/prep/report）
+
+- 后端接口：`POST /api/coach`（对话）、`POST /api/prep`（押题）、`POST /api/report`（成长报告），返回 **Markdown 文本**。
+- `utils/markdown.js` 的 `parseMarkdown(text)` 把 Markdown 转成 `[{type:'h1'|'h2'|'h3'|'li'|'p', text}]` 块，页面用 `wx:for blocks` + `.md-*` 类渲染（app.wxss 已定义）。
+- 新增 AI 页面时：JS 里 `parseMarkdown` 生成 blocks 存 data，WXML 只做三元/`===` 判断，不做方法调用。
+- 首页"AI 智能"功能网格是入口（`pages/index`），新增功能在此加卡 + `goXxx` 导航。
+
 ## WXML 禁止事项
 
 - ❌ 箭头函数（`=>`）、`.find()`/`.findIndex()`、`Math.*`、`util.*` —— WXML 模板不支持，一律在 JS 里预计算成 data 字段。

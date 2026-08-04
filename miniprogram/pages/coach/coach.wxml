@@ -1,0 +1,43 @@
+<view class="page">
+  <view class="banner">
+    <view>
+      <text class="banner-title">AI 教练</text>
+      <text class="banner-subtitle">你的私人面试陪练</text>
+    </view>
+  </view>
+
+  <!-- 对话消息区 -->
+  <view class="chat-list">
+    <view
+      wx:for="{{ messages }}"
+      wx:key="id"
+      class="msg-row {{ item.role === 'user' ? 'user' : '' }}"
+    >
+      <view class="msg-bubble {{ item.role === 'user' ? 'user' : 'ai' }}">
+        <view wx:for="{{ item.blocks }}" wx:for-item="blk" wx:for-index="bi" wx:key="key">
+          <text wx:if="{{ blk.type === 'h1' }}" class="md-h1">{{ blk.text }}</text>
+          <text wx:elif="{{ blk.type === 'h2' }}" class="md-h2">{{ blk.text }}</text>
+          <text wx:elif="{{ blk.type === 'h3' }}" class="md-h3">{{ blk.text }}</text>
+          <text wx:elif="{{ blk.type === 'li' }}" class="md-li">• {{ blk.text }}</text>
+          <text wx:else class="md-p">{{ blk.text }}</text>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{ waiting }}" class="chat-waiting">
+      <van-loading color="#6366f1" size="20px">教练思考中...</van-loading>
+    </view>
+  </view>
+
+  <!-- 底部输入区 -->
+  <view class="input-bar">
+    <van-field
+      class="input-field"
+      value="{{ input }}"
+      placeholder="聊聊你的面试..."
+      bind:input="onInput"
+      confirm-type="send"
+      bind:confirm="handleSend"
+    />
+    <van-button type="primary" round disabled="{{ !input.trim() || waiting }}" bind:click="handleSend">发送</van-button>
+  </view>
+</view>

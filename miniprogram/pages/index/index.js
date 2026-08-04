@@ -50,4 +50,16 @@ Page({
     const id = e.currentTarget.dataset.id
     wx.navigateTo({ url: `/pages/interview-detail/interview-detail?id=${id}` })
   },
+
+  goCoach() {
+    wx.navigateTo({ url: "/pages/coach/coach" })
+  },
+
+  goPrep() {
+    wx.navigateTo({ url: "/pages/prep/prep" })
+  },
+
+  goReport() {
+    wx.navigateTo({ url: "/pages/report/report" })
+  },
 })

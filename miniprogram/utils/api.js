@@ -54,6 +54,16 @@ module.exports = {
   getAnalysis: () => request("/api/analysis"),
   getDeepAnalysis: () => request("/api/analysis/deep"),
 
+  // AI 功能
+  coachChat: (messages) =>
+    request("/api/coach", "POST", { messages }),
+
+  prepPlan: (company, position, roundType) =>
+    request("/api/prep", "POST", { company, position, roundType }),
+
+  generateReport: () =>
+    request("/api/report", "POST", {}),
+
   // 模拟面试
   mockStart: (company, position, roundType) =>
     request("/api/mock", "POST", { action: "start", company, position, roundType }),

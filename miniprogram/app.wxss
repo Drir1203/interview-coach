@@ -201,6 +201,38 @@ button::after {
   border-bottom-left-radius: 8rpx;
 }
 
+/* AI Markdown 块渲染（coach / prep / report） */
+.md-h1 {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 700;
+  margin: 12rpx 0 8rpx;
+}
+
+.md-h2 {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 700;
+  margin: 10rpx 0 6rpx;
+}
+
+.md-h3 {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  margin: 8rpx 0 4rpx;
+}
+
+.md-li {
+  display: block;
+  font-size: 26rpx;
+}
+
+.md-p {
+  display: block;
+  font-size: 26rpx;
+}
+
 /* 品牌渐变横幅（tab 页页头） */
 .banner {
   background: linear-gradient(135deg, #6366f1 0%, #818cf8 60%, #a5b4fc 100%);

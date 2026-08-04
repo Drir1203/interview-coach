@@ -7,7 +7,10 @@
     "pages/new-interview/new-interview",
     "pages/practice/practice",
     "pages/practice-session/practice-session",
-    "pages/settings/settings"
+    "pages/settings/settings",
+    "pages/coach/coach",
+    "pages/prep/prep",
+    "pages/report/report"
   ],
   "window": {
     "navigationBarTitleText": "i面试",

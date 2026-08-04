@@ -1,0 +1,41 @@
+<view class="page">
+  <view class="banner">
+    <view>
+      <text class="banner-title">面试押题</text>
+      <text class="banner-subtitle">输入目标公司岗位，AI 帮你押题</text>
+    </view>
+  </view>
+
+  <!-- 表单 -->
+  <view class="card">
+    <van-field label="公司名称" placeholder="例：字节跳动" value="{{ company }}" bind:input="onCompanyInput" />
+    <van-field label="岗位" placeholder="例：前端开发" value="{{ position }}" bind:input="onPositionInput" />
+    <van-field label="轮次" value="{{ roundTypeLabel }}" readonly is-link bind:click="openRoundPicker" />
+    <van-button type="primary" round block loading="{{ generating }}" bind:click="generate" class="mt-24">
+      生成押题清单
+    </van-button>
+  </view>
+
+  <!-- 押题结果 -->
+  <view class="card" wx:if="{{ hasPlan }}">
+    <text class="card-title">押题结果</text>
+    <view wx:for="{{ planBlocks }}" wx:for-item="blk" wx:for-index="bi" wx:key="key">
+      <text wx:if="{{ blk.type === 'h1' }}" class="md-h1">{{ blk.text }}</text>
+      <text wx:elif="{{ blk.type === 'h2' }}" class="md-h2">{{ blk.text }}</text>
+      <text wx:elif="{{ blk.type === 'h3' }}" class="md-h3">{{ blk.text }}</text>
+      <text wx:elif="{{ blk.type === 'li' }}" class="md-li">• {{ blk.text }}</text>
+      <text wx:else class="md-p">{{ blk.text }}</text>
+    </view>
+  </view>
+
+  <!-- 轮次选择 -->
+  <van-popup show="{{ showRoundPicker }}" position="bottom" bind:close="closeRoundPicker">
+    <van-picker
+      columns="{{ roundColumns }}"
+      show-toolbar
+      title="选择轮次"
+      bind:confirm="onRoundConfirm"
+      bind:cancel="closeRoundPicker"
+    />
+  </van-popup>
+</view>

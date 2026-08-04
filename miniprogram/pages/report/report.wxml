@@ -1,0 +1,29 @@
+<view class="page">
+  <view class="banner">
+    <view>
+      <text class="banner-title">成长报告</text>
+      <text class="banner-subtitle">基于面试趋势与能力画像的阶段性总结</text>
+    </view>
+  </view>
+
+  <!-- 说明卡 + 生成入口 -->
+  <view class="card">
+    <text class="card-title">关于成长报告</text>
+    <text class="card-desc">基于你的面试记录和 AI 复盘数据，生成阶段性成长总结。</text>
+    <van-button type="primary" round block loading="{{ generating }}" bind:click="generate" class="mt-24">
+      {{ hasReport ? '重新生成报告' : '生成成长报告' }}
+    </van-button>
+  </view>
+
+  <!-- 报告内容 -->
+  <view class="card" wx:if="{{ hasReport }}">
+    <text class="card-title">我的成长报告</text>
+    <view wx:for="{{ reportBlocks }}" wx:for-item="blk" wx:for-index="bi" wx:key="key">
+      <text wx:if="{{ blk.type === 'h1' }}" class="md-h1">{{ blk.text }}</text>
+      <text wx:elif="{{ blk.type === 'h2' }}" class="md-h2">{{ blk.text }}</text>
+      <text wx:elif="{{ blk.type === 'h3' }}" class="md-h3">{{ blk.text }}</text>
+      <text wx:elif="{{ blk.type === 'li' }}" class="md-li">• {{ blk.text }}</text>
+      <text wx:else class="md-p">{{ blk.text }}</text>
+    </view>
+  </view>
+</view>
