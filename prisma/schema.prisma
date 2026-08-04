@@ -67,6 +67,7 @@ model User {
   interviews     Interview[]
   skillProfiles  UserSkillProfile[]
   tags           Tag[]
+  applications   JobApplication[]
 }
 
 // ────────── 公司 ──────────
@@ -184,4 +185,23 @@ model UserSkillProfile {
   user User @relation(fields: [userId], references: [id])
 
   @@unique([userId, category])
+}
+
+// ────────── 求职进度追踪 ──────────
+model JobApplication {
+  id           String   @id @default(cuid())
+  userId       String
+  company      String
+  position     String
+  status       String   @default("applied") // applied | interviewing | offer | rejected | closed
+  currentRound String   @default("first")   // first | second | third | final | hr | written
+  appliedAt    DateTime @default(now())
+  notes        String?
+  nextStep     String?  // AI 建议的下一步行动
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
 }

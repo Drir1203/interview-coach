@@ -18,6 +18,7 @@ import {
   Bot,
   Target,
   LineChart,
+  TrendingUp,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { signOut } from "next-auth/react"
@@ -37,6 +38,7 @@ const navItems = [
   { href: "/coach", label: "AI 教练", icon: Bot },
   { href: "/prep", label: "面试前准备", icon: Target },
   { href: "/interviews", label: "面试记录", icon: Briefcase },
+  { href: "/applications", label: "求职进度", icon: TrendingUp },
   { href: "/analysis", label: "深入分析", icon: BarChart3 },
   { href: "/report", label: "成长报告", icon: LineChart },
   { href: "/companies", label: "公司看板", icon: Building2 },
