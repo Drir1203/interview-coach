@@ -62,7 +62,7 @@ export default function SettingsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>i面试 v1.0</p>
+          <p>AI 面师 v1.0</p>
           <p>你的 AI 面试教练 — 记录面试 → AI 复盘 → 提升</p>
           <Separator />
           <p className="flex items-center gap-2"><Database className="size-3" /> 数据存储在云端，多设备同步</p>

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "i面试 - 你的 AI 面试教练",
+  title: "AI 面师 - 你的 AI 面试教练",
   description: "AI 面试复盘工具 — 记录面试 → AI 复盘 → 提升自己",
   icons: {
     icon: "/logo.svg",

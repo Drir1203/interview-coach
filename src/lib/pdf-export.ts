@@ -86,7 +86,7 @@ function safeJson<T>(raw: string | null | undefined): T {
 
 function footerHtml(): string {
   const today = new Date().toLocaleDateString("zh-CN")
-  return `<div style="margin-top:32px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;">由 i面试 生成 · 导出时间 ${esc(today)}</div>`
+  return `<div style="margin-top:32px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;">由 AI 面师 生成 · 导出时间 ${esc(today)}</div>`
 }
 
 // ────────── 单场完整报告 ──────────
