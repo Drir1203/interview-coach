@@ -23,7 +23,7 @@ Page({
   },
 
   onInput(e) {
-    this.setData({ input: e.detail.value })
+    this.setData({ input: e.detail })
   },
 
   handleSend() {

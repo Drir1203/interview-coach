@@ -23,8 +23,8 @@ Page({
     this.setData({ roundColumns: this.data.roundTypes.map((r) => r.label) })
   },
 
-  onCompanyInput(e) { this.setData({ company: e.detail.value }) },
-  onPositionInput(e) { this.setData({ position: e.detail.value }) },
+  onCompanyInput(e) { this.setData({ company: e.detail }) },
+  onPositionInput(e) { this.setData({ position: e.detail }) },
   openRoundPicker() {
     this.setData({ showRoundPicker: true })
   },

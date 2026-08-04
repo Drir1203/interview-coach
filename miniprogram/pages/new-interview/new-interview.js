@@ -53,10 +53,10 @@ Page({
     }
   },
 
-  onCompanyInput(e) { this.setData({ companyName: e.detail.value }) },
-  onIndustryInput(e) { this.setData({ companyIndustry: e.detail.value }) },
-  onPositionInput(e) { this.setData({ position: e.detail.value }) },
-  onNotesInput(e) { this.setData({ userNotes: e.detail.value }) },
+  onCompanyInput(e) { this.setData({ companyName: e.detail }) },
+  onIndustryInput(e) { this.setData({ companyIndustry: e.detail }) },
+  onPositionInput(e) { this.setData({ position: e.detail }) },
+  onNotesInput(e) { this.setData({ userNotes: e.detail }) },
   openRoundPicker() {
     this.setData({ showRoundPicker: true })
   },
@@ -80,14 +80,14 @@ Page({
   onQuestionTextInput(e) {
     const idx = e.currentTarget.dataset.idx
     const qs = this.data.questions
-    qs[idx].questionText = e.detail.value
+    qs[idx].questionText = e.detail
     this.setData({ questions: qs })
   },
 
   onAnswerInput(e) {
     const idx = e.currentTarget.dataset.idx
     const qs = this.data.questions
-    qs[idx].userAnswer = e.detail.value
+    qs[idx].userAnswer = e.detail
     this.setData({ questions: qs })
   },
 

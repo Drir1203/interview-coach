@@ -32,11 +32,11 @@ Page({
   },
 
   onCompanyInput(e) {
-    this.setData({ company: e.detail.value })
+    this.setData({ company: e.detail })
   },
 
   onPositionInput(e) {
-    this.setData({ position: e.detail.value })
+    this.setData({ position: e.detail })
   },
 
   openRoundPicker() {

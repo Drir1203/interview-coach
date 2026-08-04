@@ -11,9 +11,9 @@ Page({
     isRegister: false,
   },
 
-  onEmailInput(e) { this.setData({ email: e.detail.value, error: "" }) },
-  onPasswordInput(e) { this.setData({ password: e.detail.value, error: "" }) },
-  onNameInput(e) { this.setData({ name: e.detail.value, error: "" }) },
+  onEmailInput(e) { this.setData({ email: e.detail, error: "" }) },
+  onPasswordInput(e) { this.setData({ password: e.detail, error: "" }) },
+  onNameInput(e) { this.setData({ name: e.detail, error: "" }) },
 
   switchMode() {
     this.setData({ isRegister: !this.data.isRegister, error: "" })

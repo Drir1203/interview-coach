@@ -81,8 +81,8 @@ Page({
     })
   },
 
-  onCompanyInput(e) { this.setData({ company: e.detail.value }) },
-  onPositionInput(e) { this.setData({ position: e.detail.value }) },
+  onCompanyInput(e) { this.setData({ company: e.detail }) },
+  onPositionInput(e) { this.setData({ position: e.detail }) },
 
   saveAsInterview() {
     const { company, position, qas } = this.data

@@ -28,7 +28,7 @@ Page({
   },
 
   onAnswerInput(e) {
-    this.setData({ currentAnswer: e.detail.value })
+    this.setData({ currentAnswer: e.detail })
   },
 
   handleSend() {

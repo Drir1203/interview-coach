@@ -38,7 +38,7 @@ Page({
   },
 
   onSearchInput(e) {
-    this.setData({ search: e.detail.value })
+    this.setData({ search: e.detail })
     this.applyFilter()
   },
 
