@@ -58,3 +58,6 @@ logs/
 
 # 微信开发者工具私有配置（含个人 AppID / 本地勾选）
 /miniprogram/project.private.config.json
+
+# PDF 导出调试产物
+/.pdf-repro/
