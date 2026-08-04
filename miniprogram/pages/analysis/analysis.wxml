@@ -1,0 +1,84 @@
+<view class="page">
+  <view class="banner">
+    <view>
+      <text class="banner-title">深入分析</text>
+      <text class="banner-subtitle">能力画像 · 薄弱项 · 跨公司 · 趋势</text>
+    </view>
+  </view>
+
+  <block wx:if="{{ loading }}">
+    <view class="loading">
+      <van-loading color="#6366f1" size="24px">分析中...</van-loading>
+    </view>
+  </block>
+
+  <block wx:elif="{{ hasData }}">
+    <!-- 统计概览 -->
+    <view class="stats-grid">
+      <view class="stat-card">
+        <text class="stat-value">{{ stats.total }}</text>
+        <text class="stat-label">总面试</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-value">{{ stats.reviewed }}</text>
+        <text class="stat-label">已复盘</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-value">{{ stats.passRate }}%</text>
+        <text class="stat-label">通过率</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-value">{{ stats.avgScore ? stats.avgScore.toFixed(1) : '-' }}</text>
+        <text class="stat-label">平均分</text>
+      </view>
+    </view>
+
+    <!-- 能力雷达 -->
+    <text class="section-title">能力画像</text>
+    <view class="card chart-card">
+      <canvas wx:if="{{ skillProfile.length >= 3 }}" canvas-id="radarCanvas" class="radar-canvas"></canvas>
+      <view wx:else class="empty-state">复盘后生成能力画像</view>
+    </view>
+
+    <!-- 薄弱项 -->
+    <text class="section-title">薄弱项</text>
+    <view class="card">
+      <block wx:if="{{ weakness.length > 0 }}">
+        <view wx:for="{{ weakness }}" wx:key="category" class="weakness-row">
+          <view class="weakness-head">
+            <text class="weakness-name">{{ item.label }}</text>
+            <text class="weakness-score">{{ item.avgScore }} <text class="weakness-direction">{{ item.direction === 'up' ? '↑' : item.direction === 'down' ? '↓' : '→' }}</text></text>
+          </view>
+          <view class="weakness-bar">
+            <view class="weakness-bar-fill" style="width: {{ item.avgScore / 5 * 100 }}%"></view>
+          </view>
+        </view>
+      </block>
+      <view wx:else class="empty-state">暂无薄弱项数据</view>
+    </view>
+
+    <!-- 跨公司对比 -->
+    <text class="section-title">跨公司对比</text>
+    <view class="card">
+      <block wx:if="{{ companies.length > 0 }}">
+        <view wx:for="{{ companies }}" wx:key="company" class="company-row">
+          <text class="company-name">{{ item.company }}</text>
+          <text class="company-meta">{{ item.interviewCount }} 场</text>
+          <text class="company-score">{{ item.avgScore }}</text>
+        </view>
+      </block>
+      <view wx:else class="empty-state">暂无公司对比数据</view>
+    </view>
+
+    <!-- 评分趋势 -->
+    <text class="section-title">评分趋势</text>
+    <view class="card chart-card">
+      <canvas wx:if="{{ scoreTrend.length > 0 }}" canvas-id="trendCanvas" class="trend-canvas"></canvas>
+      <view wx:else class="empty-state">暂无评分趋势</view>
+    </view>
+  </block>
+
+  <block wx:else>
+    <van-empty description="暂无数据，先记录并复盘一场面试吧" />
+  </block>
+</view>

@@ -10,7 +10,8 @@
     "pages/settings/settings",
     "pages/coach/coach",
     "pages/prep/prep",
-    "pages/report/report"
+    "pages/report/report",
+    "pages/analysis/analysis"
   ],
   "window": {
     "navigationBarTitleText": "i面试",

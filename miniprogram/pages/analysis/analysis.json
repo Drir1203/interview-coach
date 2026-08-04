@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "深入分析",
+  "usingComponents": {
+    "van-loading": "@vant/weapp/loading/index",
+    "van-empty": "@vant/weapp/empty/index"
+  }
+}

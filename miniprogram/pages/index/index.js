@@ -62,4 +62,8 @@ Page({
   goReport() {
     wx.navigateTo({ url: "/pages/report/report" })
   },
+
+  goAnalysis() {
+    wx.navigateTo({ url: "/pages/analysis/analysis" })
+  },
 })

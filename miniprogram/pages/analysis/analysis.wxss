@@ -1,0 +1,86 @@
+/* 深入分析页 */
+.chart-card {
+  display: flex;
+  justify-content: center;
+}
+
+.radar-canvas {
+  width: 620rpx;
+  height: 440rpx;
+}
+
+.trend-canvas {
+  width: 620rpx;
+  height: 360rpx;
+}
+
+.weakness-row {
+  margin-bottom: 20rpx;
+}
+
+.weakness-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.weakness-name {
+  font-size: 26rpx;
+  color: var(--brand-text);
+}
+
+.weakness-score {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--brand-primary);
+}
+
+.weakness-bar {
+  height: 12rpx;
+  background: var(--brand-muted);
+  border-radius: 999rpx;
+  overflow: hidden;
+}
+
+.weakness-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #818cf8, #6366f1);
+  border-radius: 999rpx;
+}
+
+.weakness-direction {
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+}
+
+/* 跨公司对比 */
+.company-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-bottom: 2rpx solid var(--brand-border);
+}
+
+.company-row:last-child {
+  border-bottom: none;
+}
+
+.company-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  flex: 1;
+}
+
+.company-meta {
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+  margin-right: 24rpx;
+}
+
+.company-score {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--brand-primary);
+}
