@@ -13,6 +13,9 @@
       <text class="record-text">{{ recording ? '点击停止' : '点击开始录音' }}</text>
     </view>
     <text wx:if="{{ recording }}" class="record-tip">录音中...（最长 10 分钟，再次点击停止）</text>
+    <van-button plain round size="small" bind:click="chooseAudio" class="mt-24">
+      选择录音文件上传（mp3/wav/m4a/aac/ogg）
+    </van-button>
   </view>
 
   <block wx:if="{{ transcribing }}">

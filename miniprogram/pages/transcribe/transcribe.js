@@ -54,6 +54,19 @@ Page({
     })
   },
 
+  chooseAudio() {
+    wx.chooseMessageFile({
+      count: 1,
+      type: "file",
+      extension: ["mp3", "wav", "m4a", "aac", "ogg"],
+      success: (res) => {
+        const file = res.tempFiles && res.tempFiles[0]
+        if (!file) return
+        this.upload(file.path, 0)
+      },
+    })
+  },
+
   upload(filePath, duration) {
     this.setData({ transcribing: true, hasResult: false })
     const that = this
