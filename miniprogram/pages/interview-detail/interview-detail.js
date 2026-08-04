@@ -18,6 +18,9 @@ Page({
       this.setData({
         interview: data,
         loading: false,
+        roundLabel: util.ROUND_LABELS[data.roundType] || data.roundType,
+        dateText: util.formatDate(data.date),
+        statusLabel: util.STATUS_LABELS[data.status] || data.status,
         strengths: data.strengths ? JSON.parse(data.strengths) : [],
         improvementAreas: data.improvementAreas ? JSON.parse(data.improvementAreas) : [],
         weaknessAreas: data.weaknessAreas ? JSON.parse(data.weaknessAreas) : [],

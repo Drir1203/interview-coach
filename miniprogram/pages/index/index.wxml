@@ -1,21 +1,24 @@
-<view class="container">
-  <!-- 头部 -->
-  <view style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-    <view>
-      <text style="font-size:20px;font-weight:700;">面试总览</text>
+<view class="page">
+  <!-- Hero 品牌区 -->
+  <view class="hero">
+    <view class="hero-top">
+      <text class="hero-greeting">你好，{{ userName || '面试官' }} 👋</text>
+      <text wx:if="{{ !loggedIn }}" class="hero-login" bindtap="goLogin">登录</text>
     </view>
-    <button class="btn btn-primary btn-small" bindtap="goNew">+ 记录面试</button>
+    <text class="hero-subtitle">AI 帮你复盘每一次面试，稳步提升通过率</text>
+    <van-button custom-class="hero-btn" round bind:click="goNew">+ 记录一场面试</van-button>
   </view>
 
   <block wx:if="{{ loading }}">
-    <view class="loading">加载中...</view>
+    <view class="loading">
+      <van-loading color="#6366f1" size="24px">加载中...</van-loading>
+    </view>
   </block>
 
   <block wx:elif="{{ interviews.length === 0 }}">
-    <view class="empty-state">
-      <text style="display:block;font-size:40px;margin-bottom:12px;">📋</text>
-      <text>还没有面试记录</text>
-      <button class="btn btn-primary" style="margin-top:16px;width:auto;" bindtap="goNew">记录第一场面试</button>
+    <van-empty description="还没有面试记录" />
+    <view class="empty-action">
+      <van-button type="primary" round bind:click="goNew">记录第一场面试</van-button>
     </view>
   </block>
 
@@ -31,7 +34,7 @@
         <text class="stat-label">已复盘</text>
       </view>
       <view class="stat-card">
-        <text class="stat-value">{{ Math.round(stats.passRate * 100) }}%</text>
+        <text class="stat-value">{{ passRateDisplay }}%</text>
         <text class="stat-label">通过率</text>
       </view>
       <view class="stat-card">
@@ -41,23 +44,19 @@
     </view>
 
     <!-- 近期面试 -->
-    <text style="font-size:16px;font-weight:600;margin-bottom:12px;display:block;">近期面试</text>
+    <text class="section-title">近期面试</text>
 
-    <view wx:for="{{ interviews }}" wx:key="id" class="card" data-id="{{ item.id }}" bindtap="goDetail" style="padding:12px 16px;">
-      <view style="display:flex;justify-content:space-between;align-items:center;">
-        <view>
-          <text style="font-weight:600;">{{ item.company.name }}</text>
-          <text style="color:var(--muted-foreground);margin-left:8px;">{{ item.position }}</text>
-        </view>
-        <view wx:if="{{ item.overallScore }}" style="font-weight:700;color:var(--primary);">
-          {{ item.overallScore.toFixed(1) }}
-        </view>
-      </view>
-      <view style="font-size:12px;color:var(--muted-foreground);margin-top:4px;">
-        <text>{{ util.ROUND_LABELS[item.roundType] || item.roundType }}</text>
-        <text> · {{ util.formatDate(item.date) }}</text>
-        <text> · {{ item._count.questions }} 题</text>
-      </view>
-    </view>
+    <van-cell
+      wx:for="{{ interviews }}"
+      wx:key="id"
+      border="{{ false }}"
+      custom-class="cell-card"
+      title="{{ item.company.name }} · {{ item.position }}"
+      label="{{ item.roundLabel }} · {{ item.dateText }} · {{ item._count.questions }} 题"
+      value="{{ item.overallScore ? item.overallScore.toFixed(1) : '' }}"
+      is-link
+      data-id="{{ item.id }}"
+      bind:click="goDetail"
+    />
   </block>
 </view>

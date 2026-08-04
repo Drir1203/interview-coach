@@ -1,20 +1,25 @@
-const app = getApp()
+const { baseUrl } = require("../config")
 
 function request(url, method = "GET", data = {}) {
   return new Promise((resolve, reject) => {
     const token = wx.getStorageSync("token")
+    const tokenName = wx.getStorageSync("tokenName") || "authjs.session-token"
     wx.request({
-      url: app.globalData.baseUrl + url,
+      url: baseUrl + url,
       method,
       data,
       header: {
         "Content-Type": "application/json",
-        ...(token ? { Cookie: `next-auth.session-token=${token}` } : {}),
+        ...(token ? { Cookie: `${tokenName}=${token}` } : {}),
       },
       success: (res) => {
         if (res.statusCode === 401) {
-          app.logout()
+          getApp().logout()
           reject(new Error("未登录"))
+          return
+        }
+        if (res.statusCode >= 400) {
+          reject(new Error(res.data?.error || `请求失败(${res.statusCode})`))
           return
         }
         resolve(res.data)
@@ -25,14 +30,10 @@ function request(url, method = "GET", data = {}) {
 }
 
 module.exports = {
+  request,
   // 认证
   login: (email, password) =>
-    wx.request({
-      url: app.globalData.baseUrl + "/api/auth/callback/credentials",
-      method: "POST",
-      header: { "Content-Type": "application/x-www-form-urlencoded" },
-      data: { email, password, csrfToken: "mock", callbackUrl: "/" },
-    }),
+    request("/api/auth/mp-login", "POST", { email, password }),
 
   register: (name, email, password) =>
     request("/api/auth/register", "POST", { name, email, password }),

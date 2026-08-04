@@ -1,4 +1,12 @@
 {
   "navigationBarTitleText": "面试详情",
-  "usingComponents": {}
+  "usingComponents": {
+    "van-tag": "@vant/weapp/tag/index",
+    "van-cell-group": "@vant/weapp/cell-group/index",
+    "van-cell": "@vant/weapp/cell/index",
+    "van-button": "@vant/weapp/button/index",
+    "van-dialog": "@vant/weapp/dialog/index",
+    "van-loading": "@vant/weapp/loading/index",
+    "van-empty": "@vant/weapp/empty/index"
+  }
 }

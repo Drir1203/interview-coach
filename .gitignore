@@ -50,3 +50,11 @@ ecosystem.config.cjs
 
 # 运行时日志
 logs/
+
+# 小程序 npm（DevTools 构建生成，不入库）
+/miniprogram/node_modules/
+/miniprogram/miniprogram_npm/
+/miniprogram/package-lock.json
+
+# 微信开发者工具私有配置（含个人 AppID / 本地勾选）
+/miniprogram/project.private.config.json

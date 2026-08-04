@@ -1,0 +1,72 @@
+/* 我的页 */
+.profile-banner {
+  background: linear-gradient(135deg, #6366f1 0%, #818cf8 60%, #a5b4fc 100%);
+  border-radius: var(--brand-radius-lg);
+  padding: 40rpx 32rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.profile-avatar {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 40rpx;
+  color: #6366f1;
+  flex-shrink: 0;
+}
+
+.profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-name {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.profile-email {
+  display: block;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 6rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-logged {
+  font-size: 22rpx;
+  color: #6366f1;
+  background: #ffffff;
+  border-radius: 999rpx;
+  padding: 6rpx 20rpx;
+  flex-shrink: 0;
+}
+
+.profile-login-btn {
+  background: #ffffff;
+  border-radius: 999rpx;
+  height: 60rpx;
+  padding: 0 28rpx;
+  flex-shrink: 0;
+}
+
+.profile-login-btn .van-button__text {
+  color: #6366f1;
+  font-weight: 600;
+  font-size: 26rpx;
+}
+
+.logout-btn {
+  margin-top: 48rpx;
+}

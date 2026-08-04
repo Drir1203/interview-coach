@@ -1,58 +1,68 @@
-<view class="container">
-  <view style="margin-bottom:16px;">
-    <text style="font-size:20px;font-weight:700;">{{ isEdit ? '编辑面试' : '记录新面试' }}</text>
+<view class="page">
+  <view class="page-header">
+    <text class="section-title">{{ isEdit ? '编辑面试' : '记录新面试' }}</text>
   </view>
 
   <!-- 基本信息 -->
-  <view class="card" style="padding:16px;">
-    <text style="font-size:14px;font-weight:600;display:block;margin-bottom:12px;">基本信息</text>
-
-    <view class="input-group">
-      <text class="input-label">公司名称</text>
-      <input class="input-field" placeholder="例：字节跳动" value="{{ companyName }}" bindinput="onCompanyInput" />
-    </view>
-
-    <view class="input-group">
-      <text class="input-label">行业</text>
-      <input class="input-field" placeholder="例：互联网" value="{{ companyIndustry }}" bindinput="onIndustryInput" />
-    </view>
-
-    <view class="input-group">
-      <text class="input-label">岗位</text>
-      <input class="input-field" placeholder="例：后端开发" value="{{ position }}" bindinput="onPositionInput" />
-    </view>
-
-    <view class="input-group">
-      <text class="input-label">轮次</text>
-      <picker class="input-field" mode="selector" range="{{ roundTypes }}" range-key="label" value="{{ roundTypes.findIndex(r => r.value === roundType) }}" bindchange="onRoundChange" style="line-height:40px;">
-        {{ (roundTypes.find(r => r.value === roundType) || {}).label || '一面' }}
-      </picker>
-    </view>
-
-    <view class="input-group">
-      <text class="input-label">备注</text>
-      <textarea class="textarea-field" placeholder="面试整体感觉..." value="{{ userNotes }}" bindinput="onNotesInput" />
-    </view>
+  <view class="card">
+    <text class="card-title">基本信息</text>
+    <van-field label="公司名称" placeholder="例：字节跳动" value="{{ companyName }}" bind:input="onCompanyInput" />
+    <van-field label="行业" placeholder="例：互联网" value="{{ companyIndustry }}" bind:input="onIndustryInput" />
+    <van-field label="岗位" placeholder="例：后端开发" value="{{ position }}" bind:input="onPositionInput" />
+    <van-field label="轮次" value="{{ roundTypeLabel }}" readonly is-link bind:click="openRoundPicker" />
+    <van-field
+      label="备注"
+      type="textarea"
+      autosize
+      placeholder="面试整体感觉..."
+      value="{{ userNotes }}"
+      bind:input="onNotesInput"
+    />
   </view>
 
   <!-- 问题列表 -->
-  <view class="card" style="padding:16px;">
-    <view style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <text style="font-size:14px;font-weight:600;">面试问题</text>
-      <button class="btn btn-outline btn-small" bindtap="addQuestion">+ 添加</button>
+  <view class="card">
+    <view class="questions-header">
+      <text class="card-title">面试问题</text>
+      <van-button size="small" plain type="primary" bind:click="addQuestion">+ 添加</van-button>
     </view>
 
-    <view wx:for="{{ questions }}" wx:key="order" style="border:1rpx solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;">
-      <view style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <text style="font-size:12px;color:var(--muted-foreground);">问题 {{ item.order }}</text>
-        <text style="font-size:20px;color:var(--destructive);" data-idx="{{ index }}" bindtap="removeQuestion">×</text>
+    <view wx:for="{{ questions }}" wx:key="order" class="question-block">
+      <view class="question-block-header">
+        <text class="question-block-label">问题 {{ item.order }}</text>
+        <text class="question-remove" data-idx="{{ index }}" bindtap="removeQuestion">×</text>
       </view>
-      <input class="input-field" placeholder="面试官问了什么？" value="{{ item.questionText }}" data-idx="{{ index }}" bindinput="onQuestionTextInput" style="margin-bottom:6px;" />
-      <textarea class="textarea-field" placeholder="你是怎么回答的？（选填）" value="{{ item.userAnswer }}" data-idx="{{ index }}" bindinput="onAnswerInput" />
+      <van-field
+        label="题目"
+        placeholder="面试官问了什么？"
+        value="{{ item.questionText }}"
+        data-idx="{{ index }}"
+        bind:input="onQuestionTextInput"
+      />
+      <van-field
+        label="回答"
+        type="textarea"
+        autosize
+        placeholder="你是怎么回答的？（选填）"
+        value="{{ item.userAnswer }}"
+        data-idx="{{ index }}"
+        bind:input="onAnswerInput"
+      />
     </view>
   </view>
 
-  <button class="btn btn-primary" bindtap="handleSave" disabled="{{ saving }}" style="margin-top:16px;">
+  <van-button type="primary" round block loading="{{ saving }}" bind:click="handleSave" class="save-btn">
     {{ saving ? '保存中...' : '保存面试记录' }}
-  </button>
+  </van-button>
+
+  <!-- 轮次选择 -->
+  <van-popup show="{{ showRoundPicker }}" position="bottom" bind:close="closeRoundPicker">
+    <van-picker
+      columns="{{ roundColumns }}"
+      show-toolbar
+      title="选择轮次"
+      bind:confirm="onRoundConfirm"
+      bind:cancel="closeRoundPicker"
+    />
+  </van-popup>
 </view>

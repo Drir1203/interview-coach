@@ -1,43 +1,32 @@
-<view class="container">
-  <text style="font-size:20px;font-weight:700;display:block;margin-bottom:16px;">设置</text>
-
+<view class="page">
+  <!-- 用户区：登录→渐变资料卡，未登录→登录引导 -->
   <block wx:if="{{ user }}">
-    <view class="card" style="padding:16px;display:flex;align-items:center;gap:12px;">
-      <view style="width:40px;height:40px;border-radius:50%;background:rgba(24,24,27,0.1);display:flex;align-items:center;justify-content:center;">
-        <text style="font-weight:700;color:var(--primary);">
-          {{ (user.email || 'U')[0].toUpperCase() }}
-        </text>
+    <view class="profile-banner">
+      <view class="profile-avatar">{{ avatarLetter }}</view>
+      <view class="profile-info">
+        <text class="profile-name">{{ user.name || user.email }}</text>
+        <text class="profile-email">{{ user.email }}</text>
       </view>
-      <view>
-        <text style="font-weight:600;">{{ user.email }}</text>
-        <text style="display:block;font-size:12px;color:var(--muted-foreground);">已登录</text>
-      </view>
+      <text class="profile-logged">已登录</text>
     </view>
   </block>
 
-  <view class="card" style="padding:16px;">
-    <text style="font-size:14px;font-weight:600;display:block;margin-bottom:8px;">服务状态</text>
-    <view style="display:flex;justify-content:space-between;margin-bottom:8px;">
-      <text style="font-size:13px;color:var(--muted-foreground);">AI 复盘</text>
-      <text class="badge badge-default">平台已配置</text>
+  <block wx:else>
+    <view class="profile-banner">
+      <view class="profile-avatar">👤</view>
+      <view class="profile-info">
+        <text class="profile-name">未登录</text>
+        <text class="profile-email">登录后数据多设备同步</text>
+      </view>
+      <van-button custom-class="profile-login-btn" round size="small" bind:click="goLogin">登录</van-button>
     </view>
-    <view style="display:flex;justify-content:space-between;margin-bottom:8px;">
-      <text style="font-size:13px;color:var(--muted-foreground);">语音转写</text>
-      <text class="badge badge-outline">即将上线</text>
-    </view>
-    <view style="display:flex;justify-content:space-between;">
-      <text style="font-size:13px;color:var(--muted-foreground);">数据存储</text>
-      <text class="badge badge-outline">云端</text>
-    </view>
-  </view>
+  </block>
 
-  <view class="card" style="padding:16px;">
-    <text style="font-size:14px;font-weight:600;display:block;margin-bottom:8px;">关于</text>
-    <text style="font-size:12px;color:var(--muted-foreground);display:block;">i面试 v1.0</text>
-    <text style="font-size:12px;color:var(--muted-foreground);display:block;">你的 AI 面试教练</text>
-  </view>
+  <!-- 功能菜单 -->
+  <van-cell-group inset class="mt-24">
+    <van-cell title="服务状态" label="AI 复盘已配置 · 语音转写即将上线 · 云端存储" />
+    <van-cell title="关于 i面试" label="v1.0 · 你的 AI 面试教练" />
+  </van-cell-group>
 
-  <button class="btn btn-outline" bindtap="logout" style="margin-top:12px;color:var(--destructive);">
-    退出登录
-  </button>
+  <van-button wx:if="{{ user }}" round block type="danger" bind:click="logout" class="logout-btn">退出登录</van-button>
 </view>

@@ -1,41 +1,31 @@
-<view class="container" style="display:flex;flex-direction:column;justify-content:center;min-height:100vh;">
-  <view style="text-align:center;margin-bottom:32px;">
-    <text style="font-size:32px;font-weight:700;">面试复盘助手</text>
-    <text style="display:block;font-size:14px;color:var(--muted-foreground);margin-top:8px;">
-      {{ isRegister ? '创建账号' : '登录后多设备同步' }}
-    </text>
+<view class="page login-page">
+  <!-- 品牌 Hero -->
+  <view class="login-hero">
+    <text class="login-hero-title">i面试</text>
+    <text class="login-hero-subtitle">你的 AI 面试教练</text>
   </view>
 
-  <view class="card" style="padding:24px;">
+  <view class="card login-card">
+    <text class="login-card-title">{{ isRegister ? '创建账号' : '登录后多设备同步' }}</text>
+
     <block wx:if="{{ isRegister }}">
-      <view class="input-group">
-        <text class="input-label">昵称</text>
-        <input class="input-field" placeholder="你的昵称" value="{{name}}" bindinput="onNameInput" />
-      </view>
+      <van-field label="昵称" placeholder="你的昵称" value="{{ name }}" bind:input="onNameInput" />
     </block>
 
-    <view class="input-group">
-      <text class="input-label">邮箱</text>
-      <input class="input-field" type="email" placeholder="your@email.com" value="{{email}}" bindinput="onEmailInput" />
+    <van-field label="邮箱" placeholder="your@email.com" value="{{ email }}" bind:input="onEmailInput" />
+    <van-field label="密码" placeholder="至少6位" type="password" value="{{ password }}" bind:input="onPasswordInput" />
+
+    <view wx:if="{{ error }}" class="login-error">{{ error }}</view>
+
+    <view class="login-submit">
+      <van-button type="primary" round block loading="{{ loading }}" bind:click="handleSubmit">
+        {{ isRegister ? '注册' : '登录' }}
+      </van-button>
     </view>
 
-    <view class="input-group">
-      <text class="input-label">密码</text>
-      <input class="input-field" type="password" placeholder="至少6位" value="{{password}}" bindinput="onPasswordInput" />
-    </view>
-
-    <view wx:if="{{ error }}" style="color:var(--destructive);font-size:12px;margin-bottom:12px;">
-      {{ error }}
-    </view>
-
-    <button class="btn btn-primary" bindtap="handleSubmit" disabled="{{ loading }}">
-      <text wx:if="{{ loading }}">处理中...</text>
-      <text wx:else>{{ isRegister ? '注册' : '登录' }}</text>
-    </button>
-
-    <view style="text-align:center;margin-top:16px;font-size:13px;color:var(--muted-foreground);">
+    <view class="login-switch">
       <text>{{ isRegister ? '已有账号？' : '还没有账号？' }}</text>
-      <text style="color:var(--foreground);margin-left:4px;" bindtap="switchMode">{{ isRegister ? '登录' : '注册' }}</text>
+      <text class="login-switch-link" bindtap="switchMode">{{ isRegister ? '去登录' : '去注册' }}</text>
     </view>
   </view>
 </view>

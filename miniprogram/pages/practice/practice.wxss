@@ -1,0 +1,28 @@
+/* 模拟面试配置页 */
+.practice-header {
+  margin-bottom: 24rpx;
+}
+
+.practice-header .section-title {
+  margin-bottom: 4rpx;
+}
+
+.practice-subtitle {
+  display: block;
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+  margin-top: 4rpx;
+}
+
+.practice-features {
+  margin-bottom: 20rpx;
+}
+
+.practice-feature-emoji {
+  display: block;
+  font-size: 48rpx;
+}
+
+.start-btn {
+  margin-top: 24rpx;
+}

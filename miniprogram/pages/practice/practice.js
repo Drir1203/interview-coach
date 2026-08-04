@@ -6,7 +6,10 @@ Page({
     company: "",
     position: "",
     roundType: "first",
+    roundTypeLabel: "一面",
     starting: false,
+    showRoundPicker: false,
+    roundColumns: [],
     roundTypes: [
       { value: "first", label: "一面" },
       { value: "second", label: "二面" },
@@ -16,9 +19,30 @@ Page({
     ],
   },
 
+  onLoad() {
+    this.setData({ roundColumns: this.data.roundTypes.map((r) => r.label) })
+  },
+
   onCompanyInput(e) { this.setData({ company: e.detail.value }) },
   onPositionInput(e) { this.setData({ position: e.detail.value }) },
-  onRoundChange(e) { this.setData({ roundType: e.detail.value }) },
+  openRoundPicker() {
+    this.setData({ showRoundPicker: true })
+  },
+
+  closeRoundPicker() {
+    this.setData({ showRoundPicker: false })
+  },
+
+  onRoundConfirm(e) {
+    // 扁平 columns 时 simple=true，index 是数字；多列时是数组
+    const idx = Array.isArray(e.detail.index) ? e.detail.index[0] : e.detail.index
+    const rt = this.data.roundTypes[idx] || this.data.roundTypes[0]
+    this.setData({
+      roundType: rt.value,
+      roundTypeLabel: rt.label,
+      showRoundPicker: false,
+    })
+  },
 
   startMock() {
     if (!this.data.position.trim()) {

@@ -1,64 +1,70 @@
-<view style="display:flex;flex-direction:column;height:100vh;">
+<view class="session-page">
   <!-- 头部 -->
-  <view style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1rpx solid var(--border);">
+  <view class="session-header">
     <view>
-      <text style="font-weight:600;">模拟面试</text>
-      <text style="display:block;font-size:11px;color:var(--muted-foreground);">{{ company }} · {{ position }}</text>
+      <text class="session-title">模拟面试</text>
+      <text class="session-subtitle">{{ company }} · {{ position }}</text>
     </view>
-    <button class="btn btn-outline btn-small" bindtap="endSession" wx:if="{{ phase !== 'finished' }}">结束</button>
+    <van-button
+      wx:if="{{ phase !== 'finished' }}"
+      size="small"
+      plain
+      type="primary"
+      bind:click="endSession"
+    >结束</van-button>
   </view>
 
   <block wx:if="{{ phase === 'finished' && summary }}">
-    <view style="flex:1;overflow-y:auto;padding:16px;">
-      <view style="text-align:center;margin-bottom:16px;">
-        <view class="score-circle" style="margin:0 auto 8px;">
-          <text>{{ summary.overallScore.toFixed(1) }}</text>
-        </view>
-        <text style="font-size:13px;color:var(--muted-foreground);">共 {{ summary.totalQuestions }} 题</text>
+    <view class="session-body">
+      <view class="session-summary">
+        <view class="score-circle">{{ summary.overallScore.toFixed(1) }}</view>
+        <text class="session-summary-count">共 {{ summary.totalQuestions }} 题</text>
       </view>
 
       <block wx:if="{{ summary.strengths.length > 0 }}">
-        <view class="card" style="padding:12px;">
-          <text style="font-weight:600;display:block;margin-bottom:6px;">✅ 优点</text>
-          <view wx:for="{{ summary.strengths }}" wx:key="*this">
-            <text style="font-size:12px;color:var(--muted-foreground);">• {{ item }}</text>
-          </view>
+        <view class="card">
+          <text class="session-summary-title">✅ 优点</text>
+          <view wx:for="{{ summary.strengths }}" wx:key="*this" class="session-summary-item"><text>• {{ item }}</text></view>
         </view>
       </block>
 
       <block wx:if="{{ summary.improvementAreas.length > 0 }}">
-        <view class="card" style="padding:12px;margin-top:8px;">
-          <text style="font-weight:600;display:block;margin-bottom:6px;">💡 改进方向</text>
-          <view wx:for="{{ summary.improvementAreas }}" wx:key="*this">
-            <text style="font-size:12px;color:var(--muted-foreground);">• {{ item }}</text>
-          </view>
+        <view class="card">
+          <text class="session-summary-title">💡 改进方向</text>
+          <view wx:for="{{ summary.improvementAreas }}" wx:key="*this" class="session-summary-item"><text>• {{ item }}</text></view>
         </view>
       </block>
 
-      <button class="btn btn-primary" bindtap="goBack" style="margin-top:16px;">返回</button>
+      <van-button type="primary" round block bind:click="goBack">返回</van-button>
     </view>
   </block>
 
   <block wx:else>
     <!-- 消息区域 -->
-    <view style="flex:1;overflow-y:auto;padding:16px;">
-      <view wx:for="{{ messages }}" wx:key="*this" style="margin-bottom:12px;display:flex;{{ item.role === 'user' ? 'justify-content:flex-end;' : '' }}">
-        <view style="max-width:80%;padding:10px 14px;border-radius:16px;font-size:13px;
-          {{ item.role === 'user' ? 'background:var(--primary);color:var(--primary-foreground);' : 'background:var(--muted);' }}">
-          {{ item.content }}
-        </view>
+    <view class="session-messages">
+      <view wx:for="{{ messages }}" wx:key="index" class="msg-row {{ item.role === 'user' ? 'user' : '' }}">
+        <view class="msg-bubble {{ item.role === 'user' ? 'user' : 'ai' }}">{{ item.content }}</view>
       </view>
-      <view wx:if="{{ phase === 'waiting' }}" style="text-align:center;padding:16px;color:var(--muted-foreground);font-size:13px;">
-        思考中...
-      </view>
+      <view wx:if="{{ phase === 'waiting' }}" class="session-thinking">思考中...</view>
     </view>
 
     <!-- 输入区 -->
-    <view style="padding:12px 16px;border-top:1rpx solid var(--border);display:flex;gap:8px;">
-      <textarea class="textarea-field" placeholder="输入你的回答..." value="{{ currentAnswer }}" bindinput="onAnswerInput" style="flex:1;min-height:36px;height:36px;max-height:80px;" />
-      <button class="btn btn-primary btn-small" bindtap="handleSend" disabled="{{ !currentAnswer.trim() || phase === 'waiting' }}" style="width:auto;height:36px;">
-        发送
-      </button>
+    <view class="session-input">
+      <van-field
+        border="{{ false }}"
+        type="textarea"
+        autosize
+        placeholder="输入你的回答..."
+        value="{{ currentAnswer }}"
+        bind:input="onAnswerInput"
+        class="session-input-field"
+      />
+      <van-button
+        type="primary"
+        size="small"
+        disabled="{{ !currentAnswer.trim() || phase === 'waiting' }}"
+        bind:click="handleSend"
+      >发送</van-button>
     </view>
   </block>
 </view>

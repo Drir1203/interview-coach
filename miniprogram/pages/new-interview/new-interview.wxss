@@ -1,0 +1,49 @@
+/* 新建/编辑面试页 */
+.page-header {
+  margin-bottom: 24rpx;
+}
+
+.page-header .section-title {
+  margin-bottom: 0;
+}
+
+.questions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.questions-header .card-title {
+  margin-bottom: 0;
+}
+
+.question-block {
+  border: 2rpx solid var(--brand-border);
+  border-radius: var(--brand-radius-md);
+  padding: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.question-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.question-block-label {
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+}
+
+.question-remove {
+  font-size: 40rpx;
+  color: var(--brand-danger);
+  line-height: 1;
+  padding: 8rpx;
+}
+
+.save-btn {
+  margin-top: 32rpx;
+}

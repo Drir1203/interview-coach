@@ -1,19 +1,33 @@
-<view class="container">
-  <view style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <text style="font-size:20px;font-weight:700;">面试记录</text>
-    <button class="btn btn-primary btn-small" bindtap="goNew">+ 记录</button>
+<view class="page">
+  <view class="banner">
+    <view>
+      <text class="banner-title">面试记录</text>
+      <text class="banner-subtitle">管理你的每一次面试</text>
+    </view>
+    <van-button custom-class="banner-btn" round bind:click="goNew">+ 记录</van-button>
   </view>
 
   <!-- 搜索 -->
-  <input class="input-field" placeholder="搜索公司或岗位..." value="{{ search }}" bindinput="onSearchInput" style="margin-bottom:12px;" />
+  <view class="search-wrap">
+    <van-field
+      placeholder="搜索公司或岗位..."
+      value="{{ search }}"
+      clearable
+      left-icon="search"
+      border="{{ false }}"
+      bind:input="onSearchInput"
+    />
+  </view>
 
   <!-- Tab -->
-  <view style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;">
-    <view wx:for="{{ ['all','draft','recorded','ai_reviewed'] }}" wx:key="*this"
-      class="badge {{ tab === item ? 'badge-default' : 'badge-outline' }}"
-      data-tab="{{ item }}" bindtap="switchTab" style="padding:6px 12px;">
-      {{ item === 'all' ? '全部' : item === 'draft' ? '草稿' : item === 'recorded' ? '已记录' : '已复盘' }}
-    </view>
+  <view class="tab-bar">
+    <view
+      wx:for="{{ ['all','draft','recorded','ai_reviewed'] }}"
+      wx:key="*this"
+      class="tag tab-item {{ tab === item ? 'badge-active' : '' }}"
+      data-tab="{{ item }}"
+      bindtap="switchTab"
+    >{{ item === 'all' ? '全部' : item === 'draft' ? '草稿' : item === 'recorded' ? '已记录' : '已复盘' }}</view>
   </view>
 
   <block wx:if="{{ loading }}">
@@ -21,27 +35,24 @@
   </block>
 
   <block wx:elif="{{ filtered.length === 0 }}">
-    <view class="empty-state">
-      <text>暂无匹配的面试记录</text>
-    </view>
+    <van-empty description="暂无匹配的面试记录" />
   </block>
 
   <block wx:else>
-    <view wx:for="{{ filtered }}" wx:key="id" class="card" data-id="{{ item.id }}" bindtap="goDetail" style="padding:12px 16px;">
-      <view style="display:flex;justify-content:space-between;align-items:center;">
-        <view>
-          <text style="font-weight:600;">{{ item.company.name }}</text>
-          <text style="color:var(--muted-foreground);margin-left:4px;font-size:12px;">{{ item.position }}</text>
-        </view>
-        <view style="display:flex;align-items:center;gap:8px;">
-          <text wx:if="{{ item.overallScore }}" style="font-weight:700;color:var(--primary);">
-            {{ item.overallScore.toFixed(1) }}
-          </text>
-          <text class="badge {{ item.status === 'ai_reviewed' ? 'badge-default' : 'badge-outline' }}">
-            {{ util.STATUS_LABELS[item.status] || item.status }}
-          </text>
-        </view>
+    <van-cell
+      wx:for="{{ filtered }}"
+      wx:key="id"
+      border="{{ false }}"
+      custom-class="cell-card"
+      title="{{ item.company.name }} · {{ item.position }}"
+      value="{{ item.overallScore ? item.overallScore.toFixed(1) : '' }}"
+      is-link
+      data-id="{{ item.id }}"
+      bind:click="goDetail"
+    >
+      <view slot="extra">
+        <text class="tag {{ item.status === 'ai_reviewed' ? 'badge-active' : '' }}">{{ item.statusLabel }}</text>
       </view>
-    </view>
+    </van-cell>
   </block>
 </view>

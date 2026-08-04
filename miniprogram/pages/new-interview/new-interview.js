@@ -8,9 +8,13 @@ Page({
     companyIndustry: "",
     position: "",
     roundType: "first",
+    roundTypeIndex: 0,
+    roundTypeLabel: "一面",
     userNotes: "",
     questions: [{ order: 1, questionText: "", userAnswer: "" }],
     saving: false,
+    showRoundPicker: false,
+    roundColumns: [],
     roundTypes: [
       { value: "first", label: "一面" },
       { value: "second", label: "二面" },
@@ -23,14 +27,19 @@ Page({
   },
 
   onLoad(options) {
+    this.setData({ roundColumns: this.data.roundTypes.map((r) => r.label) })
     if (options.id) {
       this.setData({ isEdit: true, editId: options.id })
       api.getInterview(options.id).then((data) => {
+        const idx = Math.max(this.data.roundTypes.findIndex((r) => r.value === data.roundType), 0)
+        const rt = this.data.roundTypes[idx] || this.data.roundTypes[0]
         this.setData({
           companyName: data.company.name,
           companyIndustry: data.company.industry || "",
           position: data.position,
           roundType: data.roundType,
+          roundTypeIndex: idx,
+          roundTypeLabel: rt.label,
           userNotes: data.userNotes || "",
           questions: data.questions.length > 0
             ? data.questions.map((q) => ({
@@ -48,7 +57,25 @@ Page({
   onIndustryInput(e) { this.setData({ companyIndustry: e.detail.value }) },
   onPositionInput(e) { this.setData({ position: e.detail.value }) },
   onNotesInput(e) { this.setData({ userNotes: e.detail.value }) },
-  onRoundChange(e) { this.setData({ roundType: e.detail.value }) },
+  openRoundPicker() {
+    this.setData({ showRoundPicker: true })
+  },
+
+  closeRoundPicker() {
+    this.setData({ showRoundPicker: false })
+  },
+
+  onRoundConfirm(e) {
+    // 扁平 columns 时 simple=true，index 是数字；多列时是数组
+    const idx = Array.isArray(e.detail.index) ? e.detail.index[0] : e.detail.index
+    const rt = this.data.roundTypes[idx] || this.data.roundTypes[0]
+    this.setData({
+      roundType: rt.value,
+      roundTypeIndex: idx,
+      roundTypeLabel: rt.label,
+      showRoundPicker: false,
+    })
+  },
 
   onQuestionTextInput(e) {
     const idx = e.currentTarget.dataset.idx

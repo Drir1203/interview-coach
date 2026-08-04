@@ -6,10 +6,18 @@ Page({
     stats: { total: 0, reviewed: 0, passRate: 0, avgScore: 0 },
     interviews: [],
     loading: true,
+    userName: "",
+    loggedIn: false,
   },
 
   onShow() {
+    const user = getApp().globalData.user
+    this.setData({ userName: user && user.name ? user.name : "", loggedIn: !!user })
     this.loadData()
+  },
+
+  goLogin() {
+    wx.navigateTo({ url: "/pages/login/login" })
   },
 
   loadData() {
@@ -18,9 +26,15 @@ Page({
       api.getInterviews(),
       api.getAnalysis(),
     ]).then(([interviews, analysis]) => {
+      const stats = analysis.stats || { total: 0, reviewed: 0, passRate: 0, avgScore: 0 }
       this.setData({
-        interviews,
-        stats: analysis.stats || { total: 0, reviewed: 0, passRate: 0, avgScore: 0 },
+        interviews: (interviews || []).map((i) => ({
+          ...i,
+          roundLabel: util.ROUND_LABELS[i.roundType] || i.roundType,
+          dateText: util.formatDate(i.date),
+        })),
+        stats,
+        passRateDisplay: Math.round((stats.passRate || 0) * 100),
         loading: false,
       })
     }).catch(() => {

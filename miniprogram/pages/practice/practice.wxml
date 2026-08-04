@@ -1,48 +1,43 @@
-<view class="container">
-  <view style="margin-bottom:16px;">
-    <text style="font-size:20px;font-weight:700;">模拟面试</text>
-    <text style="display:block;font-size:13px;color:var(--muted-foreground);margin-top:4px;">
-      AI 面试官模拟真实面试，结束后生成报告
-    </text>
+<view class="page">
+  <view class="banner">
+    <view>
+      <text class="banner-title">模拟面试</text>
+      <text class="banner-subtitle">AI 面试官模拟真实面试，结束后生成报告</text>
+    </view>
   </view>
 
-  <view class="stats-grid" style="margin-bottom:16px;">
+  <view class="stats-grid practice-features">
     <view class="stat-card">
-      <text style="font-size:24px;">🧠</text>
+      <text class="practice-feature-emoji">🧠</text>
       <text class="stat-label">AI 面试官</text>
     </view>
     <view class="stat-card">
-      <text style="font-size:24px;">🎯</text>
+      <text class="practice-feature-emoji">🎯</text>
       <text class="stat-label">薄弱项练习</text>
     </view>
     <view class="stat-card">
-      <text style="font-size:24px;">📊</text>
+      <text class="practice-feature-emoji">📊</text>
       <text class="stat-label">面后报告</text>
     </view>
   </view>
 
-  <view class="card" style="padding:16px;">
-    <text style="font-size:14px;font-weight:600;display:block;margin-bottom:12px;">配置模拟面试</text>
-
-    <view class="input-group">
-      <text class="input-label">目标公司</text>
-      <input class="input-field" placeholder="例：字节跳动" value="{{ company }}" bindinput="onCompanyInput" />
-    </view>
-
-    <view class="input-group">
-      <text class="input-label">岗位</text>
-      <input class="input-field" placeholder="例：后端开发" value="{{ position }}" bindinput="onPositionInput" />
-    </view>
-
-    <view class="input-group">
-      <text class="input-label">模拟轮次</text>
-      <picker class="input-field" mode="selector" range="{{ roundTypes }}" range-key="label" bindchange="onRoundChange" style="line-height:40px;">
-        {{ (roundTypes.find(r => r.value === roundType) || {}).label || '一面' }}
-      </picker>
-    </view>
-
-    <button class="btn btn-primary" bindtap="startMock" disabled="{{ starting }}">
+  <view class="card">
+    <text class="card-title">配置模拟面试</text>
+    <van-field label="目标公司" placeholder="例：字节跳动" value="{{ company }}" bind:input="onCompanyInput" />
+    <van-field label="岗位" placeholder="例：后端开发" value="{{ position }}" bind:input="onPositionInput" />
+    <van-field label="模拟轮次" value="{{ roundTypeLabel }}" readonly is-link bind:click="openRoundPicker" />
+    <van-button type="primary" round block loading="{{ starting }}" bind:click="startMock" class="start-btn">
       {{ starting ? '准备中...' : '开始模拟面试' }}
-    </button>
+    </van-button>
   </view>
+
+  <van-popup show="{{ showRoundPicker }}" position="bottom" bind:close="closeRoundPicker">
+    <van-picker
+      columns="{{ roundColumns }}"
+      show-toolbar
+      title="选择轮次"
+      bind:confirm="onRoundConfirm"
+      bind:cancel="closeRoundPicker"
+    />
+  </van-popup>
 </view>

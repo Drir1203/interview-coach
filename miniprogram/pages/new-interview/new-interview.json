@@ -1,4 +1,10 @@
 {
   "navigationBarTitleText": "记录面试",
-  "usingComponents": {}
+  "usingComponents": {
+    "van-field": "@vant/weapp/field/index",
+    "van-picker": "@vant/weapp/picker/index",
+    "van-popup": "@vant/weapp/popup/index",
+    "van-button": "@vant/weapp/button/index",
+    "van-cell": "@vant/weapp/cell/index"
+  }
 }

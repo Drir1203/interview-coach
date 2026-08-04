@@ -1,4 +1,7 @@
 {
   "navigationBarTitleText": "模拟面试",
-  "usingComponents": {}
+  "usingComponents": {
+    "van-field": "@vant/weapp/field/index",
+    "van-button": "@vant/weapp/button/index"
+  }
 }

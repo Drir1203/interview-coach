@@ -24,27 +24,19 @@
     "list": [
       {
         "pagePath": "pages/index/index",
-        "text": "总览",
-        "iconPath": "images/dashboard.png",
-        "selectedIconPath": "images/dashboard-active.png"
+        "text": "总览"
       },
       {
         "pagePath": "pages/interviews/interviews",
-        "text": "面试",
-        "iconPath": "images/interview.png",
-        "selectedIconPath": "images/interview-active.png"
+        "text": "面试"
       },
       {
         "pagePath": "pages/practice/practice",
-        "text": "练习",
-        "iconPath": "images/practice.png",
-        "selectedIconPath": "images/practice-active.png"
+        "text": "练习"
       },
       {
         "pagePath": "pages/settings/settings",
-        "text": "我的",
-        "iconPath": "images/settings.png",
-        "selectedIconPath": "images/settings-active.png"
+        "text": "我的"
       }
     ]
   },

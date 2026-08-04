@@ -3,10 +3,20 @@ const app = getApp()
 Page({
   data: {
     user: null,
+    loggedIn: false,
   },
 
   onShow() {
-    this.setData({ user: app.globalData.user })
+    const user = app.globalData.user
+    this.setData({
+      user,
+      loggedIn: !!user,
+      avatarLetter: user && user.email ? user.email[0].toUpperCase() : "U",
+    })
+  },
+
+  goLogin() {
+    wx.navigateTo({ url: "/pages/login/login" })
   },
 
   logout() {
