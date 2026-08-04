@@ -1,5 +1,6 @@
 const api = require("../../utils/api")
 const { parseMarkdown } = require("../../utils/markdown")
+const { POPULAR_POSITIONS, POPULAR_COMPANIES } = require("../../utils/options")
 
 function withKeys(blocks) {
   return blocks.map((b, i) => ({ ...b, key: i }))
@@ -9,6 +10,8 @@ Page({
   data: {
     company: "",
     position: "",
+    positionSuggestions: POPULAR_POSITIONS,
+    companySuggestions: POPULAR_COMPANIES,
     roundType: "first",
     roundTypeLabel: "一面",
     showRoundPicker: false,

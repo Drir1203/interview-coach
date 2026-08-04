@@ -1,5 +1,6 @@
 const api = require("../../utils/api")
 const { baseUrl } = require("../../config")
+const { POPULAR_POSITIONS, POPULAR_COMPANIES } = require("../../utils/options")
 
 Page({
   data: {
@@ -10,6 +11,8 @@ Page({
     qas: [],
     company: "",
     position: "",
+    positionSuggestions: POPULAR_POSITIONS,
+    companySuggestions: POPULAR_COMPANIES,
     saving: false,
   },
 

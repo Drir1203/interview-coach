@@ -1,10 +1,13 @@
 const api = require("../../utils/api")
 const app = getApp()
+const { POPULAR_POSITIONS, POPULAR_COMPANIES } = require("../../utils/options")
 
 Page({
   data: {
     company: "",
     position: "",
+    positionSuggestions: POPULAR_POSITIONS,
+    companySuggestions: POPULAR_COMPANIES,
     roundType: "first",
     roundTypeLabel: "一面",
     starting: false,

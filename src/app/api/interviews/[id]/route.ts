@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/db"
+import { auth } from "@/auth"
+import { syncInterviewTags } from "@/lib/interview-tags"
 
 // 获取单条面试详情
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -26,6 +28,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const body = await req.json()
+  const session = await auth()
+  const userId = session?.user?.id || "default"
 
   const interview = await prisma.interview.findUnique({ where: { id } })
   if (!interview) {
@@ -75,6 +79,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       tags: { include: { tag: true } },
     },
   })
+
+  // 同步标签
+  if (body.tags !== undefined) {
+    await syncInterviewTags(userId, id, body.tags)
+  }
 
   return Response.json(updated)
 }

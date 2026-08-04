@@ -47,3 +47,51 @@
 .save-btn {
   margin-top: 32rpx;
 }
+
+/* 标签选择 */
+.tag-section {
+  padding: 12rpx 32rpx 20rpx;
+}
+
+.tag-section-label {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.tag-chip {
+  font-size: 24rpx;
+  color: var(--brand-text);
+  background: var(--brand-muted);
+  border-radius: 999rpx;
+  padding: 8rpx 20rpx;
+}
+
+.tag-chip-active {
+  background: var(--brand-primary-light);
+  color: var(--brand-primary);
+  border: 2rpx solid var(--brand-primary);
+}
+
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.selected-tag {
+  font-size: 24rpx;
+  color: var(--brand-primary);
+  background: var(--brand-primary-light);
+  border: 2rpx solid var(--brand-primary);
+  border-radius: 999rpx;
+  padding: 8rpx 20rpx;
+}

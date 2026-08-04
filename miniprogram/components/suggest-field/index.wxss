@@ -1,0 +1,21 @@
+/* 智能输入组件：热门选项 chips */
+.suggest-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  padding: 12rpx 32rpx 20rpx;
+}
+
+.suggest-chip {
+  font-size: 24rpx;
+  color: var(--brand-text);
+  background: var(--brand-muted);
+  border-radius: 999rpx;
+  padding: 8rpx 20rpx;
+}
+
+.suggest-chip-active {
+  background: var(--brand-primary-light);
+  color: var(--brand-primary);
+  border: 2rpx solid var(--brand-primary);
+}

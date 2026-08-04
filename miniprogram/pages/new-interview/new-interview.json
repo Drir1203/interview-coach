@@ -5,6 +5,7 @@
     "van-picker": "@vant/weapp/picker/index",
     "van-popup": "@vant/weapp/popup/index",
     "van-button": "@vant/weapp/button/index",
-    "van-cell": "@vant/weapp/cell/index"
+    "van-cell": "@vant/weapp/cell/index",
+    "suggest-field": "/components/suggest-field/index"
   }
 }

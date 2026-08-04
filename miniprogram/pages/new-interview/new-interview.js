@@ -1,4 +1,5 @@
 const api = require("../../utils/api")
+const { POPULAR_POSITIONS, POPULAR_COMPANIES, POPULAR_INDUSTRIES, POPULAR_TAGS } = require("../../utils/options")
 
 Page({
   data: {
@@ -7,6 +8,11 @@ Page({
     companyName: "",
     companyIndustry: "",
     position: "",
+    positionSuggestions: POPULAR_POSITIONS,
+    companySuggestions: POPULAR_COMPANIES,
+    industrySuggestions: POPULAR_INDUSTRIES,
+    tagSuggestions: POPULAR_TAGS.map((t) => ({ name: t, selected: false })),
+    selectedTags: [],
     roundType: "first",
     roundTypeIndex: 0,
     roundTypeLabel: "一面",
@@ -41,6 +47,11 @@ Page({
           roundTypeIndex: idx,
           roundTypeLabel: rt.label,
           userNotes: data.userNotes || "",
+          selectedTags: (data.tags || []).map((t) => t.tag.name),
+          tagSuggestions: this.data.tagSuggestions.map((s) => ({
+            ...s,
+            selected: (data.tags || []).some((t) => t.tag.name === s.name),
+          })),
           questions: data.questions.length > 0
             ? data.questions.map((q) => ({
                 order: q.order,
@@ -91,6 +102,22 @@ Page({
     this.setData({ questions: qs })
   },
 
+  toggleTag(e) {
+    const tag = e.currentTarget.dataset.tag
+    if (!tag) return
+    const cur = this.data.selectedTags
+    const next = cur.includes(tag) ? cur.filter((t) => t !== tag) : [...cur, tag]
+    const tagSuggestions = this.data.tagSuggestions.map((s) =>
+      s.name === tag ? { ...s, selected: !s.selected } : s
+    )
+    this.setData({ selectedTags: next, tagSuggestions })
+  },
+
+  removeTag(e) {
+    const tag = e.currentTarget.dataset.tag
+    this.setData({ selectedTags: this.data.selectedTags.filter((t) => t !== tag) })
+  },
+
   addQuestion() {
     const qs = this.data.questions
     qs.push({ order: qs.length + 1, questionText: "", userAnswer: "" })
@@ -117,6 +144,7 @@ Page({
       position: position.trim(),
       roundType: this.data.roundType,
       userNotes: this.data.userNotes.trim() || undefined,
+      tags: this.data.selectedTags,
       questions: questions.filter((q) => q.questionText.trim()).map((q) => ({
         order: q.order,
         questionText: q.questionText.trim(),

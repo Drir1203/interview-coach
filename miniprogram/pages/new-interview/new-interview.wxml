@@ -6,10 +6,27 @@
   <!-- 基本信息 -->
   <view class="card">
     <text class="card-title">基本信息</text>
-    <van-field label="公司名称" placeholder="例：字节跳动" value="{{ companyName }}" bind:input="onCompanyInput" />
-    <van-field label="行业" placeholder="例：互联网" value="{{ companyIndustry }}" bind:input="onIndustryInput" />
-    <van-field label="岗位" placeholder="例：后端开发" value="{{ position }}" bind:input="onPositionInput" />
+    <suggest-field label="公司名称" placeholder="例：字节跳动" value="{{ companyName }}" suggestions="{{ companySuggestions }}" bind:input="onCompanyInput" />
+    <suggest-field label="行业" placeholder="例：互联网" value="{{ companyIndustry }}" suggestions="{{ industrySuggestions }}" bind:input="onIndustryInput" />
+    <suggest-field label="岗位" placeholder="例：后端开发" value="{{ position }}" suggestions="{{ positionSuggestions }}" bind:input="onPositionInput" />
     <van-field label="轮次" value="{{ roundTypeLabel }}" readonly is-link bind:click="openRoundPicker" />
+
+    <!-- 标签 -->
+    <view class="tag-section">
+      <text class="tag-section-label">标签</text>
+      <view class="tag-chips">
+        <text
+          wx:for="{{ tagSuggestions }}"
+          wx:key="name"
+          class="tag-chip {{ item.selected ? 'tag-chip-active' : '' }}"
+          data-tag="{{ item.name }}"
+          bindtap="toggleTag"
+        >{{ item.name }}</text>
+      </view>
+      <view wx:if="{{ selectedTags.length > 0 }}" class="selected-tags">
+        <text wx:for="{{ selectedTags }}" wx:key="*this" class="selected-tag" data-tag="{{ item }}" bindtap="removeTag">{{ item }} ×</text>
+      </view>
+    </view>
     <van-field
       label="备注"
       type="textarea"

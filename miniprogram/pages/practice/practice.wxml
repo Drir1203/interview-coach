@@ -23,8 +23,8 @@
 
   <view class="card">
     <text class="card-title">配置模拟面试</text>
-    <van-field label="目标公司" placeholder="例：字节跳动" value="{{ company }}" bind:input="onCompanyInput" />
-    <van-field label="岗位" placeholder="例：后端开发" value="{{ position }}" bind:input="onPositionInput" />
+    <suggest-field label="目标公司" placeholder="例：字节跳动" value="{{ company }}" suggestions="{{ companySuggestions }}" bind:input="onCompanyInput" />
+    <suggest-field label="岗位" placeholder="例：后端开发" value="{{ position }}" suggestions="{{ positionSuggestions }}" bind:input="onPositionInput" />
     <van-field label="模拟轮次" value="{{ roundTypeLabel }}" readonly is-link bind:click="openRoundPicker" />
     <van-button type="primary" round block loading="{{ starting }}" bind:click="startMock" class="start-btn">
       {{ starting ? '准备中...' : '开始模拟面试' }}

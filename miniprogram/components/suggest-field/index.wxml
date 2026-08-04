@@ -1,0 +1,12 @@
+<view class="suggest-field">
+  <van-field label="{{ label }}" placeholder="{{ placeholder }}" value="{{ value }}" bind:input="onInput" clearable />
+  <view wx:if="{{ suggestions.length > 0 }}" class="suggest-chips">
+    <text
+      wx:for="{{ suggestions }}"
+      wx:key="*this"
+      class="suggest-chip {{ item === value ? 'suggest-chip-active' : '' }}"
+      data-value="{{ item }}"
+      bindtap="pickSuggestion"
+    >{{ item }}</text>
+  </view>
+</view>

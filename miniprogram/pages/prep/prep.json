@@ -5,6 +5,7 @@
     "van-button": "@vant/weapp/button/index",
     "van-loading": "@vant/weapp/loading/index",
     "van-picker": "@vant/weapp/picker/index",
-    "van-popup": "@vant/weapp/popup/index"
+    "van-popup": "@vant/weapp/popup/index",
+    "suggest-field": "/components/suggest-field/index"
   }
 }

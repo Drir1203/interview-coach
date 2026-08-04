@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import { auth } from "@/auth"
 import prisma from "@/lib/db"
+import { syncInterviewTags } from "@/lib/interview-tags"
 
 function getUserId(session: any): string {
   return session?.user?.id || "default"
@@ -69,6 +70,9 @@ export async function POST(req: Request) {
       tags: { include: { tag: true } },
     },
   })
+
+  // 持久化标签
+  await syncInterviewTags(userId, interview.id, body.tags)
 
   return Response.json(interview, { status: 201 })
 }
