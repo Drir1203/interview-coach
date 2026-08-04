@@ -66,4 +66,8 @@ Page({
   goAnalysis() {
     wx.navigateTo({ url: "/pages/analysis/analysis" })
   },
+
+  goTranscribe() {
+    wx.navigateTo({ url: "/pages/transcribe/transcribe" })
+  },
 })

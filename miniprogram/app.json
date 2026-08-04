@@ -11,7 +11,8 @@
     "pages/coach/coach",
     "pages/prep/prep",
     "pages/report/report",
-    "pages/analysis/analysis"
+    "pages/analysis/analysis",
+    "pages/transcribe/transcribe"
   ],
   "window": {
     "navigationBarTitleText": "i面试",

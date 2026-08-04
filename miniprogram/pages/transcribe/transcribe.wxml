@@ -1,0 +1,52 @@
+<view class="page">
+  <view class="banner">
+    <view>
+      <text class="banner-title">录音转写</text>
+      <text class="banner-subtitle">录下面试现场，AI 转写并提取问答</text>
+    </view>
+  </view>
+
+  <!-- 录音区 -->
+  <view class="card record-card">
+    <view class="record-btn {{ recording ? 'recording' : '' }}" bindtap="toggleRecord">
+      <text class="record-icon">{{ recording ? '⏹' : '🎙️' }}</text>
+      <text class="record-text">{{ recording ? '点击停止' : '点击开始录音' }}</text>
+    </view>
+    <text wx:if="{{ recording }}" class="record-tip">录音中...（最长 10 分钟，再次点击停止）</text>
+  </view>
+
+  <block wx:if="{{ transcribing }}">
+    <view class="loading">
+      <van-loading color="#6366f1" size="24px">AI 转写中...</van-loading>
+    </view>
+  </block>
+
+  <block wx:elif="{{ hasResult }}">
+    <!-- 转写文本 -->
+    <text class="section-title">转写文本</text>
+    <view class="card">
+      <text wx:if="{{ transcript }}" class="transcript-text">{{ transcript }}</text>
+      <text wx:else class="empty-state">未能识别到有效内容，请重试或手动录入</text>
+    </view>
+
+    <!-- 提取的问答 -->
+    <block wx:if="{{ qas.length > 0 }}">
+      <text class="section-title">提取的问答（{{ qas.length }}）</text>
+      <van-cell-group inset>
+        <block wx:for="{{ qas }}" wx:key="_k">
+          <van-cell title="Q{{ index + 1 }} {{ item.questionText }}" label="{{ item.userAnswer }}" />
+        </block>
+      </van-cell-group>
+    </block>
+
+    <!-- 保存为面试记录 -->
+    <text class="section-title">保存为面试记录</text>
+    <view class="card">
+      <van-field label="公司" placeholder="例：字节跳动" value="{{ company }}" bind:input="onCompanyInput" />
+      <van-field label="岗位" placeholder="例：后端开发" value="{{ position }}" bind:input="onPositionInput" />
+      <van-button type="primary" round block loading="{{ saving }}" bind:click="saveAsInterview" class="mt-24">
+        保存为面试记录
+      </van-button>
+    </view>
+  </block>
+</view>

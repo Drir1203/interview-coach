@@ -50,6 +50,7 @@
       <view class="feature-card" bindtap="goPrep"><text class="feature-emoji">🎯</text><text class="feature-name">面试押题</text></view>
       <view class="feature-card" bindtap="goReport"><text class="feature-emoji">📈</text><text class="feature-name">成长报告</text></view>
       <view class="feature-card" bindtap="goAnalysis"><text class="feature-emoji">📊</text><text class="feature-name">深入分析</text></view>
+      <view class="feature-card" bindtap="goTranscribe"><text class="feature-emoji">🎙️</text><text class="feature-name">录音转写</text></view>
     </view>
 
     <!-- 近期面试 -->
