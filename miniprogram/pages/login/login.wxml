@@ -29,6 +29,6 @@
     </view>
 
     <view class="login-divider"><text>或</text></view>
-    <van-button custom-class="wx-login-btn" round block bind:click="wechatLogin">微信一键登录</van-button>
+    <van-button color="#07c160" round block bind:click="wechatLogin">微信一键登录</van-button>
   </view>
 </view>

@@ -79,14 +79,3 @@
 .login-divider text {
   margin: 0 16rpx;
 }
-
-.wx-login-btn {
-  background: #07c160;
-  border-radius: 999rpx;
-  color: #ffffff;
-}
-
-.wx-login-btn .van-button__text {
-  color: #ffffff;
-  font-weight: 600;
-}
