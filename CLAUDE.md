@@ -31,6 +31,14 @@
 - **简历解析**：设置页上传 PDF → 复盘/押题作背景
 - AI 复盘/录音转写/看板/分析/模拟面试/导出/日历
 
+## 微信小程序（`miniprogram/`，品牌名「AI 面师」）
+
+- **14 页**，覆盖 Web 全部核心功能：邮箱+**微信登录**、面试 CRUD、AI 复盘、模拟面试、AI 教练、押题、成长报告、深入分析、录音转写、面试日历、简历文本、修改昵称
+- UI：Vant Weapp + 品牌靛蓝设计系统（app.wxss token + `--van-*` 映射），暗色模式/下拉刷新/分页/分享
+- 微信登录：`/api/auth/wx-login`（需服务器 `WX_APPID`/`WX_SECRET`，已配）
+- 生产部署已含小程序新接口（mp-login/wx-login/resume-text/profile-name/transcribe mime 兼容）；小程序 baseUrl 指向 `https://47.116.138.61/interview`
+- 名称「AI 面师」微信审核中；上线前需：隐私保护指引（mp 后台）+ 合法 HTTPS 域名 + request 域名白名单
+
 ## 部署经验教训（必须遵守，详见 docs/incident-review.md）
 
 1. **禁止在生产服务器跑完整 `npm install`**（ffmpeg-static 下载会超时）。改用 `npm install --ignore-scripts`。
