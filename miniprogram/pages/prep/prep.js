@@ -79,4 +79,11 @@ Page({
         this.setData({ generating: false })
       })
   },
+
+  onShareAppMessage() {
+    return {
+      title: "AI 帮我押题：" + (this.data.company || "") + " " + (this.data.position || ""),
+      path: "/pages/prep/prep",
+    }
+  },
 })

@@ -20,8 +20,10 @@
     "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#f5f5f5",
-    "backgroundTextStyle": "light"
+    "backgroundTextStyle": "light",
+    "darkmode": true
   },
+  "themeLocation": "theme.json",
   "tabBar": {
     "color": "#999999",
     "selectedColor": "#6366f1",
@@ -53,6 +55,11 @@
         "selectedIconPath": "images/settings-active.png"
       }
     ]
+  },
+  "permission": {
+    "scope.record": {
+      "desc": "用于录音转写面试内容，帮你记录和分析面试过程"
+    }
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json"

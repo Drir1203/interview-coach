@@ -70,3 +70,14 @@
 .logout-btn {
   margin-top: 48rpx;
 }
+
+.name-edit {
+  padding: 40rpx 32rpx 48rpx;
+}
+
+.name-edit-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 700;
+  margin-bottom: 24rpx;
+}

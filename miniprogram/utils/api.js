@@ -57,6 +57,15 @@ module.exports = {
   getAnalysis: () => request("/api/analysis"),
   getDeepAnalysis: () => request("/api/analysis/deep"),
 
+  // 简历
+  getResume: () => request("/api/profile/resume"),
+  saveResumeText: (resumeText) =>
+    request("/api/profile/resume-text", "POST", { resumeText }),
+
+  // 资料
+  updateName: (name) =>
+    request("/api/profile/name", "POST", { name }),
+
   // AI 功能
   coachChat: (messages) =>
     request("/api/coach", "POST", { messages }),

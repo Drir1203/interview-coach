@@ -16,11 +16,22 @@ Page({
     this.loadData()
   },
 
+  onPullDownRefresh() {
+    this.loadData(true)
+  },
+
+  onShareAppMessage() {
+    return {
+      title: "AI 面师 - 你的 AI 面试教练",
+      path: "/pages/index/index",
+    }
+  },
+
   goLogin() {
     wx.navigateTo({ url: "/pages/login/login" })
   },
 
-  loadData() {
+  loadData(fromPull) {
     this.setData({ loading: true })
     Promise.all([
       api.getInterviews(),
@@ -37,8 +48,10 @@ Page({
         passRateDisplay: Math.round((stats.passRate || 0) * 100),
         loading: false,
       })
+      if (fromPull) wx.stopPullDownRefresh()
     }).catch(() => {
       this.setData({ loading: false })
+      if (fromPull) wx.stopPullDownRefresh()
     })
   },
 

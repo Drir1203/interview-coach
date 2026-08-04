@@ -27,4 +27,11 @@ Page({
         this.setData({ generating: false })
       })
   },
+
+  onShareAppMessage() {
+    return {
+      title: "我的面试成长报告 - AI 面师",
+      path: "/pages/report/report",
+    }
+  },
 })

@@ -275,3 +275,31 @@ button::after {
 .mt-16 { margin-top: 16rpx; }
 .mt-24 { margin-top: 24rpx; }
 .mt-32 { margin-top: 32rpx; }
+
+/* ========== 暗色模式（跟随系统） ========== */
+@media (prefers-color-scheme: dark) {
+  page {
+    --brand-primary: #818cf8;
+    --brand-primary-light: #312e81;
+    --brand-bg: #0f172a;
+    --brand-card: #1e293b;
+    --brand-text: #e2e8f0;
+    --brand-muted: #334155;
+    --brand-muted-text: #94a3b8;
+    --brand-border: #334155;
+    --brand-danger: #f87171;
+
+    --van-primary-color: #818cf8;
+    --van-success-color: #07c160;
+    --van-danger-color: #f87171;
+    --van-button-primary-background: #818cf8;
+    --van-button-primary-border-color: #818cf8;
+    --van-button-default-color: #e2e8f0;
+    --van-field-label-color: #e2e8f0;
+    --van-field-input-text-color: #e2e8f0;
+    --van-tabbar-item-active-color: #818cf8;
+    --van-cell-text-color: #e2e8f0;
+    --van-cell-background: #1e293b;
+    --van-cell-group-background: #1e293b;
+  }
+}

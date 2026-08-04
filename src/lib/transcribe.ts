@@ -8,7 +8,8 @@ export interface QAPair {
 
 export async function transcribeAudio(
   audioBlob: Blob,
-  duration: number
+  duration: number,
+  mimeType?: string
 ): Promise<{ transcript: string; qas: QAPair[] }> {
   const apiKey = process.env.DASHSCOPE_API_KEY
 
@@ -16,10 +17,11 @@ export async function transcribeAudio(
     throw new Error("语音转写服务暂未配置，请手动录入面试问题")
   }
 
-  // base64
+  // base64，按实际上传格式设置 mime（iOS 录音是 aac，不再硬编码 mp3）
   const buffer = Buffer.from(await audioBlob.arrayBuffer())
   const base64 = buffer.toString("base64")
-  const dataUri = `data:audio/mp3;base64,${base64}`
+  const audioMime = mimeType || audioBlob.type || "audio/mp3"
+  const dataUri = `data:${audioMime};base64,${base64}`
 
   // DashScope chat/completions
   const response = await fetch(

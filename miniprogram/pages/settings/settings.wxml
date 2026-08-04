@@ -24,9 +24,36 @@
 
   <!-- 功能菜单 -->
   <van-cell-group inset class="mt-24">
+    <van-cell title="修改昵称" value="{{ user.name || '' }}" is-link bind:click="openNameEdit" />
     <van-cell title="服务状态" label="AI 复盘已配置 · 语音转写即将上线 · 云端存储" />
     <van-cell title="关于 AI 面师" label="v1.0 · 你的 AI 面试教练" />
   </van-cell-group>
 
+  <!-- 简历 -->
+  <view class="card mt-24">
+    <text class="card-title">我的简历</text>
+    <text class="card-desc">粘贴简历文字，AI 复盘/押题时作为候选人背景参考</text>
+    <van-field
+      type="textarea"
+      autosize
+      maxlength="20000"
+      placeholder="粘贴你的简历文本..."
+      value="{{ resumeText }}"
+      bind:input="onResumeInput"
+    />
+    <van-button type="primary" round size="small" loading="{{ resumeSaving }}" bind:click="saveResume" class="mt-16">
+      保存简历
+    </van-button>
+  </view>
+
   <van-button wx:if="{{ user }}" round block type="danger" bind:click="logout" class="logout-btn">退出登录</van-button>
+
+  <!-- 修改昵称弹窗 -->
+  <van-popup show="{{ showNameEdit }}" position="bottom" bind:close="closeNameEdit">
+    <view class="name-edit">
+      <text class="name-edit-title">修改昵称</text>
+      <van-field placeholder="输入你的昵称" value="{{ editName }}" bind:input="onNameEditInput" />
+      <van-button type="primary" round block bind:click="saveName" class="mt-24">保存</van-button>
+    </view>
+  </van-popup>
 </view>

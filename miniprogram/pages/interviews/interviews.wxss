@@ -40,3 +40,10 @@
   border-radius: var(--brand-radius-md);
   overflow: hidden;
 }
+
+.load-more {
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+  padding: 20rpx 0;
+}

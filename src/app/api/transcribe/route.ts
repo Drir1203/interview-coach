@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const buffer = await audioFile.arrayBuffer()
     const blob = new Blob([buffer], { type: audioFile.type })
 
-    const result = await transcribeAudio(blob, duration)
+    const result = await transcribeAudio(blob, duration, audioFile.type)
 
     return Response.json(result)
   } catch (err: any) {

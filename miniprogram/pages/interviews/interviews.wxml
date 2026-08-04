@@ -40,7 +40,7 @@
 
   <block wx:else>
     <van-cell
-      wx:for="{{ filtered }}"
+      wx:for="{{ visible }}"
       wx:key="id"
       border="{{ false }}"
       custom-class="cell-card"
@@ -54,5 +54,7 @@
         <text class="tag {{ item.status === 'ai_reviewed' ? 'badge-active' : '' }}">{{ item.statusLabel }}</text>
       </view>
     </van-cell>
+    <view wx:if="{{ visible.length < filtered.length }}" class="load-more">上拉加载更多</view>
+    <view wx:elif="{{ filtered.length > 20 }}" class="load-more">— 没有更多了 —</view>
   </block>
 </view>
