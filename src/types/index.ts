@@ -1,5 +1,3 @@
-import type { Company } from "../generated/prisma"
-
 // ────────── 面试创建/更新 ──────────
 
 export interface CreateInterviewInput {
