@@ -2,7 +2,7 @@
   "name": "interview-coach-miniprogram",
   "version": "1.0.0",
   "private": true,
-  "description": "i面试 微信小程序（Vant Weapp 组件库）",
+  "description": "AI 面师 微信小程序（Vant Weapp 组件库）",
   "dependencies": {
     "@vant/weapp": "^1.11.7"
   }

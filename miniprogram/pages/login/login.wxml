@@ -1,7 +1,7 @@
 <view class="page login-page">
   <!-- 品牌 Hero -->
   <view class="login-hero">
-    <text class="login-hero-title">i面试</text>
+    <text class="login-hero-title">AI 面师</text>
     <text class="login-hero-subtitle">你的 AI 面试教练</text>
   </view>
 

@@ -25,7 +25,7 @@
   <!-- 功能菜单 -->
   <van-cell-group inset class="mt-24">
     <van-cell title="服务状态" label="AI 复盘已配置 · 语音转写即将上线 · 云端存储" />
-    <van-cell title="关于 i面试" label="v1.0 · 你的 AI 面试教练" />
+    <van-cell title="关于 AI 面师" label="v1.0 · 你的 AI 面试教练" />
   </van-cell-group>
 
   <van-button wx:if="{{ user }}" round block type="danger" bind:click="logout" class="logout-btn">退出登录</van-button>
