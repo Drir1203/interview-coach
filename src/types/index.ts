@@ -43,6 +43,30 @@ export interface AIReviewInput {
   }[]
   // 候选人简历文本，作为评分背景；为空则不带入
   resumeText?: string
+  // 用户自定义要求（如"更深入分析"），附加到提示词；为空则按默认方式分析
+  instruction?: string
+}
+
+// 单题重新生成分析的输入（只针对一道题做深入复盘）
+export interface AIReviewQuestionInput {
+  company: string
+  position: string
+  roundType: string
+  question: {
+    questionText: string
+    userAnswer?: string
+  }
+  resumeText?: string
+  instruction?: string
+}
+
+// 单题重新生成分析的输出
+export interface AIReviewQuestionOutput {
+  score: number
+  feedback: string
+  improvedAnswer?: string
+  category: string
+  keyMistake?: string
 }
 
 export interface AIReviewOutput {

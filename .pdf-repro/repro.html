@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>PDF repro</title>
+  <script src="../node_modules/html2canvas/dist/html2canvas.min.js"></script>
+  <script src="../node_modules/jspdf/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <h2>repro host</h2>
+  <script>
+    const REPORT_WIDTH = 1191
+    const FONT = '-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif'
+    const ROOT_STYLE = `width:${REPORT_WIDTH}px;padding:40px;box-sizing:border-box;font-family:${FONT};color:#1f2937;background:#ffffff;font-size:14px;line-height:1.7;`
+
+    function buildHtml() {
+      const q = []
+      for (let i = 0; i < 5; i++) {
+        q.push(`<div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px;">
+          <p style="margin:0;font-weight:bold;color:#111827;">Q${i+1}. 请介绍一下你在项目中如何处理高并发问题？</p>
+          <p style="margin:6px 0 0;color:#374151;">你的回答：使用缓存、消息队列、限流等手段……</p>
+          <div style="margin-top:8px;border:1px solid #e2e8f0;background:#f8fafc;border-radius:6px;padding:8px 10px;">
+            <p style="margin:0;color:#374151;">AI 反馈：回答结构清晰，建议补充具体数据指标以增强说服力。</p>
+          </div>
+        </div>`)
+      }
+      return `<div style="${ROOT_STYLE}">
+        <h1 style="font-size:24px;color:#111827;">腾讯 · 高级后端工程师 · 一面</h1>
+        <div style="font-size:14px;color:#4b5563;">总体评分 7.5 · 2026-08-01 · 等待结果</div>
+        <h2 style="font-size:16px;color:#111827;">AI 复盘结果</h2>
+        <p style="color:#374151;">总体表现不错，回答基本覆盖核心要点，建议在项目深挖上多准备量化数据。</p>
+        <h2 style="font-size:16px;color:#111827;">面试问题（${q.length}）</h2>
+        ${q.join("")}
+        <div style="margin-top:24px;font-size:11px;color:#9ca3af;">由 i面试 生成</div>
+      </div>`
+    }
+
+    async function renderToPdf(html, filename, mode) {
+      const el = document.createElement("div")
+      el.innerHTML = html
+      if (mode === 0) {
+        // 当前代码：position:absolute; left:-100000px
+        el.style.position = "absolute"
+        el.style.left = "-100000px"
+        el.style.top = "0"
+        el.style.width = `${REPORT_WIDTH}px`
+        el.style.backgroundColor = "#ffffff"
+      } else if (mode === 1) {
+        // 变体：position:fixed 移出视口，但 left 保持 0，用 top 移出
+        el.style.position = "fixed"
+        el.style.top = "-100000px"
+        el.style.left = "0"
+        el.style.width = `${REPORT_WIDTH}px`
+        el.style.backgroundColor = "#ffffff"
+      } else if (mode === 2) {
+        // 变体：直接放在页面正常流中(在标题下方)
+        el.style.width = `${REPORT_WIDTH}px`
+        el.style.backgroundColor = "#ffffff"
+      } else if (mode === 3) {
+        // 变体：visibility:hidden + position:absolute 移出
+        el.style.position = "absolute"
+        el.style.left = "-100000px"
+        el.style.top = "0"
+        el.style.visibility = "hidden"
+        el.style.width = `${REPORT_WIDTH}px`
+        el.style.backgroundColor = "#ffffff"
+      } else if (mode === 5) {
+        // 变体：position:absolute; top:-100000px; left:0（只垂直偏移）
+        el.style.position = "absolute"
+        el.style.top = "-100000px"
+        el.style.left = "0"
+        el.style.width = `${REPORT_WIDTH}px`
+        el.style.backgroundColor = "#ffffff"
+      }
+      if (mode === 4) {
+        // 变体：字符串直传 doc.html（worker 自己建 div + 自己移出视口）
+        try {
+          const doc = new jspdf.jsPDF({ unit: "mm", format: "a4", orientation: "portrait" })
+          await doc.html(html, {
+            margin: [12, 12, 14, 12],
+            width: 210,
+            windowWidth: REPORT_WIDTH,
+            autoPaging: "text",
+            html2canvas: { backgroundColor: "#ffffff", useCORS: true, logging: false, scale: 2 },
+          })
+          doc.save(filename)
+        } finally {
+          // 字符串路径无自建节点
+        }
+        return
+      }
+      document.body.appendChild(el)
+      try {
+        const doc = new jspdf.jsPDF({ unit: "mm", format: "a4", orientation: "portrait" })
+        await doc.html(el, {
+          margin: [12, 12, 14, 12],
+          width: 210,
+          windowWidth: REPORT_WIDTH,
+          autoPaging: "text",
+          html2canvas: { backgroundColor: "#ffffff", useCORS: true, logging: false, scale: 2 },
+        })
+        doc.save(filename)
+      } finally {
+        if (el) el.remove()
+      }
+    }
+
+    window.__modes = [0, 1, 2, 3, 4, 5]
+    window.__run = async function (mode) {
+      const fname = `out_mode${mode}.pdf`
+      const src = mode === 4 ? buildHtml() : buildHtml()
+      await renderToPdf(src, fname, mode)
+      return fname
+    }
+  </script>
+</body>
+</html>

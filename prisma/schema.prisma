@@ -53,6 +53,7 @@ model User {
   emailVerified  DateTime?
   image          String?
   passwordHash   String?   // 密码登录用
+  wechatOpenid   String?   @unique // 微信小程序 openid，微信一键登录用
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 

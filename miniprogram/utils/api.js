@@ -35,6 +35,9 @@ module.exports = {
   login: (email, password) =>
     request("/api/auth/mp-login", "POST", { email, password }),
 
+  wxLogin: (code) =>
+    request("/api/auth/wx-login", "POST", { code }),
+
   register: (name, email, password) =>
     request("/api/auth/register", "POST", { name, email, password }),
 

@@ -59,3 +59,34 @@
   color: var(--brand-primary);
   margin-left: 8rpx;
 }
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  margin: 28rpx 0 20rpx;
+  color: var(--brand-muted-text);
+  font-size: 24rpx;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  height: 2rpx;
+  background: var(--brand-border);
+}
+
+.login-divider text {
+  margin: 0 16rpx;
+}
+
+.wx-login-btn {
+  background: #07c160;
+  border-radius: 999rpx;
+  color: #ffffff;
+}
+
+.wx-login-btn .van-button__text {
+  color: #ffffff;
+  font-weight: 600;
+}

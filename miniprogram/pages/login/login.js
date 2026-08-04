@@ -53,4 +53,25 @@ Page({
         this.setData({ error: err.message || "邮箱或密码错误", loading: false })
       })
   },
+
+  wechatLogin() {
+    this.setData({ loading: true, error: "" })
+    wx.login({
+      success: (res) => {
+        if (!res.code) {
+          this.setData({ error: "微信登录失败，请重试", loading: false })
+          return
+        }
+        api.wxLogin(res.code).then((data) => {
+          app.setToken(data.token, data.user || { name: "微信用户" }, data.cookieName)
+          wx.reLaunch({ url: "/pages/index/index" })
+        }).catch((err) => {
+          this.setData({ error: err.message || "微信登录失败", loading: false })
+        })
+      },
+      fail: () => {
+        this.setData({ error: "微信登录失败，请重试", loading: false })
+      },
+    })
+  },
 })

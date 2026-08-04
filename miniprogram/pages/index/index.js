@@ -70,4 +70,8 @@ Page({
   goTranscribe() {
     wx.navigateTo({ url: "/pages/transcribe/transcribe" })
   },
+
+  goCalendar() {
+    wx.navigateTo({ url: "/pages/calendar/calendar" })
+  },
 })

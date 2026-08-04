@@ -8,18 +8,21 @@ import {
   Trash2,
   Brain,
   Loader2,
-  CheckCircle2,
-  XCircle,
-  Clock,
   Download,
   Sparkles,
+  RefreshCw,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { formatDate, formatDateTime } from "@/lib/utils"
-import { ROUND_TYPE_LABELS, INTERVIEW_STATUS_CONFIG, INTERVIEW_RESULTS } from "@/types"
+import {
+  ROUND_TYPE_LABELS,
+  INTERVIEW_STATUS_CONFIG,
+  INTERVIEW_RESULTS,
+  type AIReviewOutput,
+} from "@/types"
 import Link from "next/link"
 import { exportInterviewPdf } from "@/lib/pdf-export"
 
@@ -61,10 +64,17 @@ export default function InterviewDetail() {
   const [interview, setInterview] = useState<InterviewDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [reviewing, setReviewing] = useState(false)
-  const [reviewResult, setReviewResult] = useState<any>(null)
+  const [reviewResult, setReviewResult] = useState<AIReviewOutput | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showImproved, setShowImproved] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
+  // 按题重新生成分析：regenOpen 记录当前展开自定义输入的题目 id
+  const [regenOpen, setRegenOpen] = useState<string | null>(null)
+  const [regenInstr, setRegenInstr] = useState("")
+  const [regenerating, setRegenerating] = useState<string | null>(null)
+  // 全局重新分析的自定义输入
+  const [globalInstrOpen, setGlobalInstrOpen] = useState(false)
+  const [globalInstr, setGlobalInstr] = useState("")
 
   useEffect(() => {
     fetch(`/interview/api/interviews/${params.id}`)
@@ -76,14 +86,14 @@ export default function InterviewDetail() {
       .catch(() => setLoading(false))
   }, [params.id])
 
-  const handleAIReview = async () => {
+  const handleAIReview = async (instruction?: string) => {
     setReviewing(true)
     setError(null)
     try {
       const res = await fetch("/interview/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ interviewId: params.id }),
+        body: JSON.stringify({ interviewId: params.id, instruction }),
       })
       if (!res.ok) {
         let msg = "AI 复盘失败"
@@ -95,14 +105,62 @@ export default function InterviewDetail() {
       }
       const result = await res.json()
       setReviewResult(result)
+      setGlobalInstrOpen(false)
+      setGlobalInstr("")
 
       // 刷新页面数据
       const updated = await fetch(`/interview/api/interviews/${params.id}`).then((r) => r.json())
       setInterview(updated)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "AI 复盘失败，请稍后重试")
     } finally {
       setReviewing(false)
+    }
+  }
+
+  // 展开/收起某题的自定义输入
+  const toggleRegen = (questionId: string) => {
+    if (regenOpen === questionId) {
+      setRegenOpen(null)
+      setRegenInstr("")
+    } else {
+      setRegenOpen(questionId)
+      setRegenInstr("")
+    }
+  }
+
+  // 按题重新生成 AI 分析（支持自定义要求）
+  const handleRegenQuestion = async (questionId: string) => {
+    if (regenerating) return
+    setRegenerating(questionId)
+    try {
+      const res = await fetch("/interview/api/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          interviewId: params.id,
+          mode: "question",
+          questionId,
+          instruction: regenInstr,
+        }),
+      })
+      if (!res.ok) {
+        let msg = "重新生成失败"
+        try {
+          const err = await res.json()
+          msg = err.error || msg
+        } catch { /* 非 JSON 响应 */ }
+        throw new Error(msg)
+      }
+      // 刷新页面数据以展示该题新分析
+      const updated = await fetch(`/interview/api/interviews/${params.id}`).then((r) => r.json())
+      setInterview(updated)
+      setRegenOpen(null)
+      setRegenInstr("")
+    } catch (err) {
+      alert("重新生成失败：" + (err instanceof Error ? err.message : "未知错误"))
+    } finally {
+      setRegenerating(null)
     }
   }
 
@@ -242,7 +300,7 @@ export default function InterviewDetail() {
             {interview.questions.length === 0 ? (
               <p className="text-sm text-muted-foreground">请先录入面试问题</p>
             ) : (
-              <Button onClick={handleAIReview} disabled={reviewing} className="gap-2">
+              <Button onClick={() => handleAIReview()} disabled={reviewing} className="gap-2">
                 {reviewing ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
@@ -261,17 +319,48 @@ export default function InterviewDetail() {
         <>
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-4">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Brain className="size-4 text-primary" />
                   AI 复盘结果
                 </CardTitle>
-                <Button variant="outline" size="sm" onClick={handleAIReview} disabled={reviewing}>
-                  {reviewing ? (
-                    <Loader2 className="mr-1 size-3 animate-spin" />
-                  ) : null}
-                  重新分析
-                </Button>
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={reviewing}
+                    onClick={() => {
+                      if (globalInstrOpen) {
+                        setGlobalInstrOpen(false)
+                        setGlobalInstr("")
+                      } else {
+                        handleAIReview(globalInstr)
+                      }
+                    }}
+                  >
+                    {reviewing ? (
+                      <Loader2 className="mr-1 size-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="mr-1 size-3" />
+                    )}
+                    {globalInstrOpen ? "取消" : "重新分析"}
+                  </Button>
+                  {globalInstrOpen && (
+                    <div className="w-full space-y-2 sm:w-80">
+                      <textarea
+                        value={globalInstr}
+                        onChange={(e) => setGlobalInstr(e.target.value)}
+                        placeholder="自定义要求（可选），如：更深入分析，指出薄弱点并给出针对性练习建议"
+                        rows={2}
+                        className="w-full resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                      <Button size="sm" disabled={reviewing} onClick={() => handleAIReview(globalInstr)}>
+                        {reviewing ? <Loader2 className="mr-1 size-3 animate-spin" /> : null}
+                        用此要求重新生成
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -330,7 +419,7 @@ export default function InterviewDetail() {
                   <div>
                     <h3 className="mb-2 text-sm font-medium">薄弱维度</h3>
                     <div className="space-y-2">
-                      {weaknessAreas.map((w: any, i: number) => (
+                      {weaknessAreas.map((w: { category: string; score: number; description?: string }, i: number) => (
                         <div key={i} className="flex items-center gap-3">
                           <Badge variant="outline">{w.category}</Badge>
                           <div className="flex-1">
@@ -413,19 +502,70 @@ export default function InterviewDetail() {
                         </p>
                       )}
                     </div>
-                    {q.aiImprovedAnswer && (
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      {q.aiImprovedAnswer && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto px-2 py-1"
+                          onClick={() =>
+                            setShowImproved(showImproved === q.id ? null : q.id)
+                          }
+                        >
+                          {showImproved === q.id ? "收起" : "查看优化回答"}
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="shrink-0"
-                        onClick={() =>
-                          setShowImproved(showImproved === q.id ? null : q.id)
-                        }
+                        className="h-auto px-2 py-1"
+                        disabled={regenerating !== null}
+                        onClick={() => toggleRegen(q.id)}
                       >
-                        {showImproved === q.id ? "收起" : "查看优化回答"}
+                        {regenerating === q.id ? (
+                          <Loader2 className="mr-1 size-3 animate-spin" />
+                        ) : (
+                          <RefreshCw className="mr-1 size-3" />
+                        )}
+                        {regenOpen === q.id ? "取消" : "重新生成"}
                       </Button>
-                    )}
+                    </div>
                   </div>
+
+                  {/* 按题重新生成的自定义输入 */}
+                  {regenOpen === q.id && (
+                    <div className="mt-3 space-y-2 border-t border-muted-foreground/20 pt-3">
+                      <textarea
+                        value={regenInstr}
+                        onChange={(e) => setRegenInstr(e.target.value)}
+                        placeholder="自定义要求（可选），如：更深入分析、结合简历中的项目经历展开"
+                        rows={2}
+                        className="w-full resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setRegenOpen(null)
+                            setRegenInstr("")
+                          }}
+                        >
+                          取消
+                        </Button>
+                        <Button
+                          size="sm"
+                          disabled={regenerating !== null}
+                          onClick={() => handleRegenQuestion(q.id)}
+                        >
+                          {regenerating === q.id ? (
+                            <Loader2 className="mr-1 size-3 animate-spin" />
+                          ) : null}
+                          生成
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* 优化回答 */}
                   {showImproved === q.id && q.aiImprovedAnswer && (

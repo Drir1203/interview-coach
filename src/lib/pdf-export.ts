@@ -244,9 +244,12 @@ async function renderToPdf(html: string, filename: string): Promise<void> {
 
   const el = document.createElement("div")
   el.innerHTML = html
+  // 注意：jsPDF 的 doc.html() 会克隆此元素并强制其 position:relative，但保留内联 left/top。
+  // 若用 left:-100000px 移出屏幕，克隆体内容会被再水平偏移 10 万像素，html2canvas 截取不到 → 空白 PDF。
+  // 因此只做垂直偏移（top:-100000px），left 保持 0。
   el.style.position = "absolute"
-  el.style.left = "-100000px"
-  el.style.top = "0"
+  el.style.left = "0"
+  el.style.top = "-100000px"
   el.style.width = `${REPORT_WIDTH}px`
   el.style.backgroundColor = "#ffffff"
   document.body.appendChild(el)

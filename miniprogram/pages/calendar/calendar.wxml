@@ -1,0 +1,61 @@
+<view class="page">
+  <view class="banner">
+    <view>
+      <text class="banner-title">面试日历</text>
+      <text class="banner-subtitle">查看每天的面试安排</text>
+    </view>
+  </view>
+
+  <block wx:if="{{ loading }}">
+    <view class="loading">
+      <van-loading color="#6366f1" size="24px">加载中...</van-loading>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="card">
+      <view class="cal-nav">
+        <view class="cal-nav-btn" bindtap="prevMonth">‹</view>
+        <text class="cal-month">{{ monthLabel }}</text>
+        <view class="cal-nav-btn" bindtap="nextMonth">›</view>
+      </view>
+
+      <view class="cal-weekdays">
+        <text wx:for="{{ ['日','一','二','三','四','五','六'] }}" wx:key="*this" class="cal-weekday">{{ item }}</text>
+      </view>
+
+      <view class="cal-grid">
+        <block wx:for="{{ days }}" wx:key="key">
+          <view class="cal-cell">
+            <view
+              class="cal-day {{ item.isToday ? 'today' : '' }} {{ item.date === selectedDate ? 'selected' : '' }} {{ item.hasInterview ? 'has-interview' : '' }}"
+              data-date="{{ item.date }}"
+              bindtap="selectDay"
+            >
+              <text wx:if="{{ !item.isBlank }}" class="cal-day-num">{{ item.day }}</text>
+              <text wx:if="{{ item.hasInterview }}" class="cal-dot">{{ item.count }}</text>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <!-- 选中日期详情 -->
+    <text class="section-title">{{ selectedDate }} 的面试</text>
+    <block wx:if="{{ dayInterviews.length > 0 }}">
+      <van-cell
+        wx:for="{{ dayInterviews }}"
+        wx:key="id"
+        border="{{ false }}"
+        custom-class="cal-cell-card"
+        title="{{ item.title }}"
+        label="{{ item.label }}"
+        value="{{ item.score }}"
+        is-link
+        data-id="{{ item.id }}"
+        bind:click="goDetail"
+      />
+    </block>
+    <van-empty wx:else description="这天没有面试记录" />
+  </block>
+</view>

@@ -27,5 +27,8 @@
       <text>{{ isRegister ? '已有账号？' : '还没有账号？' }}</text>
       <text class="login-switch-link" bindtap="switchMode">{{ isRegister ? '去登录' : '去注册' }}</text>
     </view>
+
+    <view class="login-divider"><text>或</text></view>
+    <van-button custom-class="wx-login-btn" round block bind:click="wechatLogin">微信一键登录</van-button>
   </view>
 </view>
