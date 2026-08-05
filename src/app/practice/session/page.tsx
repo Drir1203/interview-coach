@@ -11,7 +11,10 @@ import {
   AlertCircle,
   Sparkles,
   ArrowLeft,
+  Mic,
+  MicOff,
 } from "lucide-react"
+import { analyzeVoiceState, type VoiceState } from "@/lib/voice-state"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -38,14 +41,22 @@ function SessionInner() {
   const position = searchParams.get("position") || "未知岗位"
 
   const [messages, setMessages] = useState<
-    { role: "assistant" | "user"; content: string }[]
+    { role: "assistant" | "user"; content: string; voiceState?: VoiceState }[]
   >([])
   const [currentAnswer, setCurrentAnswer] = useState("")
   const [phase, setPhase] = useState<SessionPhase>("answering")
   const [summary, setSummary] = useState<Summary | null>(null)
   const [error, setError] = useState("")
+  const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
+  const [recordError, setRecordError] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const recordMimeTypeRef = useRef("")
+  const recordStartTimeRef = useRef(0)
+  const streamRef = useRef<MediaStream | null>(null)
 
   // 初始化：获取第一个问题
   useEffect(() => {
@@ -90,14 +101,17 @@ function SessionInner() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  // 提交回答
-  const handleSubmit = async () => {
-    if (!currentAnswer.trim() || phase !== "answering") return
+  // 发送回答（文字或语音转写共用）
+  const sendAnswer = async (rawAnswer: string, voiceState?: VoiceState) => {
+    const answer = rawAnswer.trim()
+    if (!answer || phase !== "answering") return
 
-    const answer = currentAnswer.trim()
     setCurrentAnswer("")
     setPhase("waiting")
-    setMessages((prev) => [...prev, { role: "user", content: answer }])
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: answer, ...(voiceState ? { voiceState } : {}) },
+    ])
 
     try {
       const res = await fetch("/interview/api/mock", {
@@ -137,10 +151,113 @@ function SessionInner() {
         ])
         setPhase("answering")
       }
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "请求失败")
       setPhase("error")
     }
+  }
+
+  // 提交回答（文字输入）
+  const handleSubmit = () => {
+    if (phase !== "answering" || isRecording) return
+    void sendAnswer(currentAnswer)
+  }
+
+  // 停止麦克风轨道
+  const stopStream = () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop())
+    streamRef.current = null
+  }
+
+  // 开始录音
+  const startRecording = async () => {
+    setRecordError("")
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setRecordError("当前环境不支持麦克风，请改用文字输入")
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      streamRef.current = stream
+      audioChunksRef.current = []
+
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : ""
+      const recorder = new MediaRecorder(
+        stream,
+        mimeType ? { mimeType } : undefined
+      )
+      recordMimeTypeRef.current = recorder.mimeType || "audio/webm"
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data)
+      }
+      recorder.onstart = () => {
+        recordStartTimeRef.current = Date.now()
+      }
+      recorder.onstop = () => void handleRecordingStop()
+      recorder.onerror = () => {
+        setIsRecording(false)
+        stopStream()
+        setRecordError("录音失败，请重试或改用文字输入")
+      }
+      mediaRecorderRef.current = recorder
+      recorder.start()
+      setIsRecording(true)
+    } catch {
+      setRecordError("无法访问麦克风，请授权后重试或改用文字输入")
+    }
+  }
+
+  // 停止录音并转写
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop()
+    setIsRecording(false)
+  }
+
+  const handleRecordingStop = async () => {
+    stopStream()
+    const blob = new Blob(audioChunksRef.current, {
+      type: recordMimeTypeRef.current,
+    })
+    const durationSec = Math.max(
+      1,
+      Math.round((Date.now() - recordStartTimeRef.current) / 1000)
+    )
+    setIsTranscribing(true)
+    try {
+      const file = new File([blob], "answer.webm", { type: blob.type })
+      const formData = new FormData()
+      formData.append("audio", file)
+      formData.append("duration", String(durationSec))
+      const res = await fetch("/interview/api/transcribe", {
+        method: "POST",
+        body: formData,
+      })
+      if (!res.ok) throw new Error("转写失败")
+      const data = await res.json()
+      const transcript = (data.transcript || "").trim()
+      if (!transcript) {
+        setRecordError("没听清，请再说一次或直接打字")
+      } else {
+        const voiceState = analyzeVoiceState(transcript, durationSec)
+        setRecordError("")
+        void sendAnswer(transcript, voiceState)
+      }
+    } catch (err) {
+      setRecordError(
+        err instanceof Error ? err.message : "转写失败，请改用文字输入"
+      )
+    } finally {
+      setIsTranscribing(false)
+    }
+  }
+
+  // 录音按钮
+  const toggleRecord = () => {
+    if (phase !== "answering" || isTranscribing) return
+    if (isRecording) stopRecording()
+    else void startRecording()
   }
 
   // 提前结束
@@ -304,7 +421,7 @@ function SessionInner() {
           variant="outline"
           size="sm"
           onClick={handleEnd}
-          disabled={phase === "waiting"}
+          disabled={phase === "waiting" || isRecording || isTranscribing}
           className="gap-2"
         >
           <LogOut className="size-3" />
@@ -324,13 +441,31 @@ function SessionInner() {
           >
             <div
               className={cn(
-                "max-w-[80%] rounded-2xl px-4 py-3 text-sm",
-                msg.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                "flex max-w-[80%] flex-col gap-1",
+                msg.role === "user" ? "items-end" : "items-start"
               )}
             >
-              {msg.content}
+              <div
+                className={cn(
+                  "rounded-2xl px-4 py-3 text-sm",
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+                )}
+              >
+                {msg.content}
+              </div>
+              {msg.role === "user" && msg.voiceState && (
+                <div className="flex max-w-full items-center gap-1 rounded-lg bg-red-50 px-2 py-1 text-xs text-red-600">
+                  <span>🎙 语音状态</span>
+                  <span className="truncate">{msg.voiceState.summary}</span>
+                  <span className="shrink-0">
+                    {msg.voiceState.score}/10 ·{" "}
+                    {msg.voiceState.speechRate.toFixed(1)}字/秒 · 填充词{" "}
+                    {msg.voiceState.fillerCount}个
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -340,6 +475,25 @@ function SessionInner() {
       {/* 输入区 */}
       <div className="border-t pt-4">
         <div className="flex gap-3">
+          <Button
+            variant="outline"
+            size="icon"
+            className={cn(
+              "shrink-0 self-end",
+              isRecording && "border-red-500 bg-red-500 text-white hover:bg-red-600 hover:text-white"
+            )}
+            onClick={toggleRecord}
+            disabled={phase !== "answering" || isTranscribing}
+            title={isRecording ? "点击停止录音" : "点击开始语音回答"}
+          >
+            {isTranscribing ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : isRecording ? (
+              <MicOff className="size-4" />
+            ) : (
+              <Mic className="size-4" />
+            )}
+          </Button>
           <Textarea
             ref={textareaRef}
             placeholder="输入你的回答... (Ctrl+Enter 发送)"
@@ -354,7 +508,10 @@ function SessionInner() {
             className="shrink-0 self-end"
             onClick={handleSubmit}
             disabled={
-              !currentAnswer.trim() || phase !== "answering"
+              !currentAnswer.trim() ||
+              phase !== "answering" ||
+              isRecording ||
+              isTranscribing
             }
           >
             {phase === "waiting" ? (
@@ -364,6 +521,18 @@ function SessionInner() {
             )}
           </Button>
         </div>
+        {isRecording && (
+          <p className="mt-2 flex items-center gap-1 text-xs text-red-600">
+            <Mic className="size-3 animate-pulse" />
+            录音中，请对着话筒回答，点击红色按钮停止
+          </p>
+        )}
+        {recordError && (
+          <p className="mt-2 flex items-center gap-1 text-xs text-amber-600">
+            <AlertCircle className="size-3" />
+            {recordError}
+          </p>
+        )}
         {error && (
           <p className="mt-2 flex items-center gap-1 text-xs text-destructive">
             <AlertCircle className="size-3" />

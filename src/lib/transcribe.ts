@@ -1,9 +1,32 @@
 // 录音转写 + QA 提取
 // 浏览器端用 FFmpeg.wasm 压缩后，服务端 base64 → DashScope
 
+import { execFile } from "child_process"
+import { promisify } from "util"
+import fs from "fs"
+import os from "os"
+import path from "path"
+import ffmpegStatic from "ffmpeg-static"
+
+const execFileP = promisify(execFile)
+
 export interface QAPair {
   questionText: string
   userAnswer: string
+}
+
+// Web MediaRecorder 输出 webm，DashScope ASR 可能不认 → 服务端转 mp3
+async function convertWebmToMp3(buffer: Buffer): Promise<Buffer> {
+  const inFile = path.join(os.tmpdir(), `audio-${Date.now()}.webm`)
+  const outFile = path.join(os.tmpdir(), `audio-${Date.now()}.mp3`)
+  fs.writeFileSync(inFile, buffer)
+  try {
+    await execFileP(ffmpegStatic!, ["-y", "-i", inFile, "-codec:a", "libmp3lame", "-b:a", "64k", outFile])
+    return fs.readFileSync(outFile)
+  } finally {
+    fs.unlinkSync(inFile)
+    if (fs.existsSync(outFile)) fs.unlinkSync(outFile)
+  }
 }
 
 export async function transcribeAudio(
@@ -18,9 +41,22 @@ export async function transcribeAudio(
   }
 
   // base64，按实际上传格式设置 mime（iOS 录音是 aac，不再硬编码 mp3）
-  const buffer = Buffer.from(await audioBlob.arrayBuffer())
+  let buffer: Buffer = Buffer.from(await audioBlob.arrayBuffer())
+  let audioMime = mimeType || audioBlob.type || "audio/mp3"
+  // Web 录音是 webm → 转 mp3（DashScope 兼容性）
+  const isWebm =
+    audioMime.includes("webm") ||
+    (buffer.length > 4 && buffer[0] === 0x1a && buffer[1] === 0x45 && buffer[2] === 0xdf && buffer[3] === 0xa3)
+  if (isWebm) {
+    try {
+      buffer = Buffer.from(await convertWebmToMp3(buffer))
+      audioMime = "audio/mp3"
+    } catch (e) {
+      // 转换失败则用原格式，让 DashScope 尽力而为
+      console.error("webm 转 mp3 失败:", e)
+    }
+  }
   const base64 = buffer.toString("base64")
-  const audioMime = mimeType || audioBlob.type || "audio/mp3"
   const dataUri = `data:${audioMime};base64,${base64}`
 
   // DashScope chat/completions

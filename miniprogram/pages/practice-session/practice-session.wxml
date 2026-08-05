@@ -11,6 +11,7 @@
       plain
       type="primary"
       bind:click="endSession"
+      disabled="{{ recording || transcribing }}"
     >结束</van-button>
   </view>
 
@@ -44,12 +45,19 @@
     <view class="session-messages">
       <view wx:for="{{ messages }}" wx:key="index" class="msg-row {{ item.role === 'user' ? 'user' : '' }}">
         <view class="msg-bubble {{ item.role === 'user' ? 'user' : 'ai' }}">{{ item.content }}</view>
+        <view wx:if="{{ item.role === 'user' && item.voiceState }}" class="voice-badge">
+          <text>🎙 语音状态：{{ item.voiceState.summary }}</text>
+          <text>（{{ item.voiceState.score }}/10 · 语速 {{ item.voiceState.speechRate }} 字/秒 · 填充词 {{ item.voiceState.fillerCount }} 个）</text>
+        </view>
       </view>
       <view wx:if="{{ phase === 'waiting' }}" class="session-thinking">思考中...</view>
     </view>
 
     <!-- 输入区 -->
     <view class="session-input">
+      <view class="mic-btn {{ recording ? 'recording' : '' }}" bindtap="toggleRecord">
+        <text>{{ recording ? '⏹' : '🎤' }}</text>
+      </view>
       <van-field
         border="{{ false }}"
         type="textarea"
@@ -62,9 +70,11 @@
       <van-button
         type="primary"
         size="small"
-        disabled="{{ !currentAnswer.trim() || phase === 'waiting' }}"
+        disabled="{{ !currentAnswer.trim() || phase === 'waiting' || recording || transcribing }}"
         bind:click="handleSend"
       >发送</van-button>
     </view>
+    <view wx:if="{{ recording }}" class="record-tip">🎙 录音中...点击停止（请对着话筒回答）</view>
+    <view wx:if="{{ transcribing }}" class="record-tip">⏳ 语音转写中...</view>
   </block>
 </view>
