@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
-  BarChart3,
   TrendingUp,
   AlertTriangle,
   Building2,
@@ -10,13 +9,26 @@ import {
   ArrowDown,
   Minus,
   Loader2,
+  GraduationCap,
+  Download,
 } from "lucide-react"
+import {
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  ResponsiveContainer,
+} from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { SkillRadar } from "@/components/SkillRadar"
 import { ScoreTrend } from "@/components/ScoreTrend"
+import { useAuth } from "@/hooks/useAuth"
 
 interface CompanyComp {
   company: string
@@ -41,11 +53,33 @@ interface DeepAnalysis {
   companies: string[]
 }
 
+interface OverallAnalysis {
+  skillProfile: { category: string; score: number; count?: number }[]
+  stats: { total: number }
+}
+
+// 能力维度中文标签（与 SkillRadar 保持一致）
+const CATEGORY_LABELS: Record<string, string> = {
+  technical: "技术基础",
+  behavioral: "行为面试",
+  project_deep_dive: "项目深挖",
+  system_design: "系统设计",
+  hr: "HR 面试",
+}
+
+const CERT_FONT_FAMILY =
+  '-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif'
+
 export default function AnalysisPage() {
+  const { user } = useAuth()
   const [data, setData] = useState<DeepAnalysis | null>(null)
+  const [overall, setOverall] = useState<OverallAnalysis | null>(null)
   const [loading, setLoading] = useState(true)
   const [companyFilter, setCompanyFilter] = useState("all")
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([])
+  const [certOpen, setCertOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const certRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch("/interview/api/analysis/deep")
@@ -58,6 +92,14 @@ export default function AnalysisPage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
+  }, [])
+
+  // 认证卡需要整体能力画像 + 面试总场次（/api/analysis 返回 skillProfile + stats）
+  useEffect(() => {
+    fetch("/interview/api/analysis")
+      .then((r) => r.json())
+      .then((d) => setOverall(d))
+      .catch(() => {})
   }, [])
 
   if (loading) {
@@ -80,12 +122,71 @@ export default function AnalysisPage() {
     ? data.trendData
     : data.trendData.filter((t) => t.company === companyFilter)
 
+  // ── 认证卡数据 ──
+  const certSkillProfile = overall?.skillProfile || []
+  const hasCertData = certSkillProfile.length > 0
+  const certChartData = certSkillProfile.map((s) => ({
+    category: CATEGORY_LABELS[s.category] || s.category,
+    score: s.score,
+    fullMark: 10,
+  }))
+  const certName = user?.name || "面试者"
+  const certTotal = overall?.stats.total ?? 0
+
+  const downloadCert = async () => {
+    if (!certRef.current) return
+    setExporting(true)
+    try {
+      const { default: html2canvas } = await import("html2canvas")
+      const canvas = await html2canvas(certRef.current, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      })
+      const url = canvas.toDataURL("image/png")
+      const a = document.createElement("a")
+      a.href = url
+      a.download = "ai-mianshi-cert.png"
+      a.click()
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">深入分析</h1>
         <p className="text-sm text-muted-foreground">跨公司对比、薄弱项追踪、趋势下钻</p>
       </div>
+
+      {/* 能力画像（整体）+ 认证卡入口 */}
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between space-y-0">
+          <div>
+            <CardTitle className="text-base">能力画像</CardTitle>
+            <CardDescription>
+              {hasCertData
+                ? "基于全部 AI 复盘的综合能力评估"
+                : "完成 AI 复盘后生成能力认证卡"}
+            </CardDescription>
+          </div>
+          <Button size="sm" disabled={!hasCertData} onClick={() => setCertOpen(true)}>
+            <GraduationCap className="size-4" />
+            生成能力认证卡
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {hasCertData ? (
+            <SkillRadar data={certSkillProfile} />
+          ) : (
+            <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+              暂无能力画像数据，完成 AI 复盘后生成
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="companies" className="space-y-6">
         <TabsList>
@@ -135,7 +236,7 @@ export default function AnalysisPage() {
                     <div className="mt-2 space-y-1">
                       {comp.skillProfile.map((s) => (
                         <div key={s.category} className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">{s.category}</span>
+                          <span className="text-muted-foreground">{CATEGORY_LABELS[s.category] || s.category}</span>
                           <span>{s.score.toFixed(1)}</span>
                         </div>
                       ))}
@@ -268,6 +369,89 @@ export default function AnalysisPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* 能力认证卡弹窗 */}
+      <Dialog open={certOpen} onOpenChange={setCertOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>能力认证卡</DialogTitle>
+            <DialogDescription>分享你的 AI 能力认证</DialogDescription>
+          </DialogHeader>
+
+          {/* 待导出的认证卡（内联样式，便于 html2canvas 捕获） */}
+          <div
+            ref={certRef}
+            style={{
+              width: 340,
+              boxSizing: "border-box",
+              background: "#ffffff",
+              border: "2px solid #6366f1",
+              borderRadius: 16,
+              padding: "20px 16px",
+              textAlign: "center",
+              color: "#1f2937",
+              fontFamily: CERT_FONT_FAMILY,
+              margin: "0 auto",
+            }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#6366f1" }}>AI 面师 · 能力认证</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: "#111827", marginTop: 6 }}>{certName}</div>
+
+            <div style={{ width: 260, height: 220, margin: "12px auto 0" }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={certChartData} outerRadius="72%">
+                  <PolarGrid stroke="#e5e7eb" />
+                  <PolarAngleAxis dataKey="category" tick={{ fontSize: 11, fill: "#6b7280" }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 10]} tick={false} axisLine={false} />
+                  <Radar
+                    dataKey="score"
+                    stroke="#6366f1"
+                    fill="#6366f1"
+                    fillOpacity={0.18}
+                    strokeWidth={2}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              {certChartData.map((d) => (
+                <div
+                  key={d.category}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "4px 8px",
+                    fontSize: 13,
+                    color: "#374151",
+                  }}
+                >
+                  <span>{d.category}</span>
+                  <span style={{ fontWeight: 600, color: "#6366f1" }}>{d.score.toFixed(1)}</span>
+                </div>
+              ))}
+            </div>
+
+            <div
+              style={{
+                marginTop: 14,
+                paddingTop: 10,
+                borderTop: "1px solid #e5e7eb",
+                fontSize: 11,
+                color: "#9ca3af",
+              }}
+            >
+              由 AI 面师 AI 评估 · 数据来自 {certTotal} 场真实面试
+            </div>
+          </div>
+
+          <Button onClick={downloadCert} disabled={exporting} className="w-full">
+            {exporting ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+            保存图片
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

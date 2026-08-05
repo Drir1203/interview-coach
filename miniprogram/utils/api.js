@@ -66,6 +66,9 @@ module.exports = {
   updateName: (name) =>
     request("/api/profile/name", "POST", { name }),
 
+  changePassword: (data) =>
+    request("/api/auth/change-password", "POST", data),
+
   // AI 功能
   coachChat: (messages) =>
     request("/api/coach", "POST", { messages }),

@@ -9,6 +9,46 @@ Page({
     resumeSaving: false,
     showNameEdit: false,
     editName: "",
+    showPwdEdit: false,
+    oldPwd: "",
+    newPwd: "",
+    confirmPwd: "",
+    pwdSaving: false,
+  },
+
+  openPwdEdit() {
+    this.setData({ showPwdEdit: true })
+  },
+
+  closePwdEdit() {
+    this.setData({ showPwdEdit: false })
+  },
+
+  onPwdInput(e) {
+    const field = e.currentTarget.dataset.field
+    this.setData({ [field]: e.detail })
+  },
+
+  savePwd() {
+    const oldPwd = this.data.oldPwd || ""
+    const newPwd = this.data.newPwd || ""
+    const confirmPwd = this.data.confirmPwd || ""
+    if (newPwd.length < 6) {
+      wx.showToast({ title: "新密码至少 6 位", icon: "none" })
+      return
+    }
+    if (newPwd !== confirmPwd) {
+      wx.showToast({ title: "两次输入不一致", icon: "none" })
+      return
+    }
+    this.setData({ pwdSaving: true })
+    api.changePassword({ oldPassword: oldPwd, newPassword: newPwd }).then(() => {
+      wx.showToast({ title: "密码已修改", icon: "success" })
+      this.setData({ showPwdEdit: false, oldPwd: "", newPwd: "", confirmPwd: "", pwdSaving: false })
+    }).catch((err) => {
+      wx.showToast({ title: (err && err.message) || "修改失败", icon: "none" })
+      this.setData({ pwdSaving: false })
+    })
   },
 
   openNameEdit() {

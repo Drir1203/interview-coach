@@ -1,14 +1,60 @@
 "use client"
 
-import { User, Info, Database, CheckCircle2 } from "lucide-react"
+import { useState } from "react"
+import { User, Info, Database, CheckCircle2, Lock, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/useAuth"
+import { toast } from "@/components/ui/toast"
 import { ResumeCard } from "@/components/settings/resume-card"
 
 export default function SettingsPage() {
   const { user: session } = useAuth()
+
+  const [oldPassword, setOldPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  const isWechatUser = !!session && !session.email
+
+  const submitPassword = async () => {
+    if (newPassword.length < 6) {
+      alert("新密码至少 6 位")
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      alert("两次输入的新密码不一致")
+      return
+    }
+    setSaving(true)
+    try {
+      const res = await fetch("/interview/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          oldPassword: oldPassword || undefined,
+          newPassword,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data?.error || "修改失败")
+        return
+      }
+      toast.add({ title: "密码已修改", type: "success" })
+      setOldPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
+    } catch (err: any) {
+      alert(err?.message || "修改失败")
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -23,13 +69,52 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-1 text-sm">
-            <p><span className="text-muted-foreground">邮箱：</span>{session.email}</p>
+            <p><span className="text-muted-foreground">邮箱：</span>{session.email || "微信登录"}</p>
             <p><span className="text-muted-foreground">名称：</span>{session.name || "未设置"}</p>
           </CardContent>
         </Card>
       )}
 
       <ResumeCard />
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Lock className="size-4 text-primary" />
+            <CardTitle className="text-base">修改密码</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {isWechatUser && (
+            <p className="text-sm text-muted-foreground">微信登录用户可直接设置密码</p>
+          )}
+          <Input
+            type="password"
+            placeholder="当前密码（留空则跳过，微信登录用户）"
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+            autoComplete="current-password"
+          />
+          <Input
+            type="password"
+            placeholder="新密码（至少 6 位）"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            autoComplete="new-password"
+          />
+          <Input
+            type="password"
+            placeholder="确认新密码"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            autoComplete="new-password"
+          />
+          <Button onClick={submitPassword} disabled={saving}>
+            {saving && <Loader2 className="size-4 animate-spin" />}
+            提交
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
