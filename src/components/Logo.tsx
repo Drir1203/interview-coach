@@ -48,8 +48,8 @@ export function Logo({ className = "", size = "md", showSlogan = false }: LogoPr
       {/* 文字 */}
       <div className="flex flex-col">
         <span className={`${s.text} font-bold tracking-tight`}>
-          <span className="text-foreground">i</span>
-          <span className="text-foreground">面试</span>
+          <span className="text-foreground">AI</span>
+          <span className="text-foreground">面师</span>
         </span>
         {showSlogan && (
           <span className={`${s.slogan} text-muted-foreground -mt-0.5`}>

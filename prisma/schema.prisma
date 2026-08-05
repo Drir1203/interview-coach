@@ -205,3 +205,17 @@ model JobApplication {
 
   @@index([userId, status])
 }
+
+// ────────── 面经众包（匿名贡献真实面试题） ──────────
+model InterviewExperience {
+  id        String   @id @default(cuid())
+  company   String
+  position  String
+  round     String   @default("other") // first | second | third | final | hr | written | other
+  question  String   // 真实被问到的问题（脱敏）
+  answer    String?  // 候选人当时的回答（可选）
+  createdAt DateTime @default(now())
+
+  @@index([company, position])
+  @@index([createdAt])
+}

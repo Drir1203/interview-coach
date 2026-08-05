@@ -1,4 +1,10 @@
 import { chatWithFallback, buildUserContext, type CoachMessage } from "@/lib/ai-coach"
+import prisma from "@/lib/db"
+
+const ROUND_LABEL: Record<string, string> = {
+  first: "一面", second: "二面", third: "三面", final: "终面",
+  hr: "HR面", written: "笔试", other: "其他",
+}
 
 const PREP_SYSTEM_PROMPT = `你是一位资深的技术面试教练,有 10 年以上招聘经验,擅长为候选人做面试前押题和个性化准备。
 你了解候选人的真实面试数据(下方【用户数据】),请基于这些生成一份针对性、可操作的面试准备方案。
@@ -24,18 +30,19 @@ function buildPrepPrompt(
   company: string,
   position: string,
   roundType: string,
-  userContext: string
+  userContext: string,
+  experiencesText: string
 ): string {
-  const roundLabel: Record<string, string> = {
-    first: "一面", second: "二面", third: "三面", final: "终面",
-    hr: "HR面", written: "笔试", other: "其他",
-  }
   return `请为目标面试生成准备方案。
 
 ## 目标面试
 - 公司:${company}
 - 岗位:${position}
-- 轮次:${roundLabel[roundType] || roundType}
+- 轮次:${ROUND_LABEL[roundType] || roundType}
+
+## 【该公司的历史真实面经】（来自用户匿名贡献，可信度高）
+${experiencesText}
+> 请优先把面经中出现的高频题放进押题清单，并结合这些真实题目给出针对性回答要点。
 
 ## 【用户数据】
 ${userContext}
@@ -75,8 +82,21 @@ export async function generatePrepPlan(
   roundType: string
 ): Promise<string> {
   const userContext = await buildUserContext(userId)
+
+  // 读取该公司历史面经（用户匿名贡献），增强押题准确性
+  const experiences = await prisma.interviewExperience.findMany({
+    where: { company },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  })
+  const experiencesText = experiences.length
+    ? experiences
+        .map((e) => `- [${e.position}${e.round && e.round !== "other" ? `·${ROUND_LABEL[e.round]}` : ""}] ${e.question}`)
+        .join("\n")
+    : "暂无该公司的历史面经"
+
   const system = `${PREP_SYSTEM_PROMPT}\n\n## 【用户数据】\n${userContext}`
-  const prompt = buildPrepPrompt(company, position, roundType, userContext)
+  const prompt = buildPrepPrompt(company, position, roundType, userContext, experiencesText)
   const messages: CoachMessage[] = [{ role: "user", content: prompt }]
 
   return chatWithFallback(system, messages, () => mockPrepReply(company, position))
