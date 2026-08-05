@@ -254,29 +254,67 @@ const MOCK_SYSTEM_PROMPT = `你是一位资深的技术面试官。你将进行�
 export function buildMockStartPrompt(
   company: string,
   position: string,
-  roundType: string
+  roundType: string,
+  resume?: string,
+  grillMode?: boolean
 ): string {
-  return MOCK_SYSTEM_PROMPT.replace("{company}", company)
+  let prompt = MOCK_SYSTEM_PROMPT.replace("{company}", company)
     .replace("{position}", position)
-    .replace("{roundType}", roundType) +
-    "\n\n请开始面试，提出第一个问题。"
+    .replace("{roundType}", roundType)
+
+  if (grillMode && resume) {
+    prompt += `
+
+## 简历深挖模式（务必执行）
+你现在是"简历深挖面试官"，只针对候选人简历提问：
+1. 找出简历中的漏洞、模糊表述、夸大之处、前后矛盾点
+2. 从最可疑/最薄弱的一点开始，第一问就直击要害
+3. 要求候选人详细说明、给具体例子、量化成果、讲清责任边界
+4. 简历里没有但你关心的关键点也可以追问（如技术栈深度、项目真实性）
+
+候选人简历：
+${resume.slice(0, 3000)}`
+  }
+
+  return prompt + "\n\n请开始面试，提出第一个问题。"
 }
 
 export function buildMockRespondPrompt(
   history: { role: "assistant" | "user"; content: string }[],
-  userAnswer: string
+  userAnswer: string,
+  grillMode?: boolean
 ): string {
-  return `这是面试对话历史：
+  let prompt = `这是面试对话历史：
 ${history.map((m) => `${m.role === "assistant" ? "面试官" : "候选人"}：${m.content}`).join("\n")}
 
 候选人对上一个问题的回答是：${userAnswer}
 
 请给出简短反馈（1-2句话），然后提出下一个问题或追问。如果面试应该结束，请在最后加上 [END]。`
+
+  if (grillMode) {
+    prompt += `
+
+## 简历深挖模式（务必执行）
+- 若回答含糊、夸大、缺乏量化，追问具体细节并要证据
+- 发现与简历矛盾的表述要明确指出并深挖
+- 可对关键回答连续追问（最多 3 层），保持专业但有压力感
+- 追问时引用简历原文（如"你简历里写…"）`
+  }
+
+  return prompt
 }
 
 export function buildMockSummaryPrompt(
-  history: { role: "assistant" | "user"; content: string }[]
+  history: { role: "assistant" | "user"; content: string }[],
+  grillMode?: boolean
 ): string {
+  const dims = grillMode
+    ? `,
+  "credibility": <1-10, 回答可信度>,
+  "technicalAccuracy": <1-10, 技术准确性>,
+  "expression": <1-10, 表达结构>,
+  "riskPoints": ["<简历深挖中暴露的风险点>"]`
+    : ""
   return `这是一场模拟面试的完整对话记录：
 ${history.map((m) => `${m.role === "assistant" ? "面试官" : "候选人"}：${m.content}`).join("\n")}
 
@@ -292,6 +330,6 @@ ${history.map((m) => `${m.role === "assistant" ? "面试官" : "候选人"}：${
       "score": <1-10>,
       "feedback": "<反馈>"
     }
-  ]
+  ]${dims}
 }`
 }

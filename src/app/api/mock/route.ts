@@ -1,4 +1,6 @@
 import { NextRequest } from "next/server"
+import { auth } from "@/auth"
+import prisma from "@/lib/db"
 import {
   createMockSession,
   mockRespond,
@@ -14,12 +16,14 @@ const sessions = new Map<string, any>()
 // POST /api/mock - 开始或继续模拟面试
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { action, sessionId, company, position, roundType, answer } = body
+  const { action, sessionId, company, position, roundType, answer, resumeMode } = body
 
   const apiKey = process.env.ANTHROPIC_API_KEY || ""
+  const session = await auth()
+  const userId = session?.user?.id || "default"
 
   if (action === "start") {
-    return handleStart(company, position, roundType, apiKey)
+    return handleStart(company, position, roundType, apiKey, userId, resumeMode)
   }
 
   if (action === "respond") {
@@ -37,8 +41,18 @@ async function handleStart(
   company: string,
   position: string,
   roundType: string,
-  apiKey: string
+  apiKey: string,
+  userId: string,
+  resumeMode?: boolean
 ) {
+  // 简历深挖模式：读取用户简历
+  let resume: string | undefined
+  if (resumeMode) {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { resumeText: true } })
+    if (user?.resumeText) resume = user.resumeText
+  }
+  const grill = resumeMode && !!resume
+
   // Mock 模式
   if (!apiKey) {
     const session = createMockSession(company, position, roundType)
@@ -54,7 +68,7 @@ async function handleStart(
 
   // 真实 AI 模式
   try {
-    const prompt = buildMockStartPrompt(company, position, roundType)
+    const prompt = buildMockStartPrompt(company, position, roundType, resume, grill)
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -80,6 +94,7 @@ async function handleStart(
       company,
       position,
       roundType,
+      grillMode: grill,
       history: [
         { role: "assistant", content: question },
       ],
@@ -91,6 +106,7 @@ async function handleStart(
       question,
       round: 1,
       isComplete: false,
+      grillMode: grill,
     })
   } catch (err: any) {
     // 降级到 Mock
@@ -141,7 +157,7 @@ async function handleRespond(sessionId: string, answer: string, apiKey: string) 
   try {
     session.history.push({ role: "user", content: answer })
 
-    const prompt = buildMockRespondPrompt(session.history, answer)
+    const prompt = buildMockRespondPrompt(session.history, answer, session.grillMode)
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -162,7 +178,7 @@ async function handleRespond(sessionId: string, answer: string, apiKey: string) 
     const content = data.content?.[0]?.text || ""
 
     if (content.includes("[END]")) {
-      const summaryPrompt = buildMockSummaryPrompt(session.history)
+      const summaryPrompt = buildMockSummaryPrompt(session.history, session.grillMode)
       const summaryRes = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -229,7 +245,7 @@ async function handleEnd(sessionId: string, apiKey: string) {
   }
 
   try {
-    const summaryPrompt = buildMockSummaryPrompt(session.history)
+    const summaryPrompt = buildMockSummaryPrompt(session.history, session.grillMode)
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { GraduationCap, Target, Brain, Loader2, ArrowRight } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,6 +15,18 @@ export default function PracticePage() {
   const [position, setPosition] = useState("")
   const [roundType, setRoundType] = useState("first")
   const [starting, setStarting] = useState(false)
+  const [grillMode, setGrillMode] = useState(false)
+  const [hasResume, setHasResume] = useState(false)
+
+  // 检查用户是否已上传简历（简历深挖模式的前提）
+  useEffect(() => {
+    fetch("/interview/api/profile/resume")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d && d.resumeText) setHasResume(true)
+      })
+      .catch(() => {})
+  }, [])
 
   const handleStart = async () => {
     if (!position.trim()) return
@@ -29,6 +41,7 @@ export default function PracticePage() {
           company: company.trim() || "未知公司",
           position: position.trim(),
           roundType,
+          resumeMode: grillMode,
         }),
       })
 
@@ -133,6 +146,24 @@ export default function PracticePage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">简历深挖模式</p>
+              <p className="text-xs text-muted-foreground">
+                {hasResume
+                  ? "AI 面试官盯着你简历的漏洞、夸大和矛盾点拷打你"
+                  : "需先在「设置」上传简历才能使用"}
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              className="size-5 accent-[#6366f1]"
+              checked={grillMode}
+              disabled={!hasResume}
+              onChange={(e) => setGrillMode(e.target.checked)}
+            />
           </div>
 
           <Button
