@@ -26,3 +26,33 @@
 .start-btn {
   margin-top: 24rpx;
 }
+
+/* 简历深挖开关 */
+.grill-toggle {
+  display: flex;
+  align-items: center;
+  background: var(--brand-card);
+  border: 2rpx solid var(--brand-border);
+  border-radius: var(--brand-radius-md);
+  padding: 20rpx 24rpx;
+  margin-top: 20rpx;
+}
+
+.grill-info {
+  flex: 1;
+  margin-right: 16rpx;
+}
+
+.grill-title {
+  display: block;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--brand-text);
+}
+
+.grill-desc {
+  display: block;
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+  margin-top: 4rpx;
+}

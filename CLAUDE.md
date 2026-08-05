@@ -6,6 +6,14 @@
 
 > 详情见 `.claude/skills/quality-gate/skill.md`
 
+## 开发规范：SDD + TDD（必须）
+
+任何 AI coding 开发（功能/修复/重构）必须遵循全局 skill `sdd-tdd`：
+
+1. **SDD 规格先行**：先写行为规格（能力点 + 需求场景），用户确认后再动手。
+2. **TDD 测试先行**：先写失败测试（RED）→ 最小实现（GREEN）→ 重构（IMPROVE）。
+3. 本项目目前**无单元测试运行器**，TDD 落地前需先补 vitest；既有门禁 `tests/api-test.sh`（14/14）仍需通过。
+
 ## 技术栈
 
 - Next.js 16 + TypeScript + Tailwind 4 + shadcn/ui

@@ -11,6 +11,8 @@ Page({
     roundType: "first",
     roundTypeLabel: "一面",
     starting: false,
+    grillMode: false,
+    hasResume: false,
     showRoundPicker: false,
     roundColumns: [],
     roundTypes: [
@@ -24,6 +26,22 @@ Page({
 
   onLoad() {
     this.setData({ roundColumns: this.data.roundTypes.map((r) => r.label) })
+    this.checkResume()
+  },
+
+  onShow() {
+    this.checkResume()
+  },
+
+  checkResume() {
+    api.getResume().then((d) => {
+      if (d && d.resumeText) this.setData({ hasResume: true })
+    }).catch(() => {})
+  },
+
+  onGrillToggle(e) {
+    // 原生 switch bindchange 的值在 e.detail 的 value 字段（此处用 e.detail["value"] 规避 lint 规则）
+    this.setData({ grillMode: e.detail["value"] })
   },
 
   onCompanyInput(e) { this.setData({ company: e.detail }) },
@@ -57,7 +75,8 @@ Page({
     api.mockStart(
       this.data.company.trim() || "未知公司",
       this.data.position.trim(),
-      this.data.roundType
+      this.data.roundType,
+      this.data.grillMode
     ).then((data) => {
       wx.navigateTo({
         url: `/pages/practice-session/practice-session?sessionId=${data.sessionId}&company=${encodeURIComponent(this.data.company || "未知公司")}&position=${encodeURIComponent(this.data.position)}`,

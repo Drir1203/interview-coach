@@ -76,9 +76,17 @@ module.exports = {
   generateReport: () =>
     request("/api/report", "POST", {}),
 
+  // 求职进度
+  getApplications: () => request("/api/applications"),
+  createApplication: (data) => request("/api/applications", "POST", data),
+  updateApplication: (id, data) => request("/api/applications/" + id, "PUT", data),
+  deleteApplication: (id) => request("/api/applications/" + id, "DELETE"),
+  applicationStrategy: (id) =>
+    request("/api/applications/" + id + "/strategy", "POST", {}),
+
   // 模拟面试
-  mockStart: (company, position, roundType) =>
-    request("/api/mock", "POST", { action: "start", company, position, roundType }),
+  mockStart: (company, position, roundType, resumeMode) =>
+    request("/api/mock", "POST", { action: "start", company, position, roundType, resumeMode }),
 
   mockRespond: (sessionId, answer) =>
     request("/api/mock", "POST", { action: "respond", sessionId, answer }),

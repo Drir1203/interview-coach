@@ -13,7 +13,8 @@
     "pages/report/report",
     "pages/analysis/analysis",
     "pages/transcribe/transcribe",
-    "pages/calendar/calendar"
+    "pages/calendar/calendar",
+    "pages/applications/applications"
   ],
   "window": {
     "navigationBarTitleText": "AI 面师",

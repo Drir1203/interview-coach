@@ -26,6 +26,13 @@
     <suggest-field label="目标公司" placeholder="例：字节跳动" value="{{ company }}" suggestions="{{ companySuggestions }}" bind:input="onCompanyInput" />
     <suggest-field label="岗位" placeholder="例：后端开发" value="{{ position }}" suggestions="{{ positionSuggestions }}" bind:input="onPositionInput" />
     <van-field label="模拟轮次" value="{{ roundTypeLabel }}" readonly is-link bind:click="openRoundPicker" />
+    <view class="grill-toggle">
+      <view class="grill-info">
+        <text class="grill-title">简历深挖模式</text>
+        <text class="grill-desc">{{ hasResume ? 'AI 盯着你简历的漏洞和矛盾点拷打' : '需先在「我的」页填写简历才能使用' }}</text>
+      </view>
+      <switch checked="{{ grillMode }}" disabled="{{ !hasResume }}" bindchange="onGrillToggle" color="#6366f1" />
+    </view>
     <van-button type="primary" round block loading="{{ starting }}" bind:click="startMock" class="start-btn">
       {{ starting ? '准备中...' : '开始模拟面试' }}
     </van-button>

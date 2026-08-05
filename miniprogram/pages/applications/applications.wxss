@@ -1,0 +1,121 @@
+/* 求职进度页 */
+.app-card {
+  background: var(--brand-card);
+  border-radius: var(--brand-radius-lg);
+  padding: 28rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(30, 41, 59, 0.04);
+}
+
+.app-header {
+  margin-bottom: 20rpx;
+}
+
+.app-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8rpx;
+}
+
+.app-company {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--brand-text);
+}
+
+.app-position {
+  display: block;
+  font-size: 26rpx;
+  color: var(--brand-muted-text);
+  margin-bottom: 6rpx;
+}
+
+.app-meta {
+  display: block;
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+}
+
+.app-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid var(--brand-border);
+}
+
+.picker-cell {
+  display: flex;
+  align-items: center;
+}
+
+.picker-label {
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+  margin-right: 8rpx;
+}
+
+.picker-value {
+  font-size: 24rpx;
+  color: var(--brand-primary);
+  background: var(--brand-primary-light);
+  border-radius: 999rpx;
+  padding: 8rpx 20rpx;
+}
+
+.strategy-area {
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid var(--brand-border);
+}
+
+.strategy-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8rpx;
+}
+
+.strategy-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--brand-text);
+}
+
+.strategy-collapse {
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+}
+
+.strategy-empty {
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+  padding: 16rpx 0;
+}
+
+/* 新建弹窗 */
+.create-popup {
+  border-radius: var(--brand-radius-lg) var(--brand-radius-lg) 0 0;
+}
+
+.create-wrap {
+  padding: 32rpx 28rpx 48rpx;
+}
+
+.create-title {
+  display: block;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 700;
+  margin-bottom: 24rpx;
+}
+
+.create-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 0;
+  border-bottom: 2rpx solid var(--brand-border);
+}

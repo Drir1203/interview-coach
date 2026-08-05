@@ -87,4 +87,8 @@ Page({
   goCalendar() {
     wx.navigateTo({ url: "/pages/calendar/calendar" })
   },
+
+  goApplications() {
+    wx.navigateTo({ url: "/pages/applications/applications" })
+  },
 })
