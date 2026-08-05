@@ -84,3 +84,38 @@
   font-weight: 700;
   color: var(--brand-primary);
 }
+
+/* 能力画像标题行 + 认证卡按钮 */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8rpx 0 20rpx;
+}
+
+.section-header .section-title {
+  margin: 0;
+}
+
+.cert-btn {
+  font-size: 24rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 999rpx;
+  border: 2rpx solid var(--brand-primary, #6366f1);
+  color: var(--brand-primary, #6366f1);
+}
+
+.cert-btn-disabled {
+  opacity: 0.4;
+  border-color: #cbd5e1;
+  color: #94a3b8;
+}
+
+/* 离屏认证卡画布（fixed 移到可视区外，仍可 createCanvasContext 绘制） */
+.cert-canvas {
+  position: fixed;
+  top: 0;
+  left: -9999rpx;
+  width: 600rpx;
+  height: 800rpx;
+}

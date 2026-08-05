@@ -34,7 +34,10 @@
     </view>
 
     <!-- 能力雷达 -->
-    <text class="section-title">能力画像</text>
+    <view class="section-header">
+      <text class="section-title">能力画像</text>
+      <view class="cert-btn {{ skillProfile.length >= 3 ? 'cert-btn-active' : 'cert-btn-disabled' }}" bindtap="generateCert">🎓 认证卡</view>
+    </view>
     <view class="card chart-card">
       <canvas wx:if="{{ skillProfile.length >= 3 }}" canvas-id="radarCanvas" class="radar-canvas"></canvas>
       <view wx:else class="empty-state">复盘后生成能力画像</view>
@@ -81,4 +84,7 @@
   <block wx:else>
     <van-empty description="暂无数据，先记录并复盘一场面试吧" />
   </block>
+
+  <!-- 离屏认证卡画布（不渲染到可视区，仅用于导出图片） -->
+  <canvas canvas-id="certCanvas" class="cert-canvas" style="width:600rpx;height:800rpx;position:fixed;left:-9999rpx;top:0;"></canvas>
 </view>

@@ -56,16 +56,17 @@ Page({
     return (v * (win.windowWidth || 375)) / 750
   },
 
-  // 能力雷达图（原生 canvas）
-  drawRadar(profile) {
-    const ctx = wx.createCanvasContext("radarCanvas", this)
-    const w = this.rpx2px(620)
-    const h = this.rpx2px(440)
-    const cx = w / 2
-    const cy = h / 2
-    const R = Math.min(w, h) / 2 - this.rpx2px(54)
+  // 能力雷达核心绘制（页面雷达 + 认证卡共用）
+  // ctx：已创建的 CanvasContext；cx/cy：圆心；R：半径；profile：[{category, score}]
+  // opts：{ labelOffset, fontSize, pointRadius, drawLabels }
+  drawRadarOn(ctx, cx, cy, R, profile, opts) {
+    const cfg = opts || {}
     const n = profile.length
     if (n < 3) return
+    const labelOffset = cfg.labelOffset || 0
+    const fontSize = cfg.fontSize || 11
+    const pointRadius = cfg.pointRadius || 3
+    const drawLabels = cfg.drawLabels !== false
     const angle = (i) => -Math.PI / 2 + (2 * Math.PI * i) / n
     const scoreAt = (i) => Math.min(Math.max(profile[i].score || 0, 0), 5)
     const pxAt = (i, ratio) => {
@@ -109,23 +110,158 @@ Page({
     for (let i = 0; i < n; i++) {
       const p = pxAt(i, scoreAt(i) / 5)
       ctx.beginPath()
-      ctx.arc(p.x, p.y, 3, 0, 2 * Math.PI)
+      ctx.arc(p.x, p.y, pointRadius, 0, 2 * Math.PI)
       ctx.setFillStyle("#6366f1")
       ctx.fill()
     }
 
-    // 维度标签（中文）
-    ctx.setFillStyle("#1e293b")
-    ctx.setFontSize(11)
+    // 维度标签（中文，认证卡场景可关闭）
+    if (drawLabels) {
+      ctx.setFillStyle("#1e293b")
+      ctx.setFontSize(fontSize)
+      ctx.setTextAlign("center")
+      for (let i = 0; i < n; i++) {
+        const a = angle(i)
+        const lx = cx + (R + labelOffset) * Math.cos(a)
+        const ly = cy + (R + labelOffset) * Math.sin(a) + 4
+        ctx.fillText(util.CATEGORY_LABELS[profile[i].category] || profile[i].category, lx, ly)
+      }
+    }
+  },
+
+  // 能力雷达图（原生 canvas）
+  drawRadar(profile) {
+    const ctx = wx.createCanvasContext("radarCanvas", this)
+    const w = this.rpx2px(620)
+    const h = this.rpx2px(440)
+    const cx = w / 2
+    const cy = h / 2
+    const R = Math.min(w, h) / 2 - this.rpx2px(54)
+    this.drawRadarOn(ctx, cx, cy, R, profile, {
+      labelOffset: this.rpx2px(26),
+      fontSize: 11,
+      pointRadius: 3,
+      drawLabels: true,
+    })
+    ctx.draw()
+  },
+
+  // 能力认证分享卡：离屏 canvas 绘制 → 保存相册 / 分享好友
+  generateCert() {
+    const profile = this.data.skillProfile || []
+    if (profile.length < 3) {
+      wx.showToast({ title: "完成 AI 复盘后生成", icon: "none" })
+      return
+    }
+    const app = getApp()
+    const user = (app && app.globalData && app.globalData.user) || null
+    const name = (user && (user.name || user.nickname)) || "面试者"
+    const total = (this.data.stats && this.data.stats.total) || 0
+
+    const w = this.rpx2px(600)
+    const h = this.rpx2px(800)
+    const ctx = wx.createCanvasContext("certCanvas", this)
+
+    // 白底圆角卡片
+    const radius = this.rpx2px(24)
+    ctx.beginPath()
+    ctx.arc(radius, radius, radius, Math.PI, Math.PI * 1.5)
+    ctx.arc(w - radius, radius, radius, Math.PI * 1.5, 0)
+    ctx.arc(w - radius, h - radius, radius, 0, Math.PI * 0.5)
+    ctx.arc(radius, h - radius, radius, Math.PI * 0.5, Math.PI)
+    ctx.closePath()
+    ctx.setFillStyle("#ffffff")
+    ctx.fill()
+    ctx.setStrokeStyle("#e2e8f0")
+    ctx.setLineWidth(2)
+    ctx.stroke()
+
+    // 顶部标题 + 昵称
+    ctx.setFillStyle("#111827")
+    ctx.setFontSize(this.rpx2px(34))
     ctx.setTextAlign("center")
-    for (let i = 0; i < n; i++) {
-      const a = angle(i)
-      const lx = cx + (R + this.rpx2px(26)) * Math.cos(a)
-      const ly = cy + (R + this.rpx2px(26)) * Math.sin(a) + 4
-      ctx.fillText(util.CATEGORY_LABELS[profile[i].category] || profile[i].category, lx, ly)
+    ctx.fillText("AI 面师 · 能力认证", w / 2, this.rpx2px(80))
+    ctx.setFillStyle("#64748b")
+    ctx.setFontSize(this.rpx2px(24))
+    ctx.fillText(name, w / 2, this.rpx2px(132))
+
+    // 中部雷达（复用绘制逻辑，不重复画标签）
+    this.drawRadarOn(ctx, w / 2, this.rpx2px(400), this.rpx2px(150), profile, {
+      labelOffset: 0,
+      fontSize: 0,
+      pointRadius: 4,
+      drawLabels: false,
+    })
+
+    // 底部 5 维中文标签 + 分数
+    const labelStart = this.rpx2px(565)
+    const rowH = this.rpx2px(40)
+    ctx.setFontSize(this.rpx2px(26))
+    for (let i = 0; i < profile.length; i++) {
+      const label = util.CATEGORY_LABELS[profile[i].category] || profile[i].category
+      const score = Math.min(Math.max(profile[i].score || 0, 0), 5)
+      const y = labelStart + i * rowH
+      ctx.setFillStyle("#1e293b")
+      ctx.setTextAlign("left")
+      ctx.fillText(label, this.rpx2px(56), y)
+      ctx.setFillStyle("#6366f1")
+      ctx.setTextAlign("right")
+      ctx.fillText(Number(score).toFixed(1), w - this.rpx2px(56), y)
     }
 
-    ctx.draw()
+    // 底部说明
+    ctx.setFillStyle("#94a3b8")
+    ctx.setFontSize(this.rpx2px(20))
+    ctx.setTextAlign("center")
+    ctx.fillText("由 AI 面师 AI 评估 · " + total + " 场真实面试", w / 2, this.rpx2px(772))
+
+    // 导出临时图 → 保存/分享（canvasToTempFilePath 需在 draw 回调内调用）
+    ctx.draw(false, () => {
+      wx.canvasToTempFilePath(
+        {
+          canvasId: "certCanvas",
+          success: (res) => {
+            wx.showActionSheet({
+              itemList: ["保存到相册", "分享给好友"],
+              success: (r) => {
+                if (r.tapIndex === 0) {
+                  this.saveCertToAlbum(res.tempFilePath)
+                } else if (r.tapIndex === 1) {
+                  wx.shareAppMessage({
+                    title: "我的面试能力认证 - AI 面师",
+                    imageUrl: res.tempFilePath,
+                  })
+                }
+              },
+            })
+          },
+          fail: () => {
+            wx.showToast({ title: "生成失败，请重试", icon: "none" })
+          },
+        },
+        this
+      )
+    })
+  },
+
+  // 保存认证卡到相册（含相册权限引导）
+  saveCertToAlbum(filePath) {
+    wx.saveImageToPhotosAlbum({
+      filePath,
+      success: () => {
+        wx.showToast({ title: "已保存到相册", icon: "success" })
+      },
+      fail: () => {
+        wx.showModal({
+          title: "需要相册权限",
+          content: "请在设置中开启「保存到相册」权限后重试",
+          confirmText: "去设置",
+          success: (r) => {
+            if (r.confirm) wx.openSetting()
+          },
+        })
+      },
+    })
   },
 
   // 评分趋势折线（原生 canvas）
