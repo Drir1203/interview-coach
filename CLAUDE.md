@@ -49,8 +49,11 @@
 
 ## 部署经验教训（必须遵守，详见 docs/incident-review.md）
 
-1. **禁止在生产服务器跑完整 `npm install`**（ffmpeg-static 下载会超时）。改用 `npm install --ignore-scripts`。
-2. **全量同步** `src/` + `prisma/schema.prisma` + `package.json`，避免遗漏旧文件导致页面 404/崩溃。
-3. schema 变更必须：`npx prisma db push` + `npx prisma generate`。
-4. 部署前备份服务器 `.env` + `ecosystem.config.cjs`；用 `~/.ssh/deploy_key` SSH。
-5. 服务器 npm 用国内镜像，部分包可能解压残缺（如 lucide-react 缺 shared/），可从本地 tar 传输完整包修复。
+**统一用 `bash scripts/deploy.sh` 部署**（停服→构建→启动，杜绝 .next 损坏）。
+
+1. 🔴 **禁止边构建边服务**：`npm run build` 会覆盖 `.next`，若 PM2 还在运行会读到损坏的 manifest → 生产 500。**必须** `pm2 stop i面试` → 构建 → `pm2 start`（见 scripts/deploy.sh）。
+2. **禁止在生产服务器跑完整 `npm install`**（ffmpeg-static 下载会超时）。改用 `npm install --ignore-scripts`。
+3. **全量同步** `src/` + `prisma/schema.prisma` + `package.json`，避免遗漏旧文件导致页面 404/崩溃。
+4. schema 变更必须：`npx prisma db push` + `npx prisma generate`。
+5. 部署前备份服务器 `.env` + `ecosystem.config.cjs`；用 `~/.ssh/deploy_key` SSH。
+6. 服务器 npm 用国内镜像，部分包可能解压残缺（如 lucide-react 缺 shared/），可从本地 tar 传输完整包修复。
