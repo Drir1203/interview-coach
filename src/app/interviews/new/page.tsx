@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge"
 import { ROUND_TYPES } from "@/types"
 import Link from "next/link"
 import { AudioRecorder } from "@/components/AudioRecorder"
+import { OptionChips } from "@/components/OptionChips"
+import { POPULAR_POSITIONS, POPULAR_INDUSTRIES, POPULAR_TAGS } from "@/lib/popular-options"
 
 interface QuestionEntry {
   order: number
@@ -75,6 +77,7 @@ export default function NewInterview() {
           position: position.trim(),
           roundType,
           userNotes: userNotes.trim() || undefined,
+          tags,
           questions: questions.filter((q) => q.questionText.trim()).map((q) => ({
             order: q.order,
             questionText: q.questionText.trim(),
@@ -134,6 +137,7 @@ export default function NewInterview() {
                 value={companyIndustry}
                 onChange={(e) => setCompanyIndustry(e.target.value)}
               />
+              <OptionChips options={POPULAR_INDUSTRIES} selected={[companyIndustry]} onPick={setCompanyIndustry} />
             </div>
           </div>
 
@@ -145,6 +149,7 @@ export default function NewInterview() {
                 value={position}
                 onChange={(e) => setPosition(e.target.value)}
               />
+              <OptionChips options={POPULAR_POSITIONS} selected={[position]} onPick={setPosition} />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">轮次</label>
@@ -166,6 +171,11 @@ export default function NewInterview() {
           {/* 标签 */}
           <div className="space-y-2">
             <label className="text-sm font-medium">标签</label>
+            <OptionChips
+              options={POPULAR_TAGS}
+              selected={tags}
+              onPick={(t) => setTags(tags.includes(t) ? tags.filter((x) => x !== t) : [...tags, t])}
+            />
             <div className="flex flex-wrap gap-2">
               {tags.map((tag) => (
                 <Badge key={tag} variant="secondary" className="cursor-pointer" onClick={() => removeTag(tag)}>

@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { ROUND_TYPES } from "@/types"
 import Link from "next/link"
+import { OptionChips } from "@/components/OptionChips"
+import { POPULAR_POSITIONS, POPULAR_INDUSTRIES, POPULAR_TAGS } from "@/lib/popular-options"
 
 interface QuestionEntry {
   order: number
@@ -29,6 +31,8 @@ export default function EditInterview() {
   const [position, setPosition] = useState("")
   const [roundType, setRoundType] = useState("first")
   const [userNotes, setUserNotes] = useState("")
+  const [tags, setTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState("")
   const [questions, setQuestions] = useState<QuestionEntry[]>([])
 
   useEffect(() => {
@@ -40,6 +44,7 @@ export default function EditInterview() {
         setPosition(data.position)
         setRoundType(data.roundType)
         setUserNotes(data.userNotes || "")
+        setTags((data.tags || []).map((t: any) => t.tag.name))
         setQuestions(
           data.questions.map((q: any) => ({
             order: q.order,
@@ -68,6 +73,18 @@ export default function EditInterview() {
     setQuestions(updated)
   }
 
+  const addTag = () => {
+    const t = tagInput.trim()
+    if (t && !tags.includes(t)) {
+      setTags([...tags, t])
+      setTagInput("")
+    }
+  }
+
+  const removeTag = (tag: string) => {
+    setTags(tags.filter((t) => t !== tag))
+  }
+
   const handleSubmit = async () => {
     if (!companyName.trim() || !position.trim()) return
     setSaving(true)
@@ -82,6 +99,7 @@ export default function EditInterview() {
           position: position.trim(),
           roundType,
           userNotes: userNotes.trim() || undefined,
+          tags,
           questions: questions
             .filter((q) => q.questionText.trim())
             .map((q) => ({
@@ -133,12 +151,14 @@ export default function EditInterview() {
             <div className="space-y-2">
               <label className="text-sm font-medium">行业</label>
               <Input value={companyIndustry} onChange={(e) => setCompanyIndustry(e.target.value)} />
+              <OptionChips options={POPULAR_INDUSTRIES} selected={[companyIndustry]} onPick={setCompanyIndustry} />
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">岗位</label>
               <Input value={position} onChange={(e) => setPosition(e.target.value)} />
+              <OptionChips options={POPULAR_POSITIONS} selected={[position]} onPick={setPosition} />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">轮次</label>
@@ -152,6 +172,39 @@ export default function EditInterview() {
               </Select>
             </div>
           </div>
+          {/* 标签 */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">标签</label>
+            <OptionChips
+              options={POPULAR_TAGS}
+              selected={tags}
+              onPick={(t) => setTags(tags.includes(t) ? tags.filter((x) => x !== t) : [...tags, t])}
+            />
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="cursor-pointer" onClick={() => removeTag(tag)}>
+                  {tag} ×
+                </Badge>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="输入标签后按回车"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    addTag()
+                  }
+                }}
+              />
+              <Button variant="outline" onClick={addTag} type="button">
+                添加
+              </Button>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <label className="text-sm font-medium">备注</label>
             <Textarea value={userNotes} onChange={(e) => setUserNotes(e.target.value)} rows={3} />

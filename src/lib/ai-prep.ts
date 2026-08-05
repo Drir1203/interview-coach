@@ -31,7 +31,8 @@ function buildPrepPrompt(
   position: string,
   roundType: string,
   userContext: string,
-  experiencesText: string
+  experiencesText: string,
+  sourceNote: string
 ): string {
   return `请为目标面试生成准备方案。
 
@@ -42,6 +43,7 @@ function buildPrepPrompt(
 
 ## 【该公司的历史真实面经】（来自用户匿名贡献，可信度高）
 ${experiencesText}
+> 数据来源：${sourceNote}。请在押题清单开头用一行注明"押题依据：${sourceNote}（由面经库统计）"。
 > 请优先把面经中出现的高频题放进押题清单，并结合这些真实题目给出针对性回答要点。
 
 ## 【用户数据】
@@ -84,11 +86,29 @@ export async function generatePrepPlan(
   const userContext = await buildUserContext(userId)
 
   // 读取该公司历史面经（用户匿名贡献），增强押题准确性
-  const experiences = await prisma.interviewExperience.findMany({
-    where: { company },
-    orderBy: { createdAt: "desc" },
-    take: 10,
+  const [experiences, totalExp] = await Promise.all([
+    prisma.interviewExperience.findMany({
+      where: { company },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+    prisma.interviewExperience.count({ where: { company } }),
+  ])
+
+  // 来源量统计（C）：去重贡献者数
+  const distinctUsers = await prisma.interviewExperience.findMany({
+    where: { company, userId: { not: null } },
+    select: { userId: true },
+    distinct: ["userId"],
   })
+  const contributorCount = distinctUsers.length
+  const sourceNote =
+    totalExp > 0
+      ? `${totalExp} 条真实面经，来自 ${contributorCount} 位候选人${
+          totalExp > contributorCount ? "（含早期匿名贡献）" : ""
+        }`
+      : "暂无历史面经"
+
   const experiencesText = experiences.length
     ? experiences
         .map((e) => `- [${e.position}${e.round && e.round !== "other" ? `·${ROUND_LABEL[e.round]}` : ""}] ${e.question}`)
@@ -96,7 +116,7 @@ export async function generatePrepPlan(
     : "暂无该公司的历史面经"
 
   const system = `${PREP_SYSTEM_PROMPT}\n\n## 【用户数据】\n${userContext}`
-  const prompt = buildPrepPrompt(company, position, roundType, userContext, experiencesText)
+  const prompt = buildPrepPrompt(company, position, roundType, userContext, experiencesText, sourceNote)
   const messages: CoachMessage[] = [{ role: "user", content: prompt }]
 
   return chatWithFallback(system, messages, () => mockPrepReply(company, position))
