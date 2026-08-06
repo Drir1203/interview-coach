@@ -34,18 +34,35 @@ import { Logo } from "@/components/Logo"
 import { useAuth } from "@/hooks/useAuth"
 import { useState } from "react"
 
-const navItems = [
-  { href: "/", label: "总览", icon: LayoutDashboard },
-  { href: "/coach", label: "AI 教练", icon: Bot },
-  { href: "/prep", label: "面试前准备", icon: Target },
-  { href: "/interviews", label: "面试记录", icon: Briefcase },
-  { href: "/applications", label: "求职进度", icon: TrendingUp },
-  { href: "/experiences", label: "面经库", icon: BookOpen },
-  { href: "/analysis", label: "深入分析", icon: BarChart3 },
-  { href: "/report", label: "成长报告", icon: LineChart },
-  { href: "/companies", label: "公司看板", icon: Building2 },
-  { href: "/practice", label: "模拟面试", icon: GraduationCap },
-  { href: "/settings", label: "设置", icon: Settings },
+const navGroups = [
+  {
+    label: "总览",
+    items: [{ href: "/", label: "总览", icon: LayoutDashboard }],
+  },
+  {
+    label: "AI 智能",
+    items: [
+      { href: "/coach", label: "教练", icon: Bot },
+      { href: "/prep", label: "押题", icon: Target },
+      { href: "/report", label: "成长报告", icon: LineChart },
+      { href: "/analysis", label: "深入分析", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "面试",
+    items: [
+      { href: "/interviews", label: "记录", icon: Briefcase },
+      { href: "/practice", label: "模拟面试", icon: GraduationCap },
+      { href: "/companies", label: "公司看板", icon: Building2 },
+    ],
+  },
+  {
+    label: "求职",
+    items: [
+      { href: "/applications", label: "求职进度", icon: TrendingUp },
+      { href: "/experiences", label: "面经库", icon: BookOpen },
+    ],
+  },
 ]
 
 export function Sidebar() {
@@ -71,31 +88,55 @@ export function Sidebar() {
       </div>
 
       {/* 导航 */}
-      <nav className="flex-1 px-3">
-        <ul className="space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <Icon className="size-4 shrink-0" />
-                  {item.label}
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
+      <nav className="flex-1 overflow-y-auto px-3 py-2">
+        {navGroups.map((group) => (
+          <div key={group.label}>
+            <p className="px-3 pb-1 pt-4 text-xs font-medium text-muted-foreground">
+              {group.label}
+            </p>
+            <ul className="space-y-1">
+              {group.items.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      <Icon className="size-4 shrink-0" />
+                      {item.label}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        ))}
       </nav>
+
+      {/* 设置 */}
+      <div className="border-t p-2">
+        <Link
+          href="/settings"
+          onClick={() => setOpen(false)}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+            pathname === "/settings"
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}
+        >
+          <Settings className="size-4 shrink-0" />
+          设置
+        </Link>
+      </div>
 
       {/* 暗色模式切换 */}
       <div className="border-t px-3 py-2">
