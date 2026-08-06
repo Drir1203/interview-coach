@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>侧边栏风格样机 — AI 面师 Web 导航</title>
+<style>
+  /* ================================================================
+     外壳（中性，不参与四方向风格竞争）
+  ================================================================ */
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  :root{--dens:5} /* 密度 1-10，JS 实时覆盖 */
+  body{margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f4f4f5;color:#1a1a1a;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 24px 56px}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px 0 14px;border-bottom:1px solid #e2e2e6}
+  .tb-left{min-width:0}
+  .topbar h1{font-size:16px;font-weight:700;margin:0 0 4px;letter-spacing:.01em}
+  .topbar .note{font-size:13px;color:#6a6a70;margin:0;max-width:600px}
+  .keys{font-size:12px;color:#8b8b92;white-space:nowrap}
+  .keys b{font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;font-weight:600;background:#fff;border:1px solid #dcdcdf;border-radius:6px;padding:1px 7px;margin:0 1px}
+
+  .dials{display:grid;grid-template-columns:minmax(170px,260px);gap:12px;padding:16px 0 2px}
+  .dial-hint{grid-column:1/-1;font-size:12px;color:#8b8b92;margin:0 0 2px}
+  .dial{display:grid;gap:6px;font-size:13px}
+  .dial-head{display:flex;justify-content:space-between;gap:10px;font-weight:600}
+  .dial output{font-variant-numeric:tabular-nums;color:#4f46e5;font-weight:700}
+  .dial input{width:100%;accent-color:#4f46e5}
+
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:16px}
+  .dir-card{background:#fff;border:2px solid #e7e7ea;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;cursor:pointer;min-width:0;transition:border-color 150ms cubic-bezier(.23,1,.32,1),box-shadow 150ms cubic-bezier(.23,1,.32,1)}
+  .dir-card:hover{border-color:#d0d0d6}
+  .dir-card.selected{border-color:#4f46e5;box-shadow:0 0 0 3px rgb(79 70 229 / .12)}
+  .card-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .dir-badge{font-weight:800;font-size:13px;background:#1a1a1a;color:#fff;border-radius:7px;padding:2px 9px}
+  .card-title{font-size:16px;font-weight:700;margin:0}
+  .rec-badge{font-size:11px;font-weight:700;color:#1e40af;background:#e0e7ff;border:1px solid #c7d2fe;border-radius:999px;padding:2px 10px;margin-left:auto}
+  .card-tag{font-size:12.5px;color:#6b6b71;margin:0;line-height:1.55}
+  .axis{display:flex;flex-wrap:wrap;gap:5px;font-size:10.5px}
+  .axis span{background:#f4f4f5;border:1px solid #e7e7ea;color:#52525b;border-radius:999px;padding:2px 9px;font-weight:600}
+
+  .mock-wrap{display:flex;justify-content:center;align-items:center;padding:22px 14px;background:#f9f9fb;border:1px dashed #e2e2e8;border-radius:12px;position:relative;flex:1}
+  .mock-cap{position:absolute;top:7px;left:10px;font-size:10px;letter-spacing:.06em;color:#b3b3ba;font-weight:600}
+  .rec-reason{font-size:12px;color:#4338ca;margin:0;line-height:1.6;background:#eef2ff;border:1px solid #dfe6ff;border-radius:9px;padding:8px 11px}
+  .pick-btn{display:flex;align-items:center;justify-content:center;min-height:42px;width:100%;border:1px solid #4f46e5;border-radius:9px;background:#4f46e5;color:#fff;font:700 13.5px/1.2 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;cursor:pointer;transition:background 140ms cubic-bezier(.23,1,.32,1),transform 140ms cubic-bezier(.23,1,.32,1)}
+  .pick-btn:hover{background:#4338ca}
+  .pick-btn:active{transform:scale(.985)}
+  .pick-btn:focus-visible{outline:3px solid rgb(94 106 210 / .35);outline-offset:2px}
+
+  /* 确认弹层 */
+  .confirm{position:fixed;inset:0;display:none;place-items:center;background:rgb(24 24 27 / .38);z-index:40;padding:20px}
+  .confirm.open{display:grid}
+  .dialog{width:min(520px,calc(100vw - 32px));background:#fff;border-radius:14px;padding:20px;box-shadow:0 28px 80px rgb(15 15 20 / .3);animation:pop 180ms cubic-bezier(.23,1,.32,1)}
+  @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+  .dialog h2{margin:0 0 6px;font-size:18px;font-weight:700;line-height:1.3}
+  .dialog p.meta{margin:0 0 12px;color:#5d5d64;font-size:13.5px;line-height:1.55}
+  .dialog p.hint{margin:0 0 2px;color:#8b8b92;font-size:12px;line-height:1.55}
+  textarea{box-sizing:border-box;width:100%;min-height:70px;resize:vertical;border:1px solid #dcdcdf;border-radius:10px;padding:11px 12px;color:#1a1a1a;font:500 14px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;outline:none}
+  textarea:focus{border-color:#4f46e5;box-shadow:0 0 0 3px rgb(79 70 229 / .12)}
+  .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+  .action{border:1px solid #dcdcdf;border-radius:9px;background:#fff;color:#1a1a1a;min-height:38px;padding:0 16px;font:700 13px/1 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;cursor:pointer}
+  .action.primary{border-color:#4f46e5;background:#4f46e5;color:#fff}
+  .action:focus-visible{outline:3px solid rgb(94 106 210 / .35);outline-offset:2px}
+
+  .pickbar{position:fixed;left:50%;bottom:18px;z-index:41;max-width:min(640px,calc(100vw - 28px));transform:translate(-50%,20px);opacity:0;background:#1a1a1a;color:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 18px 48px rgb(15 15 20 / .28);font:650 13.5px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;pointer-events:none;transition:transform 180ms cubic-bezier(.23,1,.32,1),opacity 180ms cubic-bezier(.23,1,.32,1)}
+  .pickbar.show{transform:translate(-50%,0);opacity:1}
+
+  @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  @media (max-width:640px){
+    .wrap{padding:0 14px 44px}
+    .topbar{flex-direction:column;align-items:flex-start;gap:8px}
+    .mock-wrap{padding:20px 6px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{transition:none!important;animation:none!important}
+  }
+
+  /* ================================================================
+     通用侧边栏基础（仅布局骨架，视觉由各方向决定）
+  ================================================================ */
+  .sb{position:relative;display:flex;flex-direction:column;flex-shrink:0;box-sizing:border-box}
+  .sb a,.sb .it{text-decoration:none;display:flex;align-items:center;gap:8px;cursor:default;user-select:none}
+  .sb nav{flex:1;display:flex;flex-direction:column}
+  .sb .it.on{cursor:default}
+  .sb .ft-meta{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#71717a}
+  .sb .ft-meta .ava{margin-left:auto}
+
+  /* ================================================================
+     方向 A · 极简 · 细线分隔（Linear 感）— 推荐
+     结构：无圆角、纯文字行、细 border 分隔分组、大留白
+     色彩：白底近黑 · 激活=浅灰底 bg-zinc-100 + 常规字重
+     选中态：仅背景变化，无指示条无加粗
+  ================================================================ */
+  .sb-a{width:246px;background:#fff;border:1px solid #e4e4e7;padding:14px 0 10px}
+  .sb-a .hd{display:flex;flex-direction:column;gap:12px;padding:0 16px 14px;border-bottom:1px solid #f0f0f2}
+  .sb-a .logo{display:flex;align-items:center;gap:7px;font-weight:650;font-size:13.5px;color:#18181b;letter-spacing:.01em}
+  .sb-a .logo i{width:15px;height:15px;border-radius:3px;background:#18181b;display:inline-block}
+  .sb-a .record{background:#fff;border:1px solid #d4d4d8;border-radius:0;color:#27272a;font:600 11.5px/1 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:6px 11px;align-self:flex-start;cursor:pointer}
+  .sb-a .record:hover{background:#fafafa}
+  .sb-a nav{padding:6px 0 4px}
+  .sb-a .it{width:100%;box-sizing:border-box;color:#52525b;font-size:13px;font-weight:400;padding:calc(9px - var(--dens)*0.45px) 16px}
+  .sb-a .it:hover{background:#fafafa}
+  .sb-a .it.on{background:#f4f4f5;color:#18181b;font-weight:400}
+  .sb-a .grp{margin-top:calc(12px - var(--dens)*0.5px);padding:calc(7px - var(--dens)*0.4px) 16px 1px;border-top:1px solid #f0f0f2;font-size:11px;letter-spacing:.09em;color:#a1a1aa;font-weight:600}
+  .sb-a .ft{border-top:1px solid #f0f0f2;padding-top:6px}
+  .sb-a .ft .it{padding-left:16px;padding-right:16px}
+  .sb-a .ft-meta{padding:4px 16px 0}
+  .sb-a .moon{width:26px;height:15px;border-radius:8px;background:#e4e4e7;position:relative;flex:none}
+  .sb-a .moon i{position:absolute;left:2px;top:2px;width:11px;height:11px;border-radius:50%;background:#fff}
+  .sb-a .ava{width:22px;height:22px;border-radius:50%;background:#e4e4e7;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:#52525b;font-weight:600}
+
+  /* ================================================================
+     方向 B · 胶囊浅底（Notion 感）
+     结构：圆角胶囊行 + 左侧 3px 靛蓝指示条，圆角容器
+     色彩：激活=靛蓝浅底 bg-indigo-50 + 靛蓝文字
+     选中态：浅底 + 靛蓝文字 + 左侧指示条
+  ================================================================ */
+  .sb-b{width:246px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 1px 2px rgb(0 0 0/.04),0 8px 24px rgb(0 0 0/.05);padding:14px 8px 10px}
+  .sb-b .hd{display:flex;flex-direction:column;gap:11px;padding:0 8px 12px;border-bottom:1px solid #f1f3f6;margin-bottom:2px}
+  .sb-b .logo{display:flex;align-items:center;gap:7px;font-weight:650;font-size:13.5px;color:#191919;padding:0 4px}
+  .sb-b .logo i{width:15px;height:15px;border-radius:5px;background:#4f46e5;display:inline-block}
+  .sb-b .record{background:#4f46e5;border:0;border-radius:8px;color:#fff;font:600 12px/1 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:7px 12px;align-self:flex-start;cursor:pointer}
+  .sb-b .record:hover{background:#4338ca}
+  .sb-b nav{padding:4px 0}
+  .sb-b .it{position:relative;width:100%;box-sizing:border-box;color:#37352f;font-size:13px;padding:calc(8px - var(--dens)*0.35px) 10px;border-radius:8px}
+  .sb-b .it:hover{background:#f5f5f4}
+  .sb-b .it.on{background:#eef2ff;color:#4f46e5;font-weight:500;padding-left:16px}
+  .sb-b .it.on::before{content:"";position:absolute;left:5px;top:50%;transform:translateY(-50%);width:3px;height:13px;border-radius:2px;background:#4f46e5}
+  .sb-b .grp{margin:calc(12px - var(--dens)*0.4px) 8px 2px;padding:0 8px;font-size:11px;color:#9ca3af;font-weight:500}
+  .sb-b .ft{border-top:1px solid #f1f3f6;padding-top:6px;margin-top:2px}
+  .sb-b .ft .it{width:100%;box-sizing:border-box}
+  .sb-b .ft-meta{padding:5px 10px 0}
+  .sb-b .moon{width:26px;height:15px;border-radius:8px;background:#e5e7eb;position:relative;flex:none}
+  .sb-b .moon i{position:absolute;right:2px;top:2px;width:11px;height:11px;border-radius:50%;background:#fff}
+  .sb-b .ava{width:22px;height:22px;border-radius:50%;background:#eef2ff;color:#4f46e5;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
+
+  /* ================================================================
+     方向 C · 实底高亮（Vercel / Stripe 感）
+     结构：窄栏 w-56、图标+文字紧凑行、锐利直角
+     色彩：激活=靛蓝实底白字 bg-indigo-600
+     选中态：实底高对比，激活项图标变白
+  ================================================================ */
+  .sb-c{width:224px;background:#fff;border:1px solid #e2e2e9;box-shadow:0 1px 3px rgb(0 0 0/.05);padding:12px 6px 8px}
+  .sb-c .hd{display:flex;flex-direction:column;gap:9px;padding:0 8px 10px;border-bottom:1px solid #eef0f4;margin-bottom:2px}
+  .sb-c .logo{display:flex;align-items:center;gap:7px;font-weight:700;font-size:12.5px;color:#111;padding:0 4px}
+  .sb-c .logo i{width:13px;height:13px;border-radius:3px;background:#4f46e5;display:inline-block}
+  .sb-c .record{background:#4f46e5;border:0;border-radius:5px;color:#fff;font:600 11.5px/1 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:6px 8px;width:100%;cursor:pointer}
+  .sb-c .record:hover{background:#4338ca}
+  .sb-c nav{padding:3px 0}
+  .sb-c .it{width:100%;box-sizing:border-box;color:#4b5563;font-size:12.5px;font-weight:500;padding:calc(7px - var(--dens)*0.35px) 8px;border-radius:5px}
+  .sb-c .ci{width:13px;height:13px;flex:none;color:#9ca3af}
+  .sb-c .it:hover{background:#f3f4f6}
+  .sb-c .it.on{background:#4f46e5;color:#fff;font-weight:600}
+  .sb-c .it.on .ci{color:#fff}
+  .sb-c .grp{margin:calc(8px - var(--dens)*0.3px) 8px 2px;padding:0 8px;font-size:9.5px;letter-spacing:.08em;color:#9ca3af;font-weight:600}
+  .sb-c .ft{border-top:1px solid #eef0f4;padding-top:6px;margin-top:2px}
+  .sb-c .ft .it{width:100%;box-sizing:border-box}
+  .sb-c .ft-meta{padding:5px 8px 0;display:flex;align-items:center;gap:8px}
+  .sb-c .ft-meta .moon{display:inline-flex;align-items:center;gap:6px;color:#6b7280;font-size:11.5px}
+  .sb-c .ft-meta .moon .ci{width:12px;height:12px;color:#9ca3af}
+  .sb-c .ava{width:20px;height:20px;border-radius:50%;background:#4f46e5;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
+
+  /* ================================================================
+     方向 D · 图标主导（Figma / 应用启动器感）
+     结构：28px 圆角方块图标 + 13px 文字、分组松、留白大、大圆角主按钮
+     色彩：多色浅底方块（靛/紫/天蓝/绿/橙…）
+     选中态：方块底加深 + 文字加粗
+  ================================================================ */
+  .sb-d{width:260px;background:#fff;border:1px solid #f0f0f4;border-radius:16px;box-shadow:0 2px 6px rgb(0 0 0/.04),0 12px 32px rgb(0 0 0/.06);padding:18px 12px 14px}
+  .sb-d .hd{display:flex;flex-direction:column;gap:14px;padding:0 8px 16px;border-bottom:1px solid #f2f2f6;margin-bottom:6px}
+  .sb-d .logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:14px;color:#111;padding:0 2px}
+  .sb-d .logo i{width:24px;height:24px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:inline-block}
+  .sb-d .record{background:#4f46e5;border:0;border-radius:12px;color:#fff;font:600 13px/1 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:10px 0;width:100%;cursor:pointer}
+  .sb-d .record:hover{background:#4338ca}
+  .sb-d nav{padding:4px 0}
+  .sb-d .it{width:100%;box-sizing:border-box;color:#3f3f46;font-size:13px;padding:calc(11px - var(--dens)*0.7px) 8px;border-radius:10px}
+  .sb-d .it:hover{background:#fafafa}
+  .sb-d .it.on{background:#f6f6f8;color:#18181b;font-weight:600}
+  .sb-d .it .ic{width:28px;height:28px;border-radius:8px;flex:none;display:inline-flex;align-items:center;justify-content:center;background:var(--tint);color:var(--ink)}
+  .sb-d .it .ic svg{width:15px;height:15px}
+  .sb-d .it.on .ic{background:var(--deep)}
+  .sb-d .grp{margin:calc(16px - var(--dens)*0.7px) 8px 6px;padding:0 8px;font-size:10.5px;letter-spacing:.06em;color:#a1a1aa;font-weight:600}
+  .sb-d .ft{border-top:1px solid #f2f2f6;padding-top:8px;margin-top:6px}
+  .sb-d .ft .it{width:100%;box-sizing:border-box}
+  .sb-d .ft-meta{padding:6px 8px 0;display:flex;align-items:center;gap:8px}
+  .sb-d .ft-meta .fm-moon{display:inline-flex;align-items:center;gap:8px;color:#52525b;font-size:12px;font-weight:500}
+  .sb-d .ic.sm{width:22px;height:22px;border-radius:7px}
+  .sb-d .ava{width:24px;height:24px;border-radius:50%;background:#e0e7ff;color:#4338ca;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+  /* 各导航项图标方块配色（浅底 → 激活加深） */
+  .sb-d .ix-home {--tint:#e0e7ff;--deep:#c7d2fe;--ink:#4f46e5}
+  .sb-d .ix-chat {--tint:#ede9fe;--deep:#ddd6fe;--ink:#7c3aed}
+  .sb-d .ix-bolt {--tint:#e0f2fe;--deep:#bae6fd;--ink:#0284c7}
+  .sb-d .ix-chart{--tint:#dcfce7;--deep:#bbf7d0;--ink:#16a34a}
+  .sb-d .ix-search{--tint:#ffedd5;--deep:#fed7aa;--ink:#ea580c}
+  .sb-d .ix-list {--tint:#e0e7ff;--deep:#c7d2fe;--ink:#4f46e5}
+  .sb-d .ix-video{--tint:#fae8ff;--deep:#f5d0fe;--ink:#c026d3}
+  .sb-d .ix-board{--tint:#cffafe;--deep:#a5f3fc;--ink:#0891b2}
+  .sb-d .ix-brief{--tint:#d1fae5;--deep:#a7f3d0;--ink:#059669}
+  .sb-d .ix-book {--tint:#fef3c7;--deep:#fde68a;--ink:#d97706}
+  .sb-d .ix-gear {--tint:#f4f4f5;--deep:#e4e4e7;--ink:#52525b}
+  .sb-d .ix-moon {--tint:#f4f4f5;--deep:#e4e4e7;--ink:#52525b}
+</style>
+</head>
+<body>
+
+<!-- 内联图标精灵（无外部依赖） -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 11.5 12 5l8 6.5M6 9.8V20h5v-4.5h2V20h5V9.8"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M5 5h14v11H9.5L5 19V5z"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path fill="currentColor" d="M13 3 5 13h6l-1 8 8-10h-6l1-8z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M5 20v-8M12 20V6M19 20v-5M3 20h18"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="1.8" cx="11" cy="11" r="6"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="m20.5 20.5-4.3-4.3"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7L8 5z"/></symbol>
+  <symbol id="i-board" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></symbol>
+  <symbol id="i-brief" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M4 8h16l-1 12H5L4 8z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2V6zM20 20H6a2 2 0 0 1-2-2"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="1.8" cx="12" cy="12" r="3.2"/><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" d="M12 3.2v2M12 18.8v2M3.2 12h2M18.8 12h2M5.9 5.9l1.4 1.4M16.7 16.7l1.4 1.4M18.1 5.9l-1.4 1.4M7.3 16.7l-1.4 1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M20 13A8 8 0 1 1 11 4a6.5 6.5 0 0 0 9 9z"/></symbol>
+</svg>
+
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="tb-left">
+      <h1>AI 面师 · Web 侧边栏导航</h1>
+      <p class="note">这是侧边栏风格样机，用于选择导航的视觉气质，不是最终页面；选定后才进入正式实现。</p>
+    </div>
+    <div class="keys">键盘 <b>1</b><b>2</b><b>3</b><b>4</b> 选择 · 确认后写入 selection.json</div>
+  </header>
+
+  <div class="dials">
+    <p class="dial-hint">拖动「信息密度」可实时调整所有侧边栏的疏密（仅影响间距，不改变方向气质）；点选方向会自动套用该方向的默认密度。</p>
+    <label class="dial"><span class="dial-head"><span>信息密度</span><output id="densOut">5</output></span><input id="densInput" type="range" min="1" max="10" value="5"></label>
+  </div>
+
+  <main class="grid">
+
+    <!-- ==================== 方向 A · 推荐 ==================== -->
+    <article class="dir-card" data-dirkey="A" data-name="极简 · 细线分隔" data-tag="Linear 感 · 白底近黑 · 无圆角细线 · 激活=浅灰底">
+      <div class="card-head">
+        <span class="dir-badge">A</span><h3 class="card-title">极简 · 细线分隔</h3><span class="rec-badge">推荐</span>
+      </div>
+      <p class="card-tag">Linear 感 · 白底近黑 · 无圆角细线分隔 · 激活=浅灰底 + 常规字重 · 大留白</p>
+      <div class="axis"><span>结构：纯文字行+细线</span><span>色彩：单色克制</span><span>选中：仅浅灰底</span></div>
+
+      <div class="mock-wrap">
+        <span class="mock-cap">迷你侧边栏 · 展开态</span>
+        <div class="sb sb-a">
+          <div class="hd">
+            <div class="logo"><i></i>AI 面师</div>
+            <button class="record" type="button">＋ 记录新面试</button>
+          </div>
+          <nav>
+            <a class="it on">总览</a>
+            <div class="grp">AI 智能</div>
+            <a class="it">AI 教练</a>
+            <a class="it">面试押题</a>
+            <a class="it">成长报告</a>
+            <a class="it">深入分析</a>
+            <div class="grp">面试</div>
+            <a class="it">面试记录</a>
+            <a class="it">模拟面试</a>
+            <a class="it">公司看板</a>
+            <div class="grp">求职</div>
+            <a class="it">求职进度</a>
+            <a class="it">面经库</a>
+          </nav>
+          <div class="ft">
+            <a class="it">设置</a>
+            <div class="ft-meta"><span class="moon"><i></i></span><span>暗色</span><span class="ava">李</span></div>
+          </div>
+        </div>
+      </div>
+
+      <p class="rec-reason"><b>推荐理由：</b>克制、专注内容，贴近多数工具类产品的阅读习惯；无圆角 + 细线分隔实现成本最低、最不易过时，后续想强调品牌可直接叠加靛蓝 accent，扩展性好。</p>
+      <button class="pick-btn" type="button">选择 A · 极简 · 细线分隔</button>
+    </article>
+
+    <!-- ==================== 方向 B ==================== -->
+    <article class="dir-card" data-dirkey="B" data-name="胶囊浅底" data-tag="Notion 感 · 圆角胶囊 · 激活=靛蓝浅底+指示条">
+      <div class="card-head">
+        <span class="dir-badge">B</span><h3 class="card-title">胶囊浅底</h3>
+      </div>
+      <p class="card-tag">Notion 感 · 圆角胶囊项 + 左侧 3px 靛蓝指示条 · 分组标题小号灰字 · 友好结构化</p>
+      <div class="axis"><span>结构：圆角胶囊+指示条</span><span>色彩：靛蓝点缀</span><span>选中：浅底+靛蓝字+指示条</span></div>
+
+      <div class="mock-wrap">
+        <span class="mock-cap">迷你侧边栏 · 展开态</span>
+        <div class="sb sb-b">
+          <div class="hd">
+            <div class="logo"><i></i>AI 面师</div>
+            <button class="record" type="button">＋ 记录新面试</button>
+          </div>
+          <nav>
+            <a class="it on">总览</a>
+            <div class="grp">AI 智能</div>
+            <a class="it">AI 教练</a>
+            <a class="it">面试押题</a>
+            <a class="it">成长报告</a>
+            <a class="it">深入分析</a>
+            <div class="grp">面试</div>
+            <a class="it">面试记录</a>
+            <a class="it">模拟面试</a>
+            <a class="it">公司看板</a>
+            <div class="grp">求职</div>
+            <a class="it">求职进度</a>
+            <a class="it">面经库</a>
+          </nav>
+          <div class="ft">
+            <a class="it">设置</a>
+            <div class="ft-meta"><span class="moon"><i></i></span><span>暗色</span><span class="ava">李</span></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="pick-btn" type="button">选择 B · 胶囊浅底</button>
+    </article>
+
+    <!-- ==================== 方向 C ==================== -->
+    <article class="dir-card" data-dirkey="C" data-name="实底高亮" data-tag="Vercel/Stripe 感 · 窄栏紧凑 · 激活=靛蓝实底白字">
+      <div class="card-head">
+        <span class="dir-badge">C</span><h3 class="card-title">实底高亮</h3>
+      </div>
+      <p class="card-tag">Vercel / Stripe 感 · 更窄侧栏（w-56）· 图标+文字紧凑 · 激活=靛蓝实底白字 · 果断高对比</p>
+      <div class="axis"><span>结构：窄栏+紧凑图标行</span><span>色彩：高对比实底</span><span>选中：实底白字</span></div>
+
+      <div class="mock-wrap">
+        <span class="mock-cap">迷你侧边栏 · 展开态</span>
+        <div class="sb sb-c">
+          <div class="hd">
+            <div class="logo"><i></i>AI 面师</div>
+            <button class="record" type="button">＋ 记录新面试</button>
+          </div>
+          <nav>
+            <a class="it on"><svg class="ci"><use href="#i-home"/></svg><span>总览</span></a>
+            <div class="grp">AI 智能</div>
+            <a class="it"><svg class="ci"><use href="#i-chat"/></svg><span>AI 教练</span></a>
+            <a class="it"><svg class="ci"><use href="#i-bolt"/></svg><span>面试押题</span></a>
+            <a class="it"><svg class="ci"><use href="#i-chart"/></svg><span>成长报告</span></a>
+            <a class="it"><svg class="ci"><use href="#i-search"/></svg><span>深入分析</span></a>
+            <div class="grp">面试</div>
+            <a class="it"><svg class="ci"><use href="#i-list"/></svg><span>面试记录</span></a>
+            <a class="it"><svg class="ci"><use href="#i-video"/></svg><span>模拟面试</span></a>
+            <a class="it"><svg class="ci"><use href="#i-board"/></svg><span>公司看板</span></a>
+            <div class="grp">求职</div>
+            <a class="it"><svg class="ci"><use href="#i-brief"/></svg><span>求职进度</span></a>
+            <a class="it"><svg class="ci"><use href="#i-book"/></svg><span>面经库</span></a>
+          </nav>
+          <div class="ft">
+            <a class="it"><svg class="ci"><use href="#i-gear"/></svg><span>设置</span></a>
+            <div class="ft-meta"><span class="moon"><svg class="ci"><use href="#i-moon"/></svg>暗色</span><span class="ava">李</span></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="pick-btn" type="button">选择 C · 实底高亮</button>
+    </article>
+
+    <!-- ==================== 方向 D ==================== -->
+    <article class="dir-card" data-dirkey="D" data-name="图标主导" data-tag="Figma/启动器感 · 28px 彩色方块图标 · 留白大">
+      <div class="card-head">
+        <span class="dir-badge">D</span><h3 class="card-title">图标主导</h3>
+      </div>
+      <p class="card-tag">Figma / 应用启动器感 · 每个导航项前 28px 彩色方块图标 · 分组松、留白大 · 活泼产品感</p>
+      <div class="axis"><span>结构：方块图标主导</span><span>色彩：多色浅底</span><span>选中：方块加深+加粗</span></div>
+
+      <div class="mock-wrap">
+        <span class="mock-cap">迷你侧边栏 · 展开态</span>
+        <div class="sb sb-d">
+          <div class="hd">
+            <div class="logo"><i></i>AI 面师</div>
+            <button class="record" type="button">＋ 记录新面试</button>
+          </div>
+          <nav>
+            <a class="it on"><i class="ic ix-home"><svg><use href="#i-home"/></svg></i><span>总览</span></a>
+            <div class="grp">AI 智能</div>
+            <a class="it"><i class="ic ix-chat"><svg><use href="#i-chat"/></svg></i><span>AI 教练</span></a>
+            <a class="it"><i class="ic ix-bolt"><svg><use href="#i-bolt"/></svg></i><span>面试押题</span></a>
+            <a class="it"><i class="ic ix-chart"><svg><use href="#i-chart"/></svg></i><span>成长报告</span></a>
+            <a class="it"><i class="ic ix-search"><svg><use href="#i-search"/></svg></i><span>深入分析</span></a>
+            <div class="grp">面试</div>
+            <a class="it"><i class="ic ix-list"><svg><use href="#i-list"/></svg></i><span>面试记录</span></a>
+            <a class="it"><i class="ic ix-video"><svg><use href="#i-video"/></svg></i><span>模拟面试</span></a>
+            <a class="it"><i class="ic ix-board"><svg><use href="#i-board"/></svg></i><span>公司看板</span></a>
+            <div class="grp">求职</div>
+            <a class="it"><i class="ic ix-brief"><svg><use href="#i-brief"/></svg></i><span>求职进度</span></a>
+            <a class="it"><i class="ic ix-book"><svg><use href="#i-book"/></svg></i><span>面经库</span></a>
+          </nav>
+          <div class="ft">
+            <a class="it"><i class="ic ix-gear"><svg><use href="#i-gear"/></svg></i><span>设置</span></a>
+            <div class="ft-meta"><span class="fm-moon"><i class="ic ix-moon sm"><svg><use href="#i-moon"/></svg></i>暗色</span><span class="ava">李</span></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="pick-btn" type="button">选择 D · 图标主导</button>
+    </article>
+
+  </main>
+</div>
+
+<!-- 确认弹层 -->
+<div class="confirm" id="confirm" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="dialog">
+    <h2 id="confirmTitle">确认侧边栏方向</h2>
+    <p class="meta" id="confirmMeta"></p>
+    <p class="hint">确认后写入同目录 <b>selection.json</b>：浏览器会弹出文件夹选择，请选 <b>design-previews/2026-08-06-sidebar</b>；无法写文件时会自动复制 JSON 到剪贴板。</p>
+    <textarea id="adjustments" placeholder="可选：写下调整建议，比如更稳一点、要 B 的胶囊 + C 的实底选中态"></textarea>
+    <div class="actions">
+      <button class="action" type="button" id="cancelPick">取消</button>
+      <button class="action primary" type="button" id="confirmPick">确认并写入 selection.json</button>
+    </div>
+  </div>
+</div>
+
+<div class="pickbar" id="pickbar" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+  var DIRS = { A: {density: 5}, B: {density: 5}, C: {density: 8}, D: {density: 3} };
+
+  function $(sel) { return document.querySelector(sel); }
+  function $all(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+
+  /* ---- 密度滑块：实时改变所有侧边栏间距（--dens 越大越紧凑） ---- */
+  var densInput = $('#densInput');
+  var densOut = $('#densOut');
+  function applyDensity(v) {
+    document.documentElement.style.setProperty('--dens', String(v));
+    densOut.textContent = String(v);
+  }
+  densInput.addEventListener('input', function () { applyDensity(densInput.value); });
+
+  /* ---- 选择流：点卡 / 键盘 1-4 → 确认弹层 → 写入 selection.json ---- */
+  var pending = null;
+  function openConfirm(key) {
+    var card = $('[data-dirkey="' + key + '"]');
+    if (!card) return;
+    $all('.dir-card').forEach(function (c) { c.classList.remove('selected'); });
+    card.classList.add('selected');
+    applyDensity(DIRS[key].density);
+    densInput.value = DIRS[key].density;
+    var name = card.getAttribute('data-name');
+    pending = { id: key, name: name, label: '选 ' + key + '：' + name, notes: card.getAttribute('data-tag') };
+    $('#confirmMeta').textContent = pending.label + ' · 密度 ' + DIRS[key].density + '（可拖动调整）';
+    $('#adjustments').value = '';
+    $('#confirm').classList.add('open');
+    $('#adjustments').focus();
+  }
+  function closeConfirm() { $('#confirm').classList.remove('open'); }
+
+  function showToast(msg) {
+    var bar = $('#pickbar');
+    bar.textContent = msg;
+    bar.classList.add('show');
+    setTimeout(function () { bar.classList.remove('show'); }, 5200);
+  }
+
+  async function confirmSelection() {
+    if (!pending) return;
+    var label = pending.label;
+    var payload = {
+      id: pending.id,
+      label: label,
+      name: pending.name,
+      notes: pending.notes,
+      density: Number(densInput.value),
+      adjustments: $('#adjustments').value.trim(),
+      source: 'sidebar-preview',
+      receivedAt: new Date().toISOString()
+    };
+    var text = JSON.stringify(payload, null, 2);
+    var copyOk = false;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try { await navigator.clipboard.writeText(text); copyOk = true; } catch (e) {}
+    }
+
+    /* 1) http 服务场景：兼容 qiaomu 试衣间 /api/select 桥 */
+    if (location.protocol !== 'file:') {
+      try {
+        var res = await fetch('/api/select', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: text
+        });
+        if (res.ok) {
+          var j = await res.json();
+          if (j && j.ok) {
+            closeConfirm(); pending = null;
+            showToast('已选择 ' + label + ' · 已回传');
+            return;
+          }
+        }
+      } catch (e) {}
+    }
+
+    /* 2) file:// 场景：File System Access API 写入同目录 selection.json */
+    if (window.showDirectoryPicker) {
+      try {
+        var dir = await window.showDirectoryPicker({ mode: 'readwrite', startIn: 'documents' });
+        var fh = await dir.getFileHandle('selection.json', { create: true });
+        var w = await fh.createWritable();
+        await w.write(text);
+        await w.close();
+        closeConfirm(); pending = null;
+        showToast('已选择 ' + label + ' · 已写入 ' + dir.name + '/selection.json');
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') {
+          closeConfirm(); pending = null;
+          showToast('已取消写文件 · 未保存' + (copyOk ? '（JSON 已复制到剪贴板）' : ''));
+          return;
+        }
+      }
+    }
+
+    /* 3) 回退：剪贴板 */
+    closeConfirm(); pending = null;
+    showToast('已选择 ' + label + (copyOk ? ' · 无法写文件，JSON 已复制，请贴回对话' : ' · 请把选择结果告知开发者'));
+  }
+
+  /* 卡片与按钮点击 */
+  $all('.dir-card').forEach(function (card) {
+    card.addEventListener('click', function (e) {
+      if (e.target.closest('.pick-btn')) return;
+      openConfirm(card.getAttribute('data-dirkey'));
+    });
+    var btn = card.querySelector('.pick-btn');
+    if (btn) btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      openConfirm(card.getAttribute('data-dirkey'));
+    });
+  });
+
+  /* 键盘 1-4 与 Esc */
+  document.addEventListener('keydown', function (e) {
+    if (e.target.closest('input,textarea,select')) return;
+    if ($('#confirm').classList.contains('open')) {
+      if (e.key === 'Escape') closeConfirm();
+      return;
+    }
+    var i = ['1', '2', '3', '4'].indexOf(e.key);
+    if (i > -1) openConfirm('ABCD'.charAt(i));
+  });
+
+  $('#cancelPick').addEventListener('click', closeConfirm);
+  $('#confirmPick').addEventListener('click', confirmSelection);
+  $('#confirm').addEventListener('click', function (e) { if (e.target === this) closeConfirm(); });
+
+  applyDensity(5);
+})();
+</script>
+</body>
+</html>
