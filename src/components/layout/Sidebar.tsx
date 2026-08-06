@@ -157,26 +157,26 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* 底部：设置 + 深色 + 用户，与上方 D 风格统一（图标方块行，无硬切分隔线） */}
+      {/* 底部：设置 + 深色 + 用户，全部用 D 风格 lucide 图标方块（与上方一致） */}
       <div className="border-t p-2.5">
-        <NavItem href="/settings" label="设置" icon={Settings} tint={{ bg: "bg-gray-100", text: "text-gray-600", bgActive: "bg-gray-200" }} pathname={pathname} onClick={() => setOpen(false)} />
+        <NavItem href="/settings" label="设置" icon={Settings} tint={{ bg: "bg-slate-100", text: "text-slate-600", bgActive: "bg-slate-200" }} pathname={pathname} onClick={() => setOpen(false)} />
 
-        {/* 深色模式 */}
-        <div className="mt-1 flex items-center gap-2.5 rounded-lg px-2 py-1.5">
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+        {/* 深色模式：Moon 图标方块 + 右侧 toggle */}
+        <div className="mt-1 flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-muted transition-colors">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
             <Moon className="size-4" />
           </span>
           <span className="flex-1 text-[13px] text-muted-foreground">深色模式</span>
           <ThemeToggle />
         </div>
 
-        {/* 用户 */}
+        {/* 用户：User 图标方块 + 姓名（保持 lucide 图标风格） */}
         <div className="mt-1">
           {session ? (
             <DropdownMenu>
               <DropdownMenuTrigger className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] hover:bg-muted transition-colors">
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-[13px] font-semibold text-indigo-600">
-                  {(session?.name || session?.email || "U")[0].toUpperCase()}
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                  <User className="size-4" />
                 </span>
                 <span className="truncate text-muted-foreground">{session?.name || session?.email?.split("@")[0] || "用户"}</span>
               </DropdownMenuTrigger>
