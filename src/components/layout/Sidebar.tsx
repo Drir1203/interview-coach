@@ -15,6 +15,7 @@ import {
   BarChart3,
   Menu,
   X,
+  Moon,
   Bot,
   Target,
   LineChart,
@@ -156,21 +157,28 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* 底部：设置 + 暗色 + 用户，合并一个分区 */}
+      {/* 底部：设置 + 深色 + 用户，与上方 D 风格统一（图标方块行，无硬切分隔线） */}
       <div className="border-t p-2.5">
         <NavItem href="/settings" label="设置" icon={Settings} tint={{ bg: "bg-gray-100", text: "text-gray-600", bgActive: "bg-gray-200" }} pathname={pathname} onClick={() => setOpen(false)} />
-        <div className="mt-2 flex items-center justify-between border-t pt-2">
-          <div className="text-xs text-muted-foreground">深色模式</div>
+
+        {/* 深色模式 */}
+        <div className="mt-1 flex items-center gap-2.5 rounded-lg px-2 py-1.5">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+            <Moon className="size-4" />
+          </span>
+          <span className="flex-1 text-[13px] text-muted-foreground">深色模式</span>
           <ThemeToggle />
         </div>
-        <div className="mt-2 border-t pt-2">
+
+        {/* 用户 */}
+        <div className="mt-1">
           {session ? (
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] hover:bg-muted transition-colors">
-                <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-medium text-primary">
+              <DropdownMenuTrigger className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] hover:bg-muted transition-colors">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-[13px] font-semibold text-indigo-600">
                   {(session?.name || session?.email || "U")[0].toUpperCase()}
-                </div>
-                <span className="truncate">{session?.name || session?.email?.split("@")[0] || "用户"}</span>
+                </span>
+                <span className="truncate text-muted-foreground">{session?.name || session?.email?.split("@")[0] || "用户"}</span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-52">
                 <DropdownMenuItem className="text-xs text-muted-foreground" disabled>
@@ -184,7 +192,7 @@ export function Sidebar() {
             </DropdownMenu>
           ) : (
             <Link href="/auth/login" onClick={() => setOpen(false)}>
-              <Button variant="outline" className="w-full gap-2" size="sm">
+              <Button variant="outline" className="w-full gap-2 rounded-xl" size="sm">
                 <User className="size-4" />
                 登录
               </Button>
