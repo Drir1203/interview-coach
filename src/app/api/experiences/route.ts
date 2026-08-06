@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth()
-    const userId = session?.user?.id || "default"
+    const userId = session?.user?.id || "__anon__"
     const body = await req.json()
 
     // 批量提交（来自 AI 草稿确认）

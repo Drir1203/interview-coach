@@ -4,7 +4,7 @@ import prisma from "@/lib/db"
 import { Prisma } from "@/generated/prisma"
 
 function getUserId(session: { user?: { id?: string } | null } | null): string {
-  return session?.user?.id || "default"
+  return session?.user?.id || "__anon__"
 }
 
 // GET /api/coach/conversations?q=关键词&limit=50 - 对话列表/搜索

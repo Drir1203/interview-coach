@@ -4,7 +4,7 @@ import prisma from "@/lib/db"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
-  const userId = session?.user?.id || "default"
+  const userId = session?.user?.id || "__anon__"
   const format = req.nextUrl.searchParams.get("format") || "csv"
 
   const interviews = await prisma.interview.findMany({

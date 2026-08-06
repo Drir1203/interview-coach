@@ -4,7 +4,8 @@ import prisma from "@/lib/db"
 import { syncInterviewTags } from "@/lib/interview-tags"
 
 function getUserId(session: any): string {
-  return session?.user?.id || "default"
+  // 未登录不再回退到 "default"（避免显示 default 用户的测试数据），返回空
+  return session?.user?.id || "__anon__"
 }
 
 // 获取面试列表

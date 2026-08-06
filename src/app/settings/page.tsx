@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { User, Info, Database, CheckCircle2, Lock, Loader2 } from "lucide-react"
+import { User, Info, Database, CheckCircle2, Lock, Loader2, Settings } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageHeader } from "@/components/layout/PageHeader"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
@@ -58,10 +59,12 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">设置</h1>
+      <div className="animate-fade-up">
+        <PageHeader icon={Settings} title="设置" description="管理账号、简历与平台偏好" />
+      </div>
 
       {session && (
-        <Card>
+        <Card className="animate-fade-up" style={{ animationDelay: "50ms" }}>
           <CardHeader>
             <div className="flex items-center gap-2">
               <User className="size-4 text-primary" />
@@ -75,9 +78,11 @@ export default function SettingsPage() {
         </Card>
       )}
 
-      <ResumeCard />
+      <div className="animate-fade-up" style={{ animationDelay: "90ms" }}>
+        <ResumeCard />
+      </div>
 
-      <Card>
+      <Card className="animate-fade-up" style={{ animationDelay: "130ms" }}>
         <CardHeader>
           <div className="flex items-center gap-2">
             <Lock className="size-4 text-primary" />
@@ -116,7 +121,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="animate-fade-up" style={{ animationDelay: "170ms" }}>
         <CardHeader>
           <div className="flex items-center gap-2">
             <CheckCircle2 className="size-4 text-green-600" />
@@ -139,7 +144,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="animate-fade-up" style={{ animationDelay: "210ms" }}>
         <CardHeader>
           <div className="flex items-center gap-2">
             <Info className="size-4 text-primary" />

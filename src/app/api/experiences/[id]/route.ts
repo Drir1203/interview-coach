@@ -3,7 +3,7 @@ import prisma from "@/lib/db"
 import { auth } from "@/auth"
 
 function getUserId(session: any): string {
-  return session?.user?.id || "default"
+  return session?.user?.id || "__anon__"
 }
 
 // DELETE /api/experiences/[id] - 撤回自己的贡献（归属校验）

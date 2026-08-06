@@ -5,6 +5,7 @@ import { Target, Loader2, Sparkles, Building2, Briefcase } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { PageHeader } from "@/components/layout/PageHeader"
 import { ROUND_TYPES } from "@/types"
 
 export default function PrepPage() {
@@ -38,17 +39,15 @@ export default function PrepPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <Target className="size-6 text-primary" />
-          面试前准备
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          输入目标公司和岗位,AI 基于你的薄弱项生成押题清单和练习计划
-        </p>
+      <div className="animate-fade-up">
+        <PageHeader
+          icon={Target}
+          title="面试前准备"
+          description="输入目标公司和岗位，AI 基于你的薄弱项生成押题清单和练习计划"
+        />
       </div>
 
-      <Card>
+      <Card className="animate-fade-up" style={{ animationDelay: "50ms" }}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Sparkles className="size-4 text-primary" />
@@ -107,7 +106,7 @@ export default function PrepPage() {
       </Card>
 
       {plan && (
-        <Card>
+        <Card className="animate-fade-up" style={{ animationDelay: "100ms" }}>
           <CardContent className="p-5">
             <div className="prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">
               {plan}

@@ -17,6 +17,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { PageHeader } from "@/components/layout/PageHeader"
 import {
   Dialog,
   DialogContent,
@@ -259,15 +261,15 @@ export default function CoachPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <Sparkles className="size-6 text-primary" />
-          AI 面试教练
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">基于你的面试记录和薄弱项,给你一对一的个性化辅导</p>
+      <div className="animate-fade-up">
+        <PageHeader
+          icon={Sparkles}
+          title="AI 面试教练"
+          description="基于你的面试记录和薄弱项，给你一对一的个性化辅导"
+        />
       </div>
 
-      <div className="flex items-stretch gap-4">
+      <div className="animate-fade-up flex items-stretch gap-4" style={{ animationDelay: "50ms" }}>
         {/* 左侧历史列表 */}
         <Card className="flex h-[calc(100vh-140px)] min-h-[560px] w-[240px] shrink-0 flex-col">
           <CardHeader className="border-b pb-3">
@@ -362,30 +364,43 @@ export default function CoachPage() {
           </CardHeader>
 
           <CardContent className="flex-1 space-y-4 overflow-y-auto p-4">
-            {messages.map((m, i) => (
-              <div key={m.id || i} className={cn("flex gap-3", m.role === "user" && "flex-row-reverse")}>
+            {messages.map((m, i) =>
+              i === 0 && m.role === "assistant" && messages.length <= 1 ? (
                 <div
-                  className={cn(
-                    "flex size-8 shrink-0 items-center justify-center rounded-full",
-                    m.role === "assistant" ? "bg-primary/10" : "bg-muted"
-                  )}
+                  key={m.id || i}
+                  className="w-full max-w-[85%] rounded-2xl bg-gradient-to-br from-indigo-50 to-card p-5 ring-1 ring-primary/15"
                 >
-                  {m.role === "assistant" ? (
-                    <Bot className="size-4 text-primary" />
-                  ) : (
-                    <User className="size-4 text-muted-foreground" />
-                  )}
+                  <div className="mb-2 flex items-center gap-2 font-medium text-primary">
+                    <Sparkles className="size-4" />
+                    AI 面试教练 · 已了解你的面试数据
+                  </div>
+                  <div className="text-sm whitespace-pre-wrap leading-relaxed">{m.content}</div>
                 </div>
-                <div
-                  className={cn(
-                    "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap",
-                    m.role === "assistant" ? "bg-muted/60" : "bg-primary text-primary-foreground"
-                  )}
-                >
-                  {m.content}
+              ) : (
+                <div key={m.id || i} className={cn("flex gap-3", m.role === "user" && "flex-row-reverse")}>
+                  <div
+                    className={cn(
+                      "flex size-8 shrink-0 items-center justify-center rounded-full",
+                      m.role === "assistant" ? "bg-primary/10" : "bg-muted"
+                    )}
+                  >
+                    {m.role === "assistant" ? (
+                      <Bot className="size-4 text-primary" />
+                    ) : (
+                      <User className="size-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div
+                    className={cn(
+                      "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap",
+                      m.role === "assistant" ? "bg-muted/60" : "bg-primary text-primary-foreground"
+                    )}
+                  >
+                    {m.content}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
 
             {loading && (
               <div className="flex gap-3">
@@ -436,9 +451,9 @@ export default function CoachPage() {
                 className="hidden"
                 onChange={handleFileChange}
               />
-              <textarea
-                className="min-h-[44px] flex-1 resize-none rounded-xl border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                placeholder="向教练提问…(Enter 发送,Shift+Enter 换行)"
+              <Textarea
+                className="min-h-[44px] flex-1 resize-none"
+                placeholder="向教练提问…（Enter 发送，Shift+Enter 换行）"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {

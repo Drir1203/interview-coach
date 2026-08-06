@@ -5,7 +5,7 @@ import { generateGrowthReport } from "@/lib/ai-report"
 // POST /api/report - 生成成长报告
 export async function POST(req: NextRequest) {
   const session = await auth()
-  const userId = session?.user?.id || "default"
+  const userId = session?.user?.id || "__anon__"
 
   try {
     const { report, data } = await generateGrowthReport(userId)

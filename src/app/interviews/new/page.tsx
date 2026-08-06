@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { PlusCircle, Trash2, ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageHeader } from "@/components/layout/PageHeader"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -103,20 +104,17 @@ export default function NewInterview() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="animate-fade-up flex items-center gap-4">
         <Link href="/interviews">
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-4" />
           </Button>
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">记录新面试</h1>
-          <p className="text-sm text-muted-foreground">录入面试信息，稍后可随时 AI 复盘</p>
-        </div>
+        <PageHeader title="记录新面试" description="录入面试信息，稍后可随时 AI 复盘" />
       </div>
 
       {/* 基本信息 */}
-      <Card>
+      <Card className="animate-fade-up" style={{ animationDelay: "50ms" }}>
         <CardHeader>
           <CardTitle className="text-base">基本信息</CardTitle>
         </CardHeader>
@@ -215,7 +213,7 @@ export default function NewInterview() {
       </Card>
 
       {/* 录音 */}
-      <Card>
+      <Card className="animate-fade-up" style={{ animationDelay: "100ms" }}>
         <CardHeader>
           <CardTitle className="text-base">录音转写</CardTitle>
         </CardHeader>
@@ -239,7 +237,7 @@ export default function NewInterview() {
       </Card>
 
       {/* 面试问题 */}
-      <Card>
+      <Card className="animate-fade-up" style={{ animationDelay: "150ms" }}>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">面试问题</CardTitle>
           <Button variant="outline" size="sm" onClick={addQuestion} type="button">
@@ -285,7 +283,7 @@ export default function NewInterview() {
       </Card>
 
       {/* 提交按钮 */}
-      <div className="flex justify-end gap-3">
+      <div className="animate-fade-up flex justify-end gap-3" style={{ animationDelay: "200ms" }}>
         <Link href="/interviews">
           <Button variant="outline">取消</Button>
         </Link>

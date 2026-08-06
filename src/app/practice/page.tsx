@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { GraduationCap, Target, Brain, Loader2, ArrowRight } from "lucide-react"
+import { GraduationCap, Target, Brain, Loader2, ArrowRight, Mic } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageHeader } from "@/components/layout/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -61,16 +62,17 @@ export default function PracticePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">模拟面试</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          AI 面试官模拟真实面试场景，结束后生成评估报告
-        </p>
+      <div className="animate-fade-up">
+        <PageHeader
+          icon={Mic}
+          title="模拟面试"
+          description="AI 面试官模拟真实面试场景，结束后生成评估报告"
+        />
       </div>
 
       {/* 信息卡片 */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="animate-fade-up transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover" style={{ animationDelay: "50ms" }}>
           <CardHeader className="pb-3">
             <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
               <Brain className="size-5 text-primary" />
@@ -81,7 +83,7 @@ export default function PracticePage() {
             </CardDescription>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="animate-fade-up transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover" style={{ animationDelay: "90ms" }}>
           <CardHeader className="pb-3">
             <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
               <Target className="size-5 text-primary" />
@@ -92,7 +94,7 @@ export default function PracticePage() {
             </CardDescription>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="animate-fade-up transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover" style={{ animationDelay: "130ms" }}>
           <CardHeader className="pb-3">
             <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
               <GraduationCap className="size-5 text-primary" />
@@ -106,7 +108,7 @@ export default function PracticePage() {
       </div>
 
       {/* 开始配置 */}
-      <Card>
+      <Card className="animate-fade-up" style={{ animationDelay: "170ms" }}>
         <CardHeader>
           <CardTitle className="text-base">配置模拟面试</CardTitle>
           <CardDescription>

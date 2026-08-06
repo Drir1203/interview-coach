@@ -8,7 +8,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   try {
     const { id } = await params
     const session = await auth()
-    const userId = session?.user?.id || "default"
+    const userId = session?.user?.id || "__anon__"
 
     const app = await prisma.jobApplication.findFirst({ where: { id, userId } })
     if (!app) {

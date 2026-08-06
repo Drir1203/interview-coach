@@ -11,6 +11,7 @@ import {
   Loader2,
   GraduationCap,
   Download,
+  BarChart3,
 } from "lucide-react"
 import {
   RadarChart,
@@ -21,6 +22,7 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageHeader } from "@/components/layout/PageHeader"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -156,13 +158,16 @@ export default function AnalysisPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">深入分析</h1>
-        <p className="text-sm text-muted-foreground">跨公司对比、薄弱项追踪、趋势下钻</p>
+      <div className="animate-fade-up">
+        <PageHeader
+          icon={BarChart3}
+          title="深入分析"
+          description="跨公司对比、薄弱项追踪、趋势下钻"
+        />
       </div>
 
       {/* 能力画像（整体）+ 认证卡入口 */}
-      <Card>
+      <Card className="animate-fade-up" style={{ animationDelay: "50ms" }}>
         <CardHeader className="flex flex-row items-start justify-between space-y-0">
           <div>
             <CardTitle className="text-base">能力画像</CardTitle>
@@ -188,7 +193,7 @@ export default function AnalysisPage() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="companies" className="space-y-6">
+      <Tabs defaultValue="companies" className="animate-fade-up space-y-6" style={{ animationDelay: "100ms" }}>
         <TabsList>
           <TabsTrigger value="companies" className="gap-2">
             <Building2 className="size-4" />

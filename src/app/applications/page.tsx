@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Briefcase, PlusCircle, Sparkles, Trash2, Loader2, ChevronDown, ChevronUp } from "lucide-react"
+import { Briefcase, PlusCircle, Sparkles, Trash2, Loader2, ChevronDown, ChevronUp, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { PageHeader } from "@/components/layout/PageHeader"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -169,15 +170,15 @@ export default function ApplicationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">求职进度</h1>
+      <div className="animate-fade-up flex flex-wrap items-center justify-between gap-4">
+        <PageHeader icon={TrendingUp} title="求职进度" description="管理投递、面试与 Offer 的全过程" />
         <Button className="gap-2" onClick={() => setCreateOpen(true)}>
           <PlusCircle className="size-4" />
           新建求职
         </Button>
       </div>
 
-      <Tabs value={tab} onValueChange={setTab}>
+      <Tabs value={tab} onValueChange={setTab} className="animate-fade-up" style={{ animationDelay: "50ms" }}>
         <TabsList>
           {STATUS_TABS.map((t) => (
             <TabsTrigger key={t.value} value={t.value}>
@@ -188,25 +189,18 @@ export default function ApplicationsPage() {
       </Tabs>
 
       {loading ? (
-        <div className="space-y-3">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <div className="h-5 w-48 animate-pulse rounded bg-muted" />
-                <div className="mt-2 h-4 w-32 animate-pulse rounded bg-muted" />
-              </CardContent>
-            </Card>
-          ))}
+        <div className="animate-fade-up flex items-center justify-center py-24">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
       ) : filtered.length === 0 ? (
-        <Card className="py-16">
+        <Card className="animate-fade-up py-16" style={{ animationDelay: "80ms" }}>
           <CardContent className="flex flex-col items-center gap-3 text-center">
             <Briefcase className="size-10 text-muted-foreground/40" />
             <p className="text-muted-foreground">{tab === "all" ? "还没有求职进度，点击右上角开始记录" : "该状态下暂无求职记录"}</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="animate-fade-up space-y-3" style={{ animationDelay: "100ms" }}>
           {filtered.map((app) => {
             const statusCfg = STATUS_CONFIG[app.status] ?? STATUS_CONFIG.applied
             const strategy = strategies[app.id] ?? app.nextStep ?? null
@@ -214,7 +208,7 @@ export default function ApplicationsPage() {
             const isExpanded = expanded[app.id]
 
             return (
-              <Card key={app.id}>
+              <Card key={app.id} className="transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">

@@ -8,7 +8,7 @@ const MAX_RESUME_TEXT_LENGTH = 20000
 export async function POST(req: NextRequest) {
   try {
     const session = await auth()
-    const userId = session?.user?.id || "default"
+    const userId = session?.user?.id || "__anon__"
 
     const { resumeText } = await req.json()
     if (typeof resumeText !== "string" || resumeText.length > MAX_RESUME_TEXT_LENGTH) {

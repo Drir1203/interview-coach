@@ -16,7 +16,7 @@ interface Attachment {
 // POST /api/coach - AI 教练对话(持久化 + 可选附件)
 export async function POST(req: NextRequest) {
   const session = await auth()
-  const userId = session?.user?.id || "default"
+  const userId = session?.user?.id || "__anon__"
 
   let body: { messages?: unknown[]; conversationId?: unknown; attachment?: unknown }
   try {

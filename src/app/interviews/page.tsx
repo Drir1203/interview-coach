@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { PageHeader } from "@/components/layout/PageHeader"
 import { formatDate } from "@/lib/utils"
 import { ROUND_TYPE_LABELS, INTERVIEW_STATUS_CONFIG } from "@/types"
 import { exportSummaryPdf } from "@/lib/pdf-export"
@@ -72,8 +73,12 @@ export default function InterviewList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">面试记录</h1>
+      <div className="animate-fade-up flex flex-wrap items-center justify-between gap-4">
+        <PageHeader
+          icon={Briefcase}
+          title="面试记录"
+          description="查看、检索所有已记录的面试与 AI 复盘"
+        />
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={pdfLoading} className="gap-2">
             {pdfLoading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
@@ -94,7 +99,7 @@ export default function InterviewList() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="animate-fade-up flex flex-wrap items-center gap-4" style={{ animationDelay: "60ms" }}>
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -115,18 +120,11 @@ export default function InterviewList() {
       </div>
 
       {loading ? (
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <div className="h-5 w-48 animate-pulse rounded bg-muted" />
-                <div className="mt-2 h-4 w-32 animate-pulse rounded bg-muted" />
-              </CardContent>
-            </Card>
-          ))}
+        <div className="animate-fade-up flex items-center justify-center py-24">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
       ) : filtered.length === 0 ? (
-        <Card className="py-16">
+        <Card className="animate-fade-up py-16" style={{ animationDelay: "80ms" }}>
           <CardContent className="flex flex-col items-center gap-3 text-center">
             <Briefcase className="size-10 text-muted-foreground/40" />
             <p className="text-muted-foreground">
@@ -143,10 +141,10 @@ export default function InterviewList() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="animate-fade-up space-y-3" style={{ animationDelay: "100ms" }}>
           {filtered.map((interview) => (
             <Link key={interview.id} href={`/interviews/${interview.id}`}>
-              <Card className="transition-colors hover:bg-muted/50">
+              <Card className="transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
                 <CardContent className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-4">
                     <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">

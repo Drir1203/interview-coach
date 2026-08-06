@@ -9,7 +9,7 @@ import prisma from "@/lib/db"
 export async function POST(req: NextRequest) {
   try {
     const session = await auth()
-    const userId = session?.user?.id || "default"
+    const userId = session?.user?.id || "__anon__"
 
     const body = await req.json()
     const oldPassword = typeof body?.oldPassword === "string" ? body.oldPassword : undefined

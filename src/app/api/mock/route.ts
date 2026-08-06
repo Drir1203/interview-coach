@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
   const apiKey = process.env.ANTHROPIC_API_KEY || ""
   const session = await auth()
-  const userId = session?.user?.id || "default"
+  const userId = session?.user?.id || "__anon__"
 
   if (action === "start") {
     return handleStart(company, position, roundType, apiKey, userId, resumeMode)

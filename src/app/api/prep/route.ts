@@ -5,7 +5,7 @@ import { generatePrepPlan } from "@/lib/ai-prep"
 // POST /api/prep - 面试前押题,生成个性化准备方案
 export async function POST(req: NextRequest) {
   const session = await auth()
-  const userId = session?.user?.id || "default"
+  const userId = session?.user?.id || "__anon__"
 
   let body: { company?: string; position?: string; roundType?: string }
   try {

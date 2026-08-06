@@ -7,7 +7,7 @@ export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 function getUserId(session: { user?: { id?: string } | null } | null): string {
-  return session?.user?.id || "default"
+  return session?.user?.id || "__anon__"
 }
 
 const MAX_RESUME_TEXT_LENGTH = 20000

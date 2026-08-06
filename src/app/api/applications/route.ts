@@ -7,7 +7,7 @@ const VALID_ROUND = ["first", "second", "third", "final", "hr", "written", "othe
 
 export async function GET() {
   const session = await auth()
-  const userId = session?.user?.id || "default"
+  const userId = session?.user?.id || "__anon__"
 
   const applications = await prisma.jobApplication.findMany({
     where: { userId },
@@ -20,7 +20,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth()
-    const userId = session?.user?.id || "default"
+    const userId = session?.user?.id || "__anon__"
     const body = await req.json()
 
     const company = typeof body.company === "string" ? body.company.trim() : ""

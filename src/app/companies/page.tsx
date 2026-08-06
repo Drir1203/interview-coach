@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Building2, Briefcase, TrendingUp } from "lucide-react"
+import { Building2, Briefcase, TrendingUp, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { PageHeader } from "@/components/layout/PageHeader"
 
 interface CompanySummary {
   id: string
@@ -49,29 +50,23 @@ export default function CompaniesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">公司看板</h1>
-      <p className="text-sm text-muted-foreground">按公司维度查看你的面试表现</p>
+      <div className="animate-fade-up">
+        <PageHeader icon={Building2} title="公司看板" description="按公司维度查看你的面试表现" />
+      </div>
 
       {loading ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="h-5 w-32 animate-pulse rounded bg-muted" />
-                <div className="mt-3 h-4 w-24 animate-pulse rounded bg-muted" />
-              </CardContent>
-            </Card>
-          ))}
+        <div className="animate-fade-up flex items-center justify-center py-24">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
       ) : companies.length === 0 ? (
-        <Card className="py-16">
+        <Card className="animate-fade-up py-16" style={{ animationDelay: "60ms" }}>
           <CardContent className="flex flex-col items-center gap-3 text-center">
             <Building2 className="size-10 text-muted-foreground/40" />
             <p className="text-muted-foreground">还没有面试记录</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="animate-fade-up grid gap-4 md:grid-cols-2" style={{ animationDelay: "60ms" }}>
           {companies.map((company) => {
             const reviewed = company.interviews.filter((i) => i.overallScore)
             const avgScore = reviewed.length
@@ -79,7 +74,7 @@ export default function CompaniesPage() {
               : 0
 
             return (
-              <Card key={company.id}>
+              <Card key={company.id} className="transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">

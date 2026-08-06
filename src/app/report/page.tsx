@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { LineChart, Loader2, RefreshCw, TrendingUp, Trophy, Target, ClipboardList } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { PageHeader } from "@/components/layout/PageHeader"
 
 interface ReportStats {
   total: number
@@ -60,24 +61,20 @@ export default function ReportPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-            <LineChart className="size-6 text-primary" />
-            成长报告
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            基于你的面试记录和复盘,AI 生成阶段性成长总结
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={handleRegenerate} disabled={loading} className="gap-2">
+      <div className="animate-fade-up flex items-center justify-between gap-4">
+        <PageHeader
+          icon={LineChart}
+          title="成长报告"
+          description="基于你的面试记录和复盘，AI 生成阶段性成长总结"
+        />
+        <Button variant="outline" size="sm" onClick={handleRegenerate} disabled={loading} className="gap-2 shrink-0">
           <RefreshCw className={loading ? "size-4 animate-spin" : "size-4"} />
           重新生成
         </Button>
       </div>
 
       {stats && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="animate-fade-up grid gap-4 sm:grid-cols-2 lg:grid-cols-4" style={{ animationDelay: "50ms" }}>
           <Card>
             <CardContent className="flex items-center gap-3 p-4">
               <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
@@ -127,7 +124,7 @@ export default function ReportPage() {
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <Card>
+      <Card className="animate-fade-up" style={{ animationDelay: "100ms" }}>
         <CardContent className="p-6">
           {loading ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">

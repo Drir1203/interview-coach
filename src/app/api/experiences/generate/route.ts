@@ -4,7 +4,7 @@ import { auth } from "@/auth"
 import { abstractExperiences } from "@/lib/ai-experience"
 
 function getUserId(session: any): string {
-  return session?.user?.id || "default"
+  return session?.user?.id || "__anon__"
 }
 
 // POST /api/experiences/generate - 从用户的面试记录抽象生成面经草稿

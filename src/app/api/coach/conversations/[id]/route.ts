@@ -3,7 +3,7 @@ import { auth } from "@/auth"
 import prisma from "@/lib/db"
 
 function getUserId(session: { user?: { id?: string } | null } | null): string {
-  return session?.user?.id || "default"
+  return session?.user?.id || "__anon__"
 }
 
 // GET /api/coach/conversations/:id - 对话详情(含全部消息,按时间升序)

@@ -9,7 +9,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params
     const session = await auth()
-    const userId = session?.user?.id || "default"
+    const userId = session?.user?.id || "__anon__"
     const body = await req.json()
 
     const existing = await prisma.jobApplication.findFirst({ where: { id, userId } })
@@ -38,7 +38,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params
     const session = await auth()
-    const userId = session?.user?.id || "default"
+    const userId = session?.user?.id || "__anon__"
 
     const existing = await prisma.jobApplication.findFirst({ where: { id, userId } })
     if (!existing) {

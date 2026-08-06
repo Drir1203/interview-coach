@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   Moon,
+  Sun,
   Bot,
   Target,
   LineChart,
@@ -30,10 +31,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ThemeToggle } from "@/components/ThemeToggle"
 import { Logo } from "@/components/Logo"
 import { useAuth } from "@/hooks/useAuth"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 // 分组：总览独立顶层项 + 三组（D 风格：彩色圆角方块图标）
 type NavTint = { bg: string; text: string; bgActive: string }
@@ -109,6 +109,23 @@ export function Sidebar() {
   const pathname = usePathname()
   const { user: session } = useAuth()
   const [open, setOpen] = useState(false)
+  const [isDark, setIsDark] = useState(false)
+
+  // 深色模式（内联实现，避免 ThemeToggle 自带标签导致重复）
+  useEffect(() => {
+    const stored = localStorage.getItem("theme")
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+    const dark = stored ? stored === "dark" : prefersDark
+    setIsDark(dark)
+    document.documentElement.classList.toggle("dark", dark)
+  }, [])
+
+  const toggleDark = () => {
+    const next = !isDark
+    setIsDark(next)
+    localStorage.setItem("theme", next ? "dark" : "light")
+    document.documentElement.classList.toggle("dark", next)
+  }
 
   const sidebarContent = (
     <>
@@ -161,14 +178,16 @@ export function Sidebar() {
       <div className="border-t p-2.5">
         <NavItem href="/settings" label="设置" icon={Settings} tint={{ bg: "bg-slate-100", text: "text-slate-600", bgActive: "bg-slate-200" }} pathname={pathname} onClick={() => setOpen(false)} />
 
-        {/* 深色模式：Moon 图标方块 + 右侧 toggle */}
-        <div className="mt-1 flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-muted transition-colors">
+        {/* 深色模式：与上方 nav 完全一致的图标方块行，点击切换 */}
+        <button
+          onClick={toggleDark}
+          className="mt-1 flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left hover:bg-muted transition-colors"
+        >
           <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
-            <Moon className="size-4" />
+            {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </span>
-          <span className="flex-1 text-[13px] text-muted-foreground">深色模式</span>
-          <ThemeToggle />
-        </div>
+          <span className="text-[13px] text-muted-foreground">{isDark ? "浅色模式" : "深色模式"}</span>
+        </button>
 
         {/* 用户：User 图标方块 + 姓名（保持 lucide 图标风格） */}
         <div className="mt-1">

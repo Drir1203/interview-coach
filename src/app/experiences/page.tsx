@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageHeader } from "@/components/layout/PageHeader"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
@@ -369,17 +370,17 @@ export default function ExperiencesPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-            <BookOpen className="size-6 text-primary" />
-            面经库
-          </h1>
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-            <ShieldCheck className="size-4 text-green-600" />
-            匿名贡献，AI 脱敏后帮助更多候选人
-          </p>
-        </div>
+      <div className="animate-fade-up flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <PageHeader
+          icon={BookOpen}
+          title="面经库"
+          description={
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="size-4 text-green-600" />
+              匿名贡献，AI 脱敏后帮助更多候选人
+            </span>
+          }
+        />
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => openDialog("import")} className="gap-2">
             <FolderOpen className="size-4" />
@@ -393,7 +394,7 @@ export default function ExperiencesPage() {
       </div>
 
       {/* 搜索 */}
-      <Card>
+      <Card className="animate-fade-up" style={{ animationDelay: "50ms" }}>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Search className="size-4 text-primary" />
@@ -424,7 +425,7 @@ export default function ExperiencesPage() {
       </Card>
 
       {/* 我的贡献（B） */}
-      <Card>
+      <Card className="animate-fade-up" style={{ animationDelay: "90ms" }}>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <History className="size-4 text-primary" />
@@ -518,9 +519,9 @@ export default function ExperiencesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="animate-fade-up space-y-4" style={{ animationDelay: "130ms" }}>
           {experiences.map((exp) => (
-            <Card key={exp.id}>
+            <Card key={exp.id} className="transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
               <CardContent className="space-y-3 p-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="default">{exp.company}</Badge>
