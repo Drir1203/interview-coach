@@ -12,13 +12,14 @@ import {
   Sparkles,
   RefreshCw,
   Send,
+  Wand2,
+  ShieldCheck,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -27,25 +28,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "@/components/ui/toast"
 import { formatDate, formatDateTime } from "@/lib/utils"
 import {
   ROUND_TYPE_LABELS,
-  ROUND_TYPES,
   INTERVIEW_STATUS_CONFIG,
   INTERVIEW_RESULTS,
   type AIReviewOutput,
 } from "@/types"
 import Link from "next/link"
 import { exportInterviewPdf } from "@/lib/pdf-export"
+import ExperienceDraftEditor, {
+  type DraftEntry,
+  type ExperienceDraftItem,
+} from "@/components/ExperienceDraftEditor"
 
 interface Question {
   id: string
@@ -98,11 +95,13 @@ export default function InterviewDetail() {
   const [globalInstr, setGlobalInstr] = useState("")
   // 贡献这场面试的真实题目
   const [contributeOpen, setContributeOpen] = useState(false)
-  const [contributeRound, setContributeRound] = useState("first")
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<Set<string>>(new Set())
-  const [contributeAnswer, setContributeAnswer] = useState("")
   const [contributing, setContributing] = useState(false)
   const [contributeError, setContributeError] = useState<string | null>(null)
+  // 贡献流程：勾选题目 → AI 抽象草稿 → 确认提交
+  const [contributeStep, setContributeStep] = useState<"questions" | "draft">("questions")
+  const [generating, setGenerating] = useState(false)
+  const [draftEntries, setDraftEntries] = useState<DraftEntry[]>([])
 
   useEffect(() => {
     fetch(`/interview/api/interviews/${params.id}`)
@@ -221,10 +220,10 @@ export default function InterviewDetail() {
 
   const openContributeDialog = () => {
     if (!interview) return
-    setContributeRound(interview.roundType || "first")
     setSelectedQuestionIds(new Set())
-    setContributeAnswer("")
     setContributeError(null)
+    setContributeStep("questions")
+    setDraftEntries([])
     setContributeOpen(true)
   }
 
@@ -237,40 +236,76 @@ export default function InterviewDetail() {
     })
   }
 
-  const handleContribute = async () => {
+  const handleGenerateDraft = async () => {
     if (!interview) return
-    const selected = interview.questions.filter((q) => selectedQuestionIds.has(q.id))
-    if (selected.length === 0) {
+    if (selectedQuestionIds.size === 0) {
       setContributeError("请至少勾选一道题目")
       return
     }
+    setGenerating(true)
+    setContributeError(null)
+    try {
+      const res = await fetch("/interview/api/experiences/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          interviewId: interview.id,
+          questionIds: [...selectedQuestionIds],
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data.error || "生成失败")
+      }
+      const entries = Array.isArray(data.entries) ? data.entries : []
+      if (entries.length === 0) {
+        setContributeError("没有生成出草稿，请重试")
+        return
+      }
+      setDraftEntries(
+        entries.map((e: any, i: number) => ({
+          key: `draft-${i}`,
+          position: e.position || interview.position,
+          round: e.round || "other",
+          question: e.question || "",
+          answer: e.answer || "",
+          originalQuestion: e.originalQuestion || "",
+          originalAnswer: e.originalAnswer || null,
+        }))
+      )
+      setContributeStep("draft")
+    } catch (err) {
+      setContributeError(err instanceof Error ? err.message : "生成失败，请稍后重试")
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const handleSubmitDraft = async (items: ExperienceDraftItem[]) => {
     setContributing(true)
     setContributeError(null)
     try {
-      await Promise.all(
-        selected.map((q) =>
-          fetch("/interview/api/experiences", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              company: interview.company.name,
-              position: interview.position,
-              round: contributeRound,
-              question: q.questionText,
-              answer: contributeAnswer.trim() || undefined,
-            }),
-          }).then((res) => {
-            if (!res.ok) throw new Error("提交失败")
-          })
-        )
-      )
-      const count = selected.length
+      const res = await fetch("/interview/api/experiences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      })
+      if (!res.ok) {
+        let msg = "提交失败"
+        try {
+          const err = await res.json()
+          msg = err.error || msg
+        } catch { /* 非 JSON 响应 */ }
+        throw new Error(msg)
+      }
+      const count = items.length
       setContributeOpen(false)
       setSelectedQuestionIds(new Set())
-      setContributeAnswer("")
+      setDraftEntries([])
+      setContributeStep("questions")
       toast.add({
         title: "贡献成功",
-        description: `已贡献 ${count} 道面经，感谢！`,
+        description: `已贡献 ${count} 道脱敏面经，感谢！`,
         type: "success",
       })
     } catch (err) {
@@ -695,88 +730,106 @@ export default function InterviewDetail() {
 
       {/* 贡献这场面试的真实题目 */}
       <Dialog open={contributeOpen} onOpenChange={setContributeOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>贡献这场面试的真实题目</DialogTitle>
-            <DialogDescription>匿名提交，脱敏后帮助更多候选人</DialogDescription>
+            <DialogTitle>
+              {contributeStep === "draft" ? "确认脱敏面经草稿" : "贡献这场面试的真实题目"}
+            </DialogTitle>
+            <DialogDescription>
+              {contributeStep === "draft"
+                ? "AI 已把勾选的题目抽象脱敏成通用面经，确认后可一键贡献"
+                : "勾选题目，AI 自动脱敏抽象成匿名面经，帮助更多候选人"}
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">公司</label>
-                <Input value={interview.company.name} disabled />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">岗位</label>
-                <Input value={interview.position} disabled />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">轮次</label>
-              <Select value={contributeRound} onValueChange={(v) => v && setContributeRound(v)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROUND_TYPES.map((rt) => (
-                    <SelectItem key={rt.value} value={rt.value}>
-                      {rt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">选择要贡献的题目</label>
-              {interview.questions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">这场面试还没有录入问题</p>
-              ) : (
-                <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border p-3">
-                  {interview.questions.map((q, i) => (
-                    <label
-                      key={q.id}
-                      className="flex cursor-pointer items-start gap-2 rounded-md p-1.5 hover:bg-muted/50"
-                    >
-                      <Checkbox
-                        checked={selectedQuestionIds.has(q.id)}
-                        onCheckedChange={() => toggleQuestion(q.id)}
-                        className="mt-0.5"
-                      />
-                      <span className="text-sm">
-                        <span className="font-medium text-muted-foreground">Q{i + 1}</span>{" "}
-                        {q.questionText}
-                      </span>
-                    </label>
-                  ))}
+          {contributeStep === "questions" ? (
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">公司</label>
+                  <Input value={interview.company.name} disabled />
                 </div>
-              )}
-            </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">岗位</label>
+                  <Input value={interview.position} disabled />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">轮次</label>
+                  <Input
+                    value={ROUND_TYPE_LABELS[interview.roundType] || interview.roundType}
+                    disabled
+                  />
+                </div>
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">我的回答（可选）</label>
-              <Textarea
-                placeholder="这次面试你是如何回答的？（将作为参考答案附到每道勾选的题）"
-                value={contributeAnswer}
-                onChange={(e) => setContributeAnswer(e.target.value)}
-                rows={3}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">选择要贡献的题目</label>
+                {interview.questions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">这场面试还没有录入问题</p>
+                ) : (
+                  <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border p-3">
+                    {interview.questions.map((q, i) => (
+                      <label
+                        key={q.id}
+                        className="flex cursor-pointer items-start gap-2 rounded-md p-1.5 hover:bg-muted/50"
+                      >
+                        <Checkbox
+                          checked={selectedQuestionIds.has(q.id)}
+                          onCheckedChange={() => toggleQuestion(q.id)}
+                          className="mt-0.5"
+                        />
+                        <span className="text-sm">
+                          <span className="font-medium text-muted-foreground">Q{i + 1}</span>{" "}
+                          {q.questionText}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <ShieldCheck className="size-4 text-green-600" />
+                AI 会去掉姓名、机密、可识别细节，把题目抽象成通用答题思路，你确认后才提交
+              </p>
+
+              {contributeError && <p className="text-sm text-destructive">{contributeError}</p>}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <ExperienceDraftEditor
+                company={interview.company.name}
+                industry={interview.company.industry ?? null}
+                sourceInterviewId={interview.id}
+                entries={draftEntries}
+                submitting={contributing}
+                onChange={setDraftEntries}
+                onSubmit={handleSubmitDraft}
+                onCancel={() => {
+                  setDraftEntries([])
+                  setContributeStep("questions")
+                }}
               />
+              {contributeError && <p className="text-sm text-destructive">{contributeError}</p>}
             </div>
+          )}
 
-            {contributeError && <p className="text-sm text-destructive">{contributeError}</p>}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setContributeOpen(false)}>
-              取消
-            </Button>
-            <Button onClick={handleContribute} disabled={contributing}>
-              {contributing && <Loader2 className="mr-2 size-4 animate-spin" />}
-              提交贡献
-            </Button>
-          </DialogFooter>
+          {contributeStep === "questions" && (
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setContributeOpen(false)} disabled={generating}>
+                取消
+              </Button>
+              <Button onClick={handleGenerateDraft} disabled={selectedQuestionIds.size === 0 || generating}>
+                {generating && <Loader2 className="mr-2 size-4 animate-spin" />}
+                {generating ? "AI 正在抽象脱敏…" : (
+                  <>
+                    <Wand2 className="mr-2 size-4" />
+                    AI 生成脱敏草稿
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </div>

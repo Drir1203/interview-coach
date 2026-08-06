@@ -34,16 +34,13 @@ import { Logo } from "@/components/Logo"
 import { useAuth } from "@/hooks/useAuth"
 import { useState } from "react"
 
+// 分组：总览作为独立顶层项，其余按语义分组（去掉冗余单子项分组）
 const navGroups = [
-  {
-    label: "总览",
-    items: [{ href: "/", label: "总览", icon: LayoutDashboard }],
-  },
   {
     label: "AI 智能",
     items: [
-      { href: "/coach", label: "教练", icon: Bot },
-      { href: "/prep", label: "押题", icon: Target },
+      { href: "/coach", label: "AI 教练", icon: Bot },
+      { href: "/prep", label: "面试押题", icon: Target },
       { href: "/report", label: "成长报告", icon: LineChart },
       { href: "/analysis", label: "深入分析", icon: BarChart3 },
     ],
@@ -51,7 +48,7 @@ const navGroups = [
   {
     label: "面试",
     items: [
-      { href: "/interviews", label: "记录", icon: Briefcase },
+      { href: "/interviews", label: "面试记录", icon: Briefcase },
       { href: "/practice", label: "模拟面试", icon: GraduationCap },
       { href: "/companies", label: "公司看板", icon: Building2 },
     ],
@@ -64,6 +61,38 @@ const navGroups = [
     ],
   },
 ]
+
+// 侧边栏导航项（统一样式）
+function NavItem({
+  href,
+  label,
+  icon: Icon,
+  pathname,
+  onClick,
+}: {
+  href: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  pathname: string
+  onClick?: () => void
+}) {
+  const isActive = pathname === href
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-colors",
+        isActive
+          ? "bg-primary/10 font-medium text-primary"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      )}
+    >
+      <Icon className="size-4 shrink-0 opacity-80" />
+      {label}
+    </Link>
+  )
+}
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -88,91 +117,69 @@ export function Sidebar() {
       </div>
 
       {/* 导航 */}
-      <nav className="flex-1 overflow-y-auto px-3 py-2">
+      <nav className="flex-1 overflow-y-auto px-2.5 py-1">
+        {/* 总览：独立顶层项（无冗余组标题） */}
+        <div className="pb-1 pt-2">
+          <NavItem href="/" label="总览" icon={LayoutDashboard} pathname={pathname} onClick={() => setOpen(false)} />
+        </div>
+
         {navGroups.map((group) => (
           <div key={group.label}>
-            <p className="px-3 pb-1 pt-4 text-xs font-medium text-muted-foreground">
+            <p className="px-2.5 pb-1 pt-4 text-[11px] font-medium tracking-wide text-muted-foreground/70">
               {group.label}
             </p>
-            <ul className="space-y-1">
-              {group.items.map((item) => {
-                const Icon = item.icon
-                const isActive = pathname === item.href
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      onClick={() => setOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      )}
-                    >
-                      <Icon className="size-4 shrink-0" />
-                      {item.label}
-                    </Link>
-                  </li>
-                )
-              })}
+            <ul className="space-y-0.5">
+              {group.items.map((item) => (
+                <li key={item.href}>
+                  <NavItem
+                    href={item.href}
+                    label={item.label}
+                    icon={item.icon}
+                    pathname={pathname}
+                    onClick={() => setOpen(false)}
+                  />
+                </li>
+              ))}
             </ul>
           </div>
         ))}
       </nav>
 
-      {/* 设置 */}
-      <div className="border-t p-2">
-        <Link
-          href="/settings"
-          onClick={() => setOpen(false)}
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-            pathname === "/settings"
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      {/* 底部：设置 + 暗色 + 用户，合并一个分区 */}
+      <div className="border-t p-2.5">
+        <NavItem href="/settings" label="设置" icon={Settings} pathname={pathname} onClick={() => setOpen(false)} />
+        <div className="mt-2 flex items-center justify-between border-t pt-2">
+          <div className="text-xs text-muted-foreground">深色模式</div>
+          <ThemeToggle />
+        </div>
+        <div className="mt-2 border-t pt-2">
+          {session ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] hover:bg-muted transition-colors">
+                <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-medium text-primary">
+                  {(session?.name || session?.email || "U")[0].toUpperCase()}
+                </div>
+                <span className="truncate">{session?.name || session?.email?.split("@")[0] || "用户"}</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-52">
+                <DropdownMenuItem className="text-xs text-muted-foreground" disabled>
+                  {session?.email}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/interview/auth/login" })}>
+                  <LogOut className="mr-2 size-4" />
+                  退出登录
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link href="/auth/login" onClick={() => setOpen(false)}>
+              <Button variant="outline" className="w-full gap-2" size="sm">
+                <User className="size-4" />
+                登录
+              </Button>
+            </Link>
           )}
-        >
-          <Settings className="size-4 shrink-0" />
-          设置
-        </Link>
-      </div>
-
-      {/* 暗色模式切换 */}
-      <div className="border-t px-3 py-2">
-        <ThemeToggle />
-      </div>
-
-      {/* 用户信息 */}
-      <div className="border-t p-3">
-        {session ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-muted transition-colors">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                {(session?.name || session?.email || "U")[0].toUpperCase()}
-              </div>
-              <span className="truncate text-sm font-medium">
-                {session?.name || session?.email?.split("@")[0] || "用户"}
-              </span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuItem className="text-xs text-muted-foreground" disabled>
-                {session?.email}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/interview/auth/login" })}>
-                <LogOut className="mr-2 size-4" />
-                退出登录
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <Link href="/auth/login" onClick={() => setOpen(false)}>
-            <Button variant="outline" className="w-full gap-2" size="sm">
-              <User className="size-4" />
-              登录
-            </Button>
-          </Link>
-        )}
+        </div>
       </div>
     </>
   )

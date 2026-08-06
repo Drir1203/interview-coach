@@ -1,0 +1,14 @@
+{
+  "id": "A",
+  "label": "选 A：明亮 · 功能优先",
+  "name": "明亮 · 功能优先",
+  "notes": "浅灰蓝底 · 靛蓝重音 · 对称卡片网格",
+  "dials": {
+    "variance": 4,
+    "motion": 3,
+    "density": 6
+  },
+  "adjustments": "动效强度更大点，信息密度小点",
+  "source": "preview",
+  "receivedAt": "2026-08-06T04:24:32.051Z"
+}
