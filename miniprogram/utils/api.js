@@ -49,9 +49,16 @@ module.exports = {
   updateResult: (id, result) =>
     request("/api/interviews/" + id, "PUT", { result }),
 
-  // AI 复盘
-  review: (interviewId) =>
-    request("/api/review", "POST", { interviewId }),
+  // AI 复盘（options: { mode?: "full"|"question", questionId?, instruction? }）
+  review: (interviewId, options = {}) => {
+    const data = { interviewId }
+    if (options.mode) data.mode = options.mode
+    if (options.questionId) data.questionId = options.questionId
+    const instruction =
+      typeof options.instruction === "string" ? options.instruction.trim() : ""
+    if (instruction) data.instruction = instruction
+    return request("/api/review", "POST", data)
+  },
 
   // 分析
   getAnalysis: () => request("/api/analysis"),

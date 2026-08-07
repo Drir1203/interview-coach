@@ -45,6 +45,27 @@
     <!-- AI 复盘 -->
     <view class="card">
       <block wx:if="{{ interview.status === 'ai_reviewed' }}">
+        <!-- C1 重新分析 -->
+        <view class="review-actions">
+          <van-button size="small" plain type="primary" bind:click="toggleReanalyze">
+            {{ reanalyzeOpen ? '收起' : '重新分析' }}
+          </van-button>
+        </view>
+
+        <block wx:if="{{ reanalyzeOpen }}">
+          <textarea
+            class="custom-input"
+            value="{{ reanalyzeInstr }}"
+            bindinput="onReanalyzeInput"
+            placeholder="自定义要求（可选），如：更深入分析，指出薄弱点并给出针对性练习建议"
+            maxlength="500"
+          />
+          <view class="custom-actions">
+            <van-button size="small" plain bind:click="closeReanalyze">取消</van-button>
+            <van-button size="small" type="primary" loading="{{ reanalyzing }}" bind:click="reanalyze">重新分析</van-button>
+          </view>
+        </block>
+
         <view class="detail-score">
           <view class="score-circle">{{ interview.overallScore ? interview.overallScore.toFixed(1) : '-' }}</view>
           <text class="detail-score-label">总体评分</text>
@@ -61,6 +82,28 @@
           <text class="detail-subtitle">🔴 改进方向</text>
           <view wx:for="{{ improvementAreas }}" wx:key="*this" class="detail-item"><text>• {{ item }}</text></view>
         </block>
+
+        <!-- C3 薄弱维度 -->
+        <block wx:if="{{ weaknessAreas.length > 0 }}">
+          <text class="detail-subtitle">📉 薄弱维度</text>
+          <view wx:for="{{ weaknessAreas }}" wx:key="category" class="weakness-row">
+            <view class="weakness-head">
+              <text class="weakness-cat">{{ item.label }}</text>
+              <text class="weakness-score">{{ item.score ? item.score.toFixed(1) : '-' }}</text>
+            </view>
+            <view class="weakness-bar">
+              <view class="weakness-bar-fill" style="width: {{ item.percent }}%;"></view>
+            </view>
+          </view>
+        </block>
+
+        <!-- C4 教练下一步建议 -->
+        <block wx:if="{{ nextSteps }}">
+          <view class="nextsteps-card">
+            <text class="nextsteps-title">✨ AI 教练建议 · 接下来练什么</text>
+            <text class="nextsteps-text">{{ nextSteps }}</text>
+          </view>
+        </block>
       </block>
 
       <block wx:else>
@@ -76,21 +119,53 @@
 
     <!-- 问题列表 -->
     <text class="section-title questions-title">面试问题（{{ interview.questions ? interview.questions.length : 0 }}）</text>
-    <van-cell-group inset>
-      <block wx:for="{{ interview.questions }}" wx:key="id">
-        <van-cell
-          title="Q{{ item.order }} {{ item.questionText }}"
-          label="{{ item.userAnswer }}"
-          value="{{ item.aiScore ? item.aiScore.toFixed(0) : '' }}"
-        />
-        <van-cell
-          wx:if="{{ item.aiFeedback }}"
-          title="AI 反馈"
-          label="{{ item.aiFeedback }}"
-          border="{{ false }}"
-        />
-      </block>
-    </van-cell-group>
+    <view class="question-card" wx:for="{{ interview.questions }}" wx:key="id">
+      <view class="question-head">
+        <view class="question-text">
+          <text class="question-q">Q{{ item.order }}</text>
+          <text class="question-title">{{ item.questionText }}</text>
+        </view>
+        <view wx:if="{{ item.aiScore }}" class="question-score">{{ item.aiScore.toFixed(0) }}</view>
+      </view>
+
+      <view wx:if="{{ item.userAnswer }}" class="question-answer">
+        <text class="question-label">你的回答：</text>
+        <text>{{ item.userAnswer }}</text>
+      </view>
+
+      <view wx:if="{{ item.aiFeedback }}" class="question-feedback">
+        <view class="question-feedback-head">
+          <text class="question-label">AI 反馈</text>
+          <view class="question-ops">
+            <text wx:if="{{ item.aiImprovedAnswer }}" class="question-op" data-id="{{ item.id }}" bindtap="toggleImproved">{{ showImprovedId === item.id ? '收起' : '查看优化回答' }}</text>
+            <text class="question-op" data-id="{{ item.id }}" bindtap="toggleRegen">{{ regenQuestionId === item.id ? '取消' : '重新生成' }}</text>
+          </view>
+        </view>
+        <text class="question-feedback-text">{{ item.aiFeedback }}</text>
+        <text wx:if="{{ item.aiKeyMistake }}" class="question-mistake">关键失误：{{ item.aiKeyMistake }}</text>
+
+        <!-- C2 单题重新生成 -->
+        <block wx:if="{{ regenQuestionId === item.id }}">
+          <textarea
+            class="custom-input"
+            value="{{ regenInstr }}"
+            bindinput="onRegenInput"
+            placeholder="自定义要求（可选），如：更深入分析、结合简历展开"
+            maxlength="500"
+          />
+          <view class="custom-actions">
+            <van-button size="mini" plain bind:click="toggleRegen" data-id="{{ item.id }}">取消</van-button>
+            <van-button size="mini" type="primary" loading="{{ regeneratingId === item.id }}" bind:click="regenQuestion" data-id="{{ item.id }}">生成</van-button>
+          </view>
+        </block>
+
+        <!-- C5 优化回答 -->
+        <view wx:if="{{ showImprovedId === item.id && item.aiImprovedAnswer }}" class="question-improved">
+          <text class="question-label">优化回答</text>
+          <text>{{ item.aiImprovedAnswer }}</text>
+        </view>
+      </view>
+    </view>
 
     <!-- 备注 -->
     <view wx:if="{{ interview.userNotes }}" class="card">
