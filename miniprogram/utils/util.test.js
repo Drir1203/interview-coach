@@ -1,0 +1,67 @@
+// util.js 纯函数测试：分数刻度（10 分制）+ 走势文本
+import { describe, it, expect } from "vitest"
+import { clampScore, barPercent, trendText } from "./util"
+
+describe("clampScore", () => {
+  it("正常值原样返回", () => {
+    expect(clampScore(7)).toBe(7)
+    expect(clampScore(0)).toBe(0)
+    expect(clampScore(10)).toBe(10)
+  })
+
+  it("超过 max 时钳制到 max", () => {
+    expect(clampScore(12)).toBe(10)
+    expect(clampScore(10.5)).toBe(10)
+  })
+
+  it("低于 0 时钳制到 0", () => {
+    expect(clampScore(-3)).toBe(0)
+  })
+
+  it("自定义 max", () => {
+    expect(clampScore(5, 5)).toBe(5)
+    expect(clampScore(6, 5)).toBe(5)
+  })
+
+  it("非数字输入返回 0", () => {
+    expect(clampScore("abc")).toBe(0)
+    expect(clampScore(null)).toBe(0)
+    expect(clampScore(undefined)).toBe(0)
+  })
+})
+
+describe("barPercent", () => {
+  it("按 10 分制换算百分比", () => {
+    expect(barPercent(5)).toBe(50)
+    expect(barPercent(10)).toBe(100)
+    expect(barPercent(7.5)).toBe(75)
+    expect(barPercent(0)).toBe(0)
+  })
+
+  it("越界钳制到 0-100", () => {
+    expect(barPercent(12)).toBe(100)
+    expect(barPercent(-2)).toBe(0)
+  })
+
+  it("非数字输入返回 0", () => {
+    expect(barPercent("x")).toBe(0)
+    expect(barPercent(null)).toBe(0)
+  })
+})
+
+describe("trendText", () => {
+  it("≥2 场拼接走势序列（分数四舍五入取整）", () => {
+    expect(trendText([{ score: 7 }, { score: 8 }, { score: 9 }])).toBe("7 → 8 → 9")
+    expect(trendText([{ score: 7.4 }, { score: 8.6 }])).toBe("7 → 9")
+  })
+
+  it("不足 2 场返回空串", () => {
+    expect(trendText([{ score: 7 }])).toBe("")
+    expect(trendText([])).toBe("")
+  })
+
+  it("null/undefined 返回空串", () => {
+    expect(trendText(null)).toBe("")
+    expect(trendText(undefined)).toBe("")
+  })
+})

@@ -50,11 +50,13 @@
         <view wx:for="{{ weakness }}" wx:key="category" class="weakness-row">
           <view class="weakness-head">
             <text class="weakness-name">{{ item.label }}</text>
+            <text class="weakness-meta">{{ item.count }} 题</text>
             <text class="weakness-score">{{ item.avgScore }} <text class="weakness-direction">{{ item.direction === 'up' ? '↑' : item.direction === 'down' ? '↓' : '→' }}</text></text>
           </view>
           <view class="weakness-bar">
-            <view class="weakness-bar-fill" style="width: {{ item.avgScore / 5 * 100 }}%"></view>
+            <view class="weakness-bar-fill" style="width: {{ item.barPercent }}%"></view>
           </view>
+          <view wx:if="{{ item.trendText }}" class="weakness-trend">最近 {{ item.trend.length }} 场：{{ item.trendText }}</view>
         </view>
       </block>
       <view wx:else class="empty-state">暂无薄弱项数据</view>
@@ -78,6 +80,16 @@
     <view class="card chart-card">
       <canvas wx:if="{{ scoreTrend.length > 0 }}" canvas-id="trendCanvas" class="trend-canvas"></canvas>
       <view wx:else class="empty-state">暂无评分趋势</view>
+    </view>
+
+    <!-- B3 数据明细（最新在前） -->
+    <view wx:if="{{ trendDetail.length > 0 }}" class="card trend-detail-card">
+      <view class="trend-detail-item" wx:for="{{ trendDetail }}" wx:key="index">
+        <text class="trend-detail-date">{{ item.date }}</text>
+        <text class="trend-detail-company">{{ item.company }}</text>
+        <text class="trend-detail-pos">{{ item.position }}</text>
+        <text class="trend-detail-score">{{ item.scoreText }}</text>
+      </view>
     </view>
   </block>
 

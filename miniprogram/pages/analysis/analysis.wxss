@@ -54,6 +54,64 @@
   color: var(--brand-muted-text);
 }
 
+.weakness-meta {
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+  flex-shrink: 0;
+}
+
+.weakness-trend {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+}
+
+/* B3 趋势数据明细（最新在前） */
+.trend-detail-card {
+  margin-top: 20rpx;
+}
+
+.trend-detail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 0;
+  border-bottom: 2rpx solid var(--brand-border);
+  font-size: 24rpx;
+}
+
+.trend-detail-item:last-child {
+  border-bottom: none;
+}
+
+.trend-detail-date {
+  color: var(--brand-muted-text);
+  flex-shrink: 0;
+}
+
+.trend-detail-company {
+  font-weight: 600;
+  flex: 1;
+  margin: 0 12rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trend-detail-pos {
+  color: var(--brand-muted-text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trend-detail-score {
+  font-weight: 700;
+  color: var(--brand-primary);
+  flex-shrink: 0;
+}
+
 /* 跨公司对比 */
 .company-row {
   display: flex;

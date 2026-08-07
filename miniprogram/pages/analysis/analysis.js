@@ -10,6 +10,7 @@ Page({
     weakness: [],
     companies: [],
     scoreTrend: [],
+    trendDetail: [],
   },
 
   onLoad() {
@@ -21,7 +22,11 @@ Page({
     Promise.all([api.getAnalysis(), api.getDeepAnalysis()]).then(([basic, deep]) => {
       const stats = basic.stats || {}
       const skillProfile = basic.skillProfile || []
-      const weakness = deep.weaknessTracking || []
+      const weakness = (deep.weaknessTracking || []).map((w) => ({
+        ...w,
+        barPercent: util.barPercent(w.avgScore),
+        trendText: util.trendText(w.trend || []),
+      }))
       const companies = deep.companyComparison || []
       const trend = deep.trendData || []
 
@@ -39,6 +44,10 @@ Page({
           weakness,
           companies,
           scoreTrend: trend,
+          trendDetail: trend.slice().reverse().map((t) => ({
+            ...t,
+            scoreText: typeof t.score === "number" ? t.score.toFixed(1) : "-",
+          })),
         },
         () => {
           if (skillProfile.length >= 3) this.drawRadar(skillProfile)
@@ -68,7 +77,7 @@ Page({
     const pointRadius = cfg.pointRadius || 3
     const drawLabels = cfg.drawLabels !== false
     const angle = (i) => -Math.PI / 2 + (2 * Math.PI * i) / n
-    const scoreAt = (i) => Math.min(Math.max(profile[i].score || 0, 0), 5)
+    const scoreAt = (i) => util.clampScore(profile[i].score)
     const pxAt = (i, ratio) => {
       const a = angle(i)
       return { x: cx + R * ratio * Math.cos(a), y: cy + R * ratio * Math.sin(a) }
@@ -96,7 +105,7 @@ Page({
     // 数据多边形
     ctx.beginPath()
     for (let i = 0; i < n; i++) {
-      const p = pxAt(i, scoreAt(i) / 5)
+      const p = pxAt(i, scoreAt(i) / 10)
       i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)
     }
     ctx.closePath()
@@ -108,7 +117,7 @@ Page({
 
     // 顶点圆点
     for (let i = 0; i < n; i++) {
-      const p = pxAt(i, scoreAt(i) / 5)
+      const p = pxAt(i, scoreAt(i) / 10)
       ctx.beginPath()
       ctx.arc(p.x, p.y, pointRadius, 0, 2 * Math.PI)
       ctx.setFillStyle("#6366f1")
@@ -199,7 +208,7 @@ Page({
     ctx.setFontSize(this.rpx2px(26))
     for (let i = 0; i < profile.length; i++) {
       const label = util.CATEGORY_LABELS[profile[i].category] || profile[i].category
-      const score = Math.min(Math.max(profile[i].score || 0, 0), 5)
+      const score = util.clampScore(profile[i].score)
       const y = labelStart + i * rowH
       ctx.setFillStyle("#1e293b")
       ctx.setTextAlign("left")
@@ -287,10 +296,10 @@ Page({
     ctx.lineTo(w - padR, h - padB)
     ctx.stroke()
 
-    // 0-5 分横网格
+    // 0-10 分横网格（步长 2）
     ctx.setStrokeStyle("#f1f5f9")
-    for (let s = 0; s <= 5; s++) {
-      const y = h - padB - (plotH * s) / 5
+    for (let s = 0; s <= 10; s += 2) {
+      const y = h - padB - (plotH * s) / 10
       ctx.beginPath()
       ctx.moveTo(padL, y)
       ctx.lineTo(w - padR, y)
@@ -298,7 +307,7 @@ Page({
     }
 
     const xOf = (i) => (n === 1 ? padL + plotW / 2 : padL + (plotW * i) / (n - 1))
-    const yOf = (score) => h - padB - (plotH * Math.min(Math.max(score, 0), 5)) / 5
+    const yOf = (score) => h - padB - (plotH * util.clampScore(score)) / 10
 
     // 折线
     ctx.setStrokeStyle("#6366f1")

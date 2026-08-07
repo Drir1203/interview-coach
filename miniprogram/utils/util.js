@@ -33,6 +33,29 @@ const CATEGORY_LABELS = {
   project_deep_dive: "项目深挖", system_design: "系统设计", hr: "HR 面试",
 }
 
+// 分数刻度：clamp [0, max]，非数字返回 0（后端 AI 评分为 10 分制）
+function clampScore(score, max = 10) {
+  if (typeof score !== "number" || Number.isNaN(score)) return 0
+  return Math.min(Math.max(score, 0), max)
+}
+
+// 进度条百分比：score/max → 0-100 整数
+function barPercent(score, max = 10) {
+  if (max <= 0) return 0
+  return Math.round((clampScore(score, max) / max) * 100)
+}
+
+// 薄弱项走势序列文本："7 → 8 → 9"；不足 2 场返回 ""
+function trendText(trend) {
+  if (!Array.isArray(trend) || trend.length < 2) return ""
+  return trend
+    .map((t) => {
+      const v = t && t.score
+      return Number.isFinite(Number(v)) ? Math.round(Number(v)) : 0
+    })
+    .join(" → ")
+}
+
 module.exports = {
   formatDate,
   formatDateTime,
@@ -40,4 +63,7 @@ module.exports = {
   RESULT_LABELS,
   STATUS_LABELS,
   CATEGORY_LABELS,
+  clampScore,
+  barPercent,
+  trendText,
 }
