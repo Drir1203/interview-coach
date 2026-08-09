@@ -113,22 +113,63 @@
 }
 
 /* 跨公司对比 */
-.company-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.company-block {
   padding: 20rpx 0;
   border-bottom: 2rpx solid var(--brand-border);
 }
 
-.company-row:last-child {
+.company-block:last-child {
   border-bottom: none;
+}
+
+.company-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .company-name {
   font-size: 28rpx;
   font-weight: 600;
   flex: 1;
+}
+
+/* C1 维度得分明细 */
+.company-skill-row {
+  display: flex;
+  align-items: center;
+  margin-top: 10rpx;
+}
+
+.company-skill-label {
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+  width: 140rpx;
+  flex-shrink: 0;
+}
+
+.company-skill-bar {
+  flex: 1;
+  margin: 0 16rpx;
+  height: 10rpx;
+  background: var(--brand-muted);
+  border-radius: 999rpx;
+  overflow: hidden;
+}
+
+.company-skill-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #c7d2fe, #818cf8);
+  border-radius: 999rpx;
+}
+
+.company-skill-score {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--brand-primary);
+  width: 70rpx;
+  text-align: right;
+  flex-shrink: 0;
 }
 
 .company-meta {
@@ -176,4 +217,20 @@
   left: -9999rpx;
   width: 600rpx;
   height: 800rpx;
+}
+
+/* C2 趋势公司筛选 */
+.trend-filter {
+  display: flex;
+  justify-content: flex-end;
+  margin: 8rpx 0 16rpx;
+}
+
+.trend-filter-picker {
+  font-size: 24rpx;
+  color: var(--brand-primary);
+  border: 2rpx solid var(--brand-primary);
+  border-radius: 999rpx;
+  padding: 8rpx 24rpx;
+  background: var(--brand-card);
 }

@@ -11,6 +11,8 @@ Page({
     companies: [],
     scoreTrend: [],
     trendDetail: [],
+    trendFilterRange: ["全部公司"],
+    filterIndex: 0,
   },
 
   onLoad() {
@@ -27,13 +29,23 @@ Page({
         barPercent: util.barPercent(w.avgScore),
         trendText: util.trendText(w.trend || []),
       }))
-      const companies = deep.companyComparison || []
-      const trend = deep.trendData || []
+      // C1 跨公司对比：每公司维度得分明细（10 分制进度条）
+      const companies = (deep.companyComparison || []).map((c) => ({
+        ...c,
+        skills: (c.skillProfile || []).map((s) => ({
+          category: s.category,
+          label: util.CATEGORY_LABELS[s.category] || s.category,
+          barPercent: util.barPercent(s.score),
+          scoreText: typeof s.score === "number" ? s.score.toFixed(1) : "-",
+        })),
+      }))
+      // C2 趋势筛选：原始全量数据存实例，按筛选重绘
+      this._trend = deep.trendData || []
 
       this.setData(
         {
           loading: false,
-          hasData: skillProfile.length > 0 || weakness.length > 0 || trend.length > 0,
+          hasData: skillProfile.length > 0 || weakness.length > 0 || this._trend.length > 0,
           stats: {
             total: stats.total || 0,
             reviewed: stats.reviewed || 0,
@@ -43,20 +55,41 @@ Page({
           skillProfile,
           weakness,
           companies,
-          scoreTrend: trend,
-          trendDetail: trend.slice().reverse().map((t) => ({
-            ...t,
-            scoreText: typeof t.score === "number" ? t.score.toFixed(1) : "-",
-          })),
+          trendFilterRange: ["全部公司"].concat(deep.companies || []),
+          filterIndex: 0,
         },
         () => {
           if (skillProfile.length >= 3) this.drawRadar(skillProfile)
-          if (trend.length > 0) this.drawTrend(trend)
+          this.applyFilter()
         }
       )
     }).catch(() => {
       this.setData({ loading: false })
     })
+  },
+
+  // C2 趋势公司筛选：按选中公司过滤并重绘（canvas 正序，明细倒序）
+  applyFilter() {
+    const range = this.data.trendFilterRange || ["全部公司"]
+    const idx = this.data.filterIndex || 0
+    const company = idx === 0 ? "" : range[idx]
+    const filtered = util.filterTrend(this._trend || [], company)
+    this.setData(
+      {
+        scoreTrend: filtered,
+        trendDetail: filtered.slice().reverse().map((t) => ({
+          ...t,
+          scoreText: typeof t.score === "number" ? t.score.toFixed(1) : "-",
+        })),
+      },
+      () => {
+        if (filtered.length > 0) this.drawTrend(filtered)
+      }
+    )
+  },
+
+  onCompanyChange(e) {
+    this.setData({ filterIndex: Number(e.detail.value) || 0 }, () => this.applyFilter())
   },
 
   // rpx → px（750 设计稿）

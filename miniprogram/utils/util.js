@@ -56,6 +56,13 @@ function trendText(trend) {
     .join(" → ")
 }
 
+// 趋势公司筛选：company 空/"all" 返回原数组，否则过滤该公司；非法输入返回 []
+function filterTrend(trend, company) {
+  if (!Array.isArray(trend)) return []
+  if (!company || company === "all") return trend
+  return trend.filter((t) => t && t.company === company)
+}
+
 module.exports = {
   formatDate,
   formatDateTime,
@@ -66,4 +73,5 @@ module.exports = {
   clampScore,
   barPercent,
   trendText,
+  filterTrend,
 }

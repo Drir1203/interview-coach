@@ -66,10 +66,22 @@
     <text class="section-title">跨公司对比</text>
     <view class="card">
       <block wx:if="{{ companies.length > 0 }}">
-        <view wx:for="{{ companies }}" wx:key="company" class="company-row">
-          <text class="company-name">{{ item.company }}</text>
-          <text class="company-meta">{{ item.interviewCount }} 场</text>
-          <text class="company-score">{{ item.avgScore }}</text>
+        <view wx:for="{{ companies }}" wx:key="company" class="company-block">
+          <view class="company-row">
+            <text class="company-name">{{ item.company }}</text>
+            <text class="company-meta">{{ item.interviewCount }} 场</text>
+            <text class="company-score">{{ item.avgScore }}</text>
+          </view>
+          <!-- C1 维度得分明细 -->
+          <block wx:if="{{ item.skills.length > 0 }}" class="company-skills">
+            <view wx:for="{{ item.skills }}" wx:for-item="sk" wx:key="category" class="company-skill-row">
+              <text class="company-skill-label">{{ sk.label }}</text>
+              <view class="company-skill-bar">
+                <view class="company-skill-bar-fill" style="width: {{ sk.barPercent }}%"></view>
+              </view>
+              <text class="company-skill-score">{{ sk.scoreText }}</text>
+            </view>
+          </block>
         </view>
       </block>
       <view wx:else class="empty-state">暂无公司对比数据</view>
@@ -77,6 +89,11 @@
 
     <!-- 评分趋势 -->
     <text class="section-title">评分趋势</text>
+    <view wx:if="{{ trendFilterRange.length > 1 }}" class="trend-filter">
+      <picker mode="selector" range="{{ trendFilterRange }}" value="{{ filterIndex }}" bindchange="onCompanyChange">
+        <view class="trend-filter-picker">📊 {{ trendFilterRange[filterIndex] }} ▾</view>
+      </picker>
+    </view>
     <view class="card chart-card">
       <canvas wx:if="{{ scoreTrend.length > 0 }}" canvas-id="trendCanvas" class="trend-canvas"></canvas>
       <view wx:else class="empty-state">暂无评分趋势</view>

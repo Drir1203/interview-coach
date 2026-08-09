@@ -61,21 +61,47 @@
 
 **验收**：canvas 折线用正序 `trend`（时间从左到右），列表用倒序副本；仅当趋势图存在时展示。
 
+### C1 跨公司对比增强：维度得分明细
+
+**Requirement**：每家公司卡片下方展示各能力维度得分明细（中文标签 + 进度条 + 分数）。
+
+**Scenario**：
+- Given `companyComparison` 项含 `skillProfile:[{category, score}]` 且非空
+- When 渲染该公司行
+- Then 行内展开各维度：`CATEGORY_LABELS[category] || category` 标签 + 进度条（`barPercent(score)`）+ 分数（`toFixed(1)`）
+- Given `skillProfile` 为空
+- Then 不展示明细
+
+**验收**：`score` 同为 10 分制，复用 `barPercent`；不做每公司独立雷达 canvas（多实例性能差，以进度条明细替代）。
+
+### C2 趋势公司筛选
+
+**Requirement**：趋势区提供公司筛选器（picker），切换后折线与明细联动刷新。
+
+**Scenario**：
+- Given 用户选择「全部公司」或某公司
+- When 切换筛选
+- Then 折线 `scoreTrend` 与明细 `trendDetail` 均按 `filterTrend(trendData, company)` 过滤后重绘（canvas 用正序，明细用倒序）
+- Given 过滤后无数据
+- Then 显示「暂无趋势数据」占位，不绘制 canvas
+
+**验收**：`filterTrend` 为 util 纯函数；筛选状态不持久化，重进页面回到「全部公司」。
+
 ---
 
 ## 非目标（明确不做）
 
-- 跨公司对比的雷达图/维度明细 → 暂保持现有 公司/场次/均分 三列
-- 趋势公司筛选器 → 后续可选
+- 每公司独立雷达 canvas → 以维度明细+进度条替代（避免多 canvas 性能/复杂度）
 - Web 端任何改动
 - 后端 `/api/analysis/*` 任何改动
 
 ## 测试计划
 
-- **纯函数**（`miniprogram/utils/util.js` 新增，可测）：
+- **纯函数**（`miniprogram/utils/util.js`，可测）：
   - `clampScore(score, max = 10)` — clamp `[0, max]`，非数字返回 0
   - `barPercent(score, max = 10)` — 进度条百分比 `clamp(score/max*100, 0, 100)`，保留整数
   - `trendText(trend)` — `trend.length >= 2` 时返回 `"7 → 8 → 9"`，否则 `""`
-- **单测**：新增 `miniprogram/utils/util.test.js`（vitest），覆盖上述边界：越界/非法输入/单场。
+  - `filterTrend(trend, company)` — `company` 空/`"all"` 返回原数组，否则过滤该公司的面试；非法输入返回 `[]`
+- **单测**：`miniprogram/utils/util.test.js`（vitest），覆盖上述边界：越界/非法输入/单场/空筛选/非法输入。
 - **UI 胶水层**（wxml/wxss/canvas 绘制）豁免测试，理由：纯展示逻辑，业务状态均收敛于 util 纯函数。
 - **回归门禁**：本轮不动 Web/后端，以 vitest 为门禁（沿用昨日决策）。

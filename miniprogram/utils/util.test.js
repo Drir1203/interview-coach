@@ -1,6 +1,6 @@
-// util.js 纯函数测试：分数刻度（10 分制）+ 走势文本
+// util.js 纯函数测试：分数刻度（10 分制）+ 走势文本 + 趋势筛选
 import { describe, it, expect } from "vitest"
-import { clampScore, barPercent, trendText } from "./util"
+import { clampScore, barPercent, trendText, filterTrend } from "./util"
 
 describe("clampScore", () => {
   it("正常值原样返回", () => {
@@ -63,5 +63,36 @@ describe("trendText", () => {
   it("null/undefined 返回空串", () => {
     expect(trendText(null)).toBe("")
     expect(trendText(undefined)).toBe("")
+  })
+})
+
+describe("filterTrend", () => {
+  const trend = [
+    { date: "2026-07-01", score: 7, company: "字节", position: "后端" },
+    { date: "2026-07-05", score: 8, company: "腾讯", position: "后端" },
+    { date: "2026-07-09", score: 9, company: "字节", position: "后端" },
+  ]
+
+  it("company 为空时返回原数组", () => {
+    expect(filterTrend(trend, "")).toEqual(trend)
+    expect(filterTrend(trend, null)).toEqual(trend)
+    expect(filterTrend(trend, undefined)).toEqual(trend)
+    expect(filterTrend(trend, "all")).toEqual(trend)
+  })
+
+  it("按公司过滤", () => {
+    const bytes = filterTrend(trend, "字节")
+    expect(bytes.length).toBe(2)
+    expect(bytes.every((t) => t.company === "字节")).toBe(true)
+  })
+
+  it("无匹配公司返回空数组", () => {
+    expect(filterTrend(trend, "阿里")).toEqual([])
+  })
+
+  it("非法输入返回空数组", () => {
+    expect(filterTrend(null, "字节")).toEqual([])
+    expect(filterTrend(undefined, "字节")).toEqual([])
+    expect(filterTrend("not-array", "字节")).toEqual([])
   })
 })
