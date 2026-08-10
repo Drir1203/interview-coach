@@ -1,6 +1,6 @@
 // util.js 纯函数测试：分数刻度（10 分制）+ 走势文本 + 趋势筛选 + 策略存储
 import { describe, it, expect } from "vitest"
-import { clampScore, barPercent, trendText, filterTrend, storeStrategy } from "./util"
+import { clampScore, barPercent, trendText, filterTrend, storeStrategy, chatTimeLabel } from "./util"
 
 describe("clampScore", () => {
   it("正常值原样返回", () => {
@@ -115,5 +115,31 @@ describe("storeStrategy", () => {
   it("非法输入返回空数组", () => {
     expect(storeStrategy(null, "a1", [])).toEqual([])
     expect(storeStrategy(undefined, "a1", [])).toEqual([])
+  })
+})
+
+describe("chatTimeLabel", () => {
+  function localIso(hour, minute, offsetDays = 0) {
+    const d = new Date()
+    d.setDate(d.getDate() + offsetDays)
+    d.setHours(hour, minute, 0, 0)
+    const pad = (n) => String(n).padStart(2, "0")
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(hour)}:${pad(minute)}:00`
+  }
+
+  it("今天返回 HH:mm", () => {
+    expect(chatTimeLabel(localIso(8, 5))).toBe("08:05")
+    expect(chatTimeLabel(localIso(23, 59))).toBe("23:59")
+  })
+
+  it("非今天返回 MM-DD HH:mm", () => {
+    expect(chatTimeLabel(localIso(14, 30, -2))).toMatch(/^\d{2}-\d{2} 14:30$/)
+  })
+
+  it("空串/非法输入返回空串", () => {
+    expect(chatTimeLabel("")).toBe("")
+    expect(chatTimeLabel(null)).toBe("")
+    expect(chatTimeLabel(undefined)).toBe("")
+    expect(chatTimeLabel("not-a-date")).toBe("")
   })
 })

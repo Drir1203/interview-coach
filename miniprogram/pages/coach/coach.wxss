@@ -1,4 +1,4 @@
-/* AI 教练对话页：消息区 + 底部固定输入栏 */
+/* AI 教练对话页：消息区 + 底部固定输入栏 + 历史对话弹层 */
 
 .chat-list {
   padding-bottom: 160rpx;
@@ -25,4 +25,131 @@
 
 .input-field {
   flex: 1;
+}
+
+/* ===== 历史对话弹层 ===== */
+.history-popup {
+  overflow: hidden;
+}
+
+.history-wrap {
+  height: 75vh;
+  display: flex;
+  flex-direction: column;
+  padding: 24rpx 24rpx 0;
+  box-sizing: border-box;
+  background: var(--brand-card);
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8rpx 0 16rpx;
+}
+
+.history-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--brand-text);
+}
+
+.history-search {
+  padding: 0 0 16rpx;
+}
+
+.history-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 24rpx;
+}
+
+.history-loading {
+  padding: 80rpx 0;
+  display: flex;
+  justify-content: center;
+}
+
+.history-empty {
+  padding: 40rpx 0;
+}
+
+.history-list {
+  border-radius: var(--brand-radius-md);
+  overflow: hidden;
+}
+
+.history-item {
+  padding: 20rpx 24rpx;
+  border-bottom: 2rpx solid var(--brand-border);
+  background: var(--brand-card);
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item.current {
+  background: var(--brand-primary-light);
+}
+
+.history-item-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.history-item-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--brand-text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-item-title.current {
+  color: var(--brand-primary);
+}
+
+.history-item-time {
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+  flex-shrink: 0;
+}
+
+.history-item-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-top: 8rpx;
+}
+
+.history-item-summary {
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+}
+
+.history-action {
+  font-size: 28rpx;
+  padding: 8rpx;
+  border-radius: var(--brand-radius-sm);
+}
+
+.history-action.danger {
+  font-size: 26rpx;
 }

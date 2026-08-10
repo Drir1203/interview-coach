@@ -83,6 +83,18 @@ module.exports = {
     return request("/api/coach", "POST", data)
   },
 
+  // 教练历史对话（q 为空时不带 query）
+  getCoachConversations: (q) => {
+    const base = "/api/coach/conversations"
+    return request(q ? base + "?q=" + encodeURIComponent(q) : base)
+  },
+  getCoachConversation: (id) =>
+    request("/api/coach/conversations/" + id),
+  renameCoachConversation: (id, title) =>
+    request("/api/coach/conversations/" + id, "PUT", { title }),
+  deleteCoachConversation: (id) =>
+    request("/api/coach/conversations/" + id, "DELETE"),
+
   prepPlan: (company, position, roundType) =>
     request("/api/prep", "POST", { company, position, roundType }),
 

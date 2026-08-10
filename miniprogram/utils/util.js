@@ -69,6 +69,24 @@ function storeStrategy(apps, id, blocks) {
   return apps.map((a) => (a && a.id === id ? { ...a, strategyBlocks: blocks } : a))
 }
 
+// 教练历史时间标签：今天返回 HH:mm，非今天返回 MM-DD HH:mm；空/非法输入返回 ""
+function chatTimeLabel(iso) {
+  if (!iso) return ""
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ""
+  const now = new Date()
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  const hh = String(d.getHours()).padStart(2, "0")
+  const mm = String(d.getMinutes()).padStart(2, "0")
+  if (sameDay) return `${hh}:${mm}`
+  const mo = String(d.getMonth() + 1).padStart(2, "0")
+  const dd = String(d.getDate()).padStart(2, "0")
+  return `${mo}-${dd} ${hh}:${mm}`
+}
+
 module.exports = {
   formatDate,
   formatDateTime,
@@ -81,4 +99,5 @@ module.exports = {
   trendText,
   filterTrend,
   storeStrategy,
+  chatTimeLabel,
 }

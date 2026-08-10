@@ -2,8 +2,9 @@
   <view class="banner">
     <view>
       <text class="banner-title">AI 教练</text>
-      <text class="banner-subtitle">你的私人面试陪练</text>
+      <text class="banner-subtitle">{{ currentTitle || '你的私人面试陪练' }}</text>
     </view>
+    <van-button custom-class="banner-btn" round bind:click="openHistory">历史</van-button>
   </view>
 
   <!-- 对话消息区 -->
@@ -40,4 +41,53 @@
     />
     <van-button type="primary" round disabled="{{ !input.trim() || waiting }}" bind:click="handleSend">发送</van-button>
   </view>
+
+  <!-- 历史对话弹层 -->
+  <van-popup show="{{ showHistory }}" position="bottom" round custom-class="history-popup" bind:close="closeHistory">
+    <view class="history-wrap">
+      <view class="history-header">
+        <text class="history-title">历史对话</text>
+        <van-button size="small" type="primary" plain round bind:click="startNewConversation">新对话</van-button>
+      </view>
+      <van-search
+        value="{{ historySearch }}"
+        placeholder="搜索历史对话…"
+        bind:change="onHistorySearch"
+        custom-class="history-search"
+      />
+      <view class="history-body">
+        <view wx:if="{{ historyLoading }}" class="history-loading">
+          <van-loading color="#6366f1" size="20px">加载中...</van-loading>
+        </view>
+        <view wx:elif="{{ historyList.length === 0 }}" class="history-empty">
+          <van-empty description="还没有历史对话">
+            <van-button size="small" round type="primary" bind:click="startNewConversation">开始新对话</van-button>
+          </van-empty>
+        </view>
+        <view wx:else class="history-list">
+          <view
+            wx:for="{{ historyList }}"
+            wx:key="id"
+            class="history-item {{ item.isCurrent ? 'current' : '' }}"
+            data-id="{{ item.id }}"
+            bind:click="openConversation"
+          >
+            <view class="history-item-main">
+              <view class="history-item-title-row">
+                <text class="history-item-title {{ item.isCurrent ? 'current' : '' }}">{{ item.titleText }}</text>
+                <text class="history-item-time">{{ item.timeText }}</text>
+              </view>
+              <view class="history-item-summary-row">
+                <text class="history-item-summary">{{ item.summaryText }}</text>
+                <view class="history-item-actions">
+                  <text class="history-action" catch:click="renameConversation" data-id="{{ item.id }}" data-title="{{ item.title }}">✏️</text>
+                  <text class="history-action danger" catch:click="deleteConversation" data-id="{{ item.id }}">🗑️</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </van-popup>
 </view>
