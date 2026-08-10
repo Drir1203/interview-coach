@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Loader2, AlertCircle } from "lucide-react"
 import { Logo } from "@/components/Logo"
@@ -10,13 +10,38 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
+// callbackUrl 功能路径 → 功能名（登录页提示「登录后继续使用「XX」」）
+const FEATURE_NAMES: Record<string, string> = {
+  "/coach": "AI 教练",
+  "/prep": "面试押题",
+  "/report": "成长报告",
+  "/analysis": "深入分析",
+  "/applications": "投递管理",
+  "/interviews": "面试记录",
+  "/companies": "公司管理",
+  "/experiences": "经历管理",
+  "/practice": "模拟面试",
+  "/settings": "设置",
+}
+
+// 从 callbackUrl（如 /interview/coach、/interview/interviews/new）解析功能名；识别不出返回 null
+function featureNameFromCallback(callbackUrl: string): string | null {
+  if (!callbackUrl) return null
+  const path = callbackUrl.replace(/^\/interview/, "") // 去掉 basePath
+  const matched = Object.keys(FEATURE_NAMES)
+    .sort((a, b) => b.length - a.length) // 长 key 优先，命中子路径如 /interviews/new
+    .find((key) => path === key || path.startsWith(`${key}/`))
+  return matched ? FEATURE_NAMES[matched] : null
+}
+
 function LoginForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const callbackUrl = searchParams.get("callbackUrl") || ""
+  const featureName = featureNameFromCallback(callbackUrl)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,7 +61,7 @@ function LoginForm() {
         return
       }
 
-      window.location.href = searchParams.get("callbackUrl") || "/interview/"
+      window.location.href = callbackUrl || "/interview/"
     } catch {
       setError("登录失败，请重试")
       setLoading(false)
@@ -50,7 +75,9 @@ function LoginForm() {
           <Logo size="md" />
         </div>
         <CardTitle className="text-xl">登录</CardTitle>
-        <CardDescription>登录后可在多设备同步面试数据</CardDescription>
+        <CardDescription>
+          {featureName ? `登录后继续使用「${featureName}」` : "登录后可在多设备同步面试数据"}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
