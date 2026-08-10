@@ -63,6 +63,12 @@ function filterTrend(trend, company) {
   return trend.filter((t) => t && t.company === company)
 }
 
+// 投递策略按卡存储（不可变更新）：返回新数组，匹配项 strategyBlocks 替换为 blocks
+function storeStrategy(apps, id, blocks) {
+  if (!Array.isArray(apps)) return []
+  return apps.map((a) => (a && a.id === id ? { ...a, strategyBlocks: blocks } : a))
+}
+
 module.exports = {
   formatDate,
   formatDateTime,
@@ -74,4 +80,5 @@ module.exports = {
   barPercent,
   trendText,
   filterTrend,
+  storeStrategy,
 }

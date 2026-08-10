@@ -12,6 +12,7 @@ Page({
     messages: [],
     input: "",
     waiting: false,
+    conversationId: "",
   },
 
   onLoad() {
@@ -39,7 +40,10 @@ Page({
     const messages = this.data.messages.concat([userMsg])
     this.setData({ messages, input: "", waiting: true })
 
-    api.coachChat(messages.map((m) => ({ role: m.role, content: m.content })))
+    api.coachChat(
+      messages.map((m) => ({ role: m.role, content: m.content })),
+      this.data.conversationId
+    )
       .then((data) => {
         const reply = data.reply
         const updated = this.data.messages.concat([{
@@ -48,7 +52,9 @@ Page({
           content: reply,
           blocks: withKeys(parseMarkdown(reply)),
         }])
-        this.setData({ messages: updated, waiting: false })
+        const patch = { messages: updated, waiting: false }
+        if (data.conversationId) patch.conversationId = data.conversationId
+        this.setData(patch)
       })
       .catch(() => {
         wx.showToast({ title: "教练暂时开小差了", icon: "none" })

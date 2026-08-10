@@ -54,3 +54,32 @@ describe("api.review options 透传", () => {
     })
   })
 })
+
+describe("api.coachChat 透传 conversationId", () => {
+  beforeEach(() => {
+    capturedRequests = []
+    installWxMock()
+  })
+
+  afterEach(() => {
+    delete globalThis.wx
+  })
+
+  it("新对话：不传 conversationId", async () => {
+    await api.coachChat([{ role: "user", content: "hi" }])
+    expect(capturedRequests[0].data).toEqual({ messages: [{ role: "user", content: "hi" }] })
+  })
+
+  it("续聊：透传 conversationId", async () => {
+    await api.coachChat([{ role: "user", content: "hi" }], "conv-abc")
+    expect(capturedRequests[0].data).toEqual({
+      messages: [{ role: "user", content: "hi" }],
+      conversationId: "conv-abc",
+    })
+  })
+
+  it("空字符串 conversationId 不携带", async () => {
+    await api.coachChat([{ role: "user", content: "hi" }], "")
+    expect(capturedRequests[0].data).toEqual({ messages: [{ role: "user", content: "hi" }] })
+  })
+})

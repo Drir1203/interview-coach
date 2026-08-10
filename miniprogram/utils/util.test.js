@@ -1,6 +1,6 @@
-// util.js 纯函数测试：分数刻度（10 分制）+ 走势文本 + 趋势筛选
+// util.js 纯函数测试：分数刻度（10 分制）+ 走势文本 + 趋势筛选 + 策略存储
 import { describe, it, expect } from "vitest"
-import { clampScore, barPercent, trendText, filterTrend } from "./util"
+import { clampScore, barPercent, trendText, filterTrend, storeStrategy } from "./util"
 
 describe("clampScore", () => {
   it("正常值原样返回", () => {
@@ -94,5 +94,26 @@ describe("filterTrend", () => {
     expect(filterTrend(null, "字节")).toEqual([])
     expect(filterTrend(undefined, "字节")).toEqual([])
     expect(filterTrend("not-array", "字节")).toEqual([])
+  })
+})
+
+describe("storeStrategy", () => {
+  it("更新匹配项的 strategyBlocks（不可变）", () => {
+    const apps = [{ id: "a1", name: "A" }, { id: "a2", name: "B" }]
+    const blocks = [{ type: "p", text: "策略" }]
+    const next = storeStrategy(apps, "a1", blocks)
+    expect(next[0].strategyBlocks).toEqual(blocks)
+    expect(next[0].name).toBe("A")
+    expect(next[1]).toEqual({ id: "a2", name: "B" })
+  })
+
+  it("无匹配时返回原数组（不修改）", () => {
+    const apps = [{ id: "a1", name: "A" }]
+    expect(storeStrategy(apps, "nope", [])).toEqual(apps)
+  })
+
+  it("非法输入返回空数组", () => {
+    expect(storeStrategy(null, "a1", [])).toEqual([])
+    expect(storeStrategy(undefined, "a1", [])).toEqual([])
   })
 })

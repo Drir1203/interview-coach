@@ -40,9 +40,7 @@ Page({
     createRoundLabel: "一面",
     saving: false,
     expandedId: "",
-    strategyText: "",
-    generating: false,
-    strategyBlocks: [],
+    generatingId: "",
     hasResume: false,
     statusOptions,
     roundOptions,
@@ -72,6 +70,7 @@ Page({
           statusIndex: statusIdx >= 0 ? statusIdx : 0,
           roundIndex: roundIdx >= 0 ? roundIdx : 0,
           appliedAtText: util.formatDate(a.appliedAt),
+          strategyBlocks: [],
         }
       })
       this.setData({ applications, loading: false })
@@ -197,15 +196,15 @@ Page({
 
   generateStrategy(e) {
     const id = e.currentTarget.dataset.id
-    this.setData({ expandedId: id, generating: true, strategyBlocks: [] })
+    if (this.data.generatingId) return
+    this.setData({ expandedId: id, generatingId: id })
     api.applicationStrategy(id).then((data) => {
       this.setData({
-        generating: false,
-        strategyText: data.strategy || "",
-        strategyBlocks: parseMarkdown(data.strategy),
+        generatingId: "",
+        applications: util.storeStrategy(this.data.applications, id, parseMarkdown(data.strategy || "")),
       })
     }).catch(() => {
-      this.setData({ generating: false })
+      this.setData({ generatingId: "" })
       wx.showToast({ title: "生成失败", icon: "none" })
     })
   },

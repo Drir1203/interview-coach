@@ -63,14 +63,14 @@
           plain
           type="primary"
           data-id="{{ item.id }}"
-          loading="{{ generating && expandedId === item.id }}"
+          loading="{{ generatingId === item.id }}"
           bind:click="generateStrategy"
         >AI 策略</van-button>
         <van-button size="small" plain type="danger" data-id="{{ item.id }}" bind:click="deleteApplication">删除</van-button>
       </view>
 
       <view class="strategy-area" wx:if="{{ expandedId === item.id }}">
-        <block wx:if="{{ generating }}">
+        <block wx:if="{{ generatingId === item.id }}">
           <view class="loading">
             <van-loading color="#6366f1" size="24px">AI 生成中...</van-loading>
           </view>
@@ -80,8 +80,8 @@
             <text class="strategy-title">🎯 AI 推进策略</text>
             <text class="strategy-collapse" data-id="{{ item.id }}" bindtap="toggleExpand">收起</text>
           </view>
-          <view wx:if="{{ strategyBlocks.length === 0 }}" class="strategy-empty">暂无策略内容</view>
-          <view wx:for="{{ strategyBlocks }}" wx:for-item="blk" wx:for-index="bi" wx:key="key">
+          <view wx:if="{{ item.strategyBlocks.length === 0 }}" class="strategy-empty">暂无策略内容</view>
+          <view wx:for="{{ item.strategyBlocks }}" wx:for-item="blk" wx:for-index="bi" wx:key="key">
             <text wx:if="{{ blk.type === 'h1' }}" class="md-h1">{{ blk.text }}</text>
             <text wx:elif="{{ blk.type === 'h2' }}" class="md-h2">{{ blk.text }}</text>
             <text wx:elif="{{ blk.type === 'h3' }}" class="md-h3">{{ blk.text }}</text>

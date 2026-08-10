@@ -77,8 +77,11 @@ module.exports = {
     request("/api/auth/change-password", "POST", data),
 
   // AI 功能
-  coachChat: (messages) =>
-    request("/api/coach", "POST", { messages }),
+  coachChat: (messages, conversationId) => {
+    const data = { messages }
+    if (conversationId) data.conversationId = conversationId
+    return request("/api/coach", "POST", data)
+  },
 
   prepPlan: (company, position, roundType) =>
     request("/api/prep", "POST", { company, position, roundType }),
