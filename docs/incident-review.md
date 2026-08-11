@@ -199,6 +199,30 @@ curl -k https://47.116.138.61/api/v1/agent/run          # crossborder-ai API（�
 
 ---
 
+## 十、补充记录：PM2 进程表丢失导致部署启动失败（2026-08-11）
+
+**影响**：deploy.sh 部署流程中断，服务短暂停服（从 `pm2 stop` 到手动修复，约 1-2 分钟）。
+
+**时间线**：
+- deploy.sh 1-5 步正常（备份/同步/停服/prisma/构建）
+- 第 6 步 `pm2 start i面试` 报 `[PM2][ERROR] Script not found: /opt/interview-coach/i面试`
+- 诊断：`pm2 list` 为空 → **PM2 进程表丢失**，`pm2 start <应用名>` 把应用名当脚本路径解析
+
+**根因**：PM2 进程表（`~/.pm2/dump.pm2`）是易失状态，服务重启/异常可能清空；`pm2 start <name>` / `pm2 stop <name>` 依赖进程表中的应用名注册，进程表丢失即失败。
+
+**修复**：
+```bash
+cd /opt/interview-coach && pm2 start ecosystem.config.cjs && pm2 save
+```
+从配置文件直接启动（不依赖进程表），`pm2 save` 持久化进程表防再丢。
+
+**防范（已固化到 deploy.sh）**：
+1. 停服改为幂等：`pm2 stop i面试 2>/dev/null; pm2 delete i面试 2>/dev/null; true`（进程表丢失不中断，delete 清旧注册防重复）
+2. 启动改为 `pm2 start ecosystem.config.cjs && pm2 save`（配置文件启动 + 持久化进程表）
+3. 经验：依赖「应用名」的 PM2 命令都要容错；部署入口始终用 ecosystem 配置文件
+
+---
+
 ## 报告信息
 
 - 报告人：DevOps/全栈工程师
