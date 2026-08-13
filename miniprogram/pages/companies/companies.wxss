@@ -1,0 +1,95 @@
+/* 公司看板页 */
+.company-card {
+  margin-bottom: 20rpx;
+}
+
+.company-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.company-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--brand-text);
+  flex: 1;
+}
+
+.company-count {
+  font-size: 24rpx;
+  color: var(--brand-primary);
+  background: var(--brand-muted);
+  border-radius: 999rpx;
+  padding: 6rpx 20rpx;
+  flex-shrink: 0;
+}
+
+.company-industry {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+}
+
+.company-avg {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.company-avg-label {
+  font-size: 26rpx;
+  color: var(--brand-muted-text);
+}
+
+.company-avg-score {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--brand-primary);
+}
+
+.company-interviews {
+  margin-top: 16rpx;
+}
+
+.company-interview-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--brand-muted);
+  border-radius: 12rpx;
+  padding: 18rpx 20rpx;
+  margin-bottom: 12rpx;
+}
+
+.interview-pos {
+  font-size: 26rpx;
+  color: var(--brand-text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.interview-score {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--brand-primary);
+  flex-shrink: 0;
+}
+
+.interview-score-empty {
+  font-size: 26rpx;
+  color: var(--brand-muted-text);
+  flex-shrink: 0;
+}
+
+.company-more {
+  display: block;
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+  text-align: center;
+  margin-top: 8rpx;
+}

@@ -91,4 +91,8 @@ Page({
   goApplications() {
     wx.navigateTo({ url: "/pages/applications/applications" })
   },
+
+  goCompanies() {
+    wx.navigateTo({ url: "/pages/companies/companies" })
+  },
 })

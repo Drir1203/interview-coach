@@ -10,6 +10,7 @@ Page({
     generating: false,
     reportBlocks: [],
     hasReport: false,
+    stats: null,
   },
 
   generate() {
@@ -19,6 +20,7 @@ Page({
         this.setData({
           reportBlocks: withKeys(parseMarkdown(data.report)),
           hasReport: true,
+          stats: data.data || null,
           generating: false,
         })
       })

@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "公司看板",
+  "usingComponents": {
+    "van-loading": "@vant/weapp/loading/index",
+    "van-empty": "@vant/weapp/empty/index"
+  }
+}

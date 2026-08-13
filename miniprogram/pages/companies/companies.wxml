@@ -1,0 +1,48 @@
+<view class="page">
+  <view class="banner">
+    <view>
+      <text class="banner-title">公司看板</text>
+      <text class="banner-subtitle">按公司维度查看你的面试表现</text>
+    </view>
+  </view>
+
+  <view class="loading" wx:if="{{ loading }}">
+    <van-loading color="#6366f1" size="24px">加载中...</van-loading>
+  </view>
+
+  <view wx:elif="{{ companies.length === 0 }}">
+    <van-empty description="还没有面试记录" />
+  </view>
+
+  <view wx:else class="company-list">
+    <view wx:for="{{ companies }}" wx:key="id" class="card company-card">
+      <view class="company-head">
+        <text class="company-name">{{ item.name }}</text>
+        <text class="company-count">{{ item.interviews.length }} 场</text>
+      </view>
+      <text wx:if="{{ item.industry }}" class="company-industry">{{ item.industry }}</text>
+
+      <view wx:if="{{ item.avgScoreText }}" class="company-avg">
+        <text class="company-avg-label">平均评分</text>
+        <text class="company-avg-score">{{ item.avgScoreText }}</text>
+      </view>
+
+      <view class="company-interviews">
+        <view
+          wx:for="{{ item.topInterviews }}"
+          wx:for-item="iv"
+          wx:for-index="ii"
+          wx:key="id"
+          class="company-interview-item"
+          data-id="{{ iv.id }}"
+          bindtap="goDetail"
+        >
+          <text class="interview-pos">{{ iv.position }}</text>
+          <text wx:if="{{ iv.overallScore }}" class="interview-score">{{ iv.overallScore.toFixed(1) }}</text>
+          <text wx:else class="interview-score-empty">-</text>
+        </view>
+        <text wx:if="{{ item.showMore }}" class="company-more">还有 {{ item.moreCount }} 场面试</text>
+      </view>
+    </view>
+  </view>
+</view>

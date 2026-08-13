@@ -6,6 +6,26 @@
     </view>
   </view>
 
+  <!-- 统计卡（生成报告后展示） -->
+  <view class="stats-grid" wx:if="{{ stats }}">
+    <view class="stat-card">
+      <text class="stat-value">{{ stats.total }}</text>
+      <text class="stat-label">总面试</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{ stats.reviewed }}</text>
+      <text class="stat-label">已复盘</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{ stats.passRate }}%</text>
+      <text class="stat-label">通过率</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{ stats.avgScore ? stats.avgScore.toFixed(1) : '-' }}</text>
+      <text class="stat-label">平均分</text>
+    </view>
+  </view>
+
   <!-- 说明卡 + 生成入口 -->
   <view class="card">
     <text class="card-title">关于成长报告</text>

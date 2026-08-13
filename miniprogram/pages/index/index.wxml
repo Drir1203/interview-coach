@@ -53,6 +53,7 @@
       <view class="feature-card" bindtap="goTranscribe"><text class="feature-emoji">🎙️</text><text class="feature-name">录音转写</text></view>
       <view class="feature-card" bindtap="goCalendar"><text class="feature-emoji">🗓️</text><text class="feature-name">面试日历</text></view>
       <view class="feature-card" bindtap="goApplications"><text class="feature-emoji">💼</text><text class="feature-name">求职进度</text></view>
+      <view class="feature-card" bindtap="goCompanies"><text class="feature-emoji">🏢</text><text class="feature-name">公司看板</text></view>
     </view>
 
     <!-- 近期面试 -->
