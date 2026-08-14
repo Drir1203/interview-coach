@@ -3,7 +3,15 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export default async function middleware(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET })
+  // 与服务端 Auth.js 保持一致的 secureCookie 判定：
+  // 存在 NEXTAUTH_URL/AUTH_URL 时以其协议为准（本项目 https → __Secure- 前缀 cookie），
+  // 否则按请求本身协议判定。getToken 默认按非安全 cookie 名（authjs.session-token）读取，
+  // 不显式传 secureCookie 会导致读不到 __Secure-authjs.session-token → 已登录也被当未登录。
+  const envUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL
+  const secureCookie = envUrl
+    ? new URL(envUrl).protocol === "https:"
+    : req.nextUrl.protocol === "https:"
+  const token = await getToken({ req, secret: process.env.AUTH_SECRET, secureCookie })
   if (token) return NextResponse.next()
 
   // 未登录：直达登录页，callbackUrl 指向原功能页（登录后自动回跳对应功能页）
