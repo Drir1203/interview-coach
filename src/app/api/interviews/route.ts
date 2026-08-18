@@ -2,6 +2,7 @@ import { NextRequest } from "next/server"
 import { auth } from "@/auth"
 import prisma from "@/lib/db"
 import { syncInterviewTags } from "@/lib/interview-tags"
+import { assertInterviewQuota } from "@/lib/tier"
 
 function getUserId(session: any): string {
   // 未登录不再回退到 "default"（避免显示 default 用户的测试数据），返回空
@@ -30,6 +31,15 @@ export async function GET(req: NextRequest) {
 export async function POST(req: Request) {
   const session = await auth()
   const userId = getUserId(session)
+
+  // 付费墙：已登录用户受免费场次限额（未登录豁免，保持门禁匿名链路可用）
+  if (session?.user?.id) {
+    const quota = await assertInterviewQuota(session.user.id)
+    if (!quota.ok) {
+      return Response.json({ error: quota.error, code: quota.code }, { status: 402 })
+    }
+  }
+
   const body = await req.json()
 
   let company = await prisma.company.findFirst({

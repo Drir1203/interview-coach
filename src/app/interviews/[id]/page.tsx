@@ -14,6 +14,7 @@ import {
   Send,
   Wand2,
   ShieldCheck,
+  Lock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -31,6 +32,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "@/components/ui/toast"
 import { formatDate, formatDateTime } from "@/lib/utils"
+import { useSubscription } from "@/hooks/useSubscription"
+import { redirectToPricing } from "@/lib/api"
 import {
   ROUND_TYPE_LABELS,
   INTERVIEW_STATUS_CONFIG,
@@ -79,6 +82,8 @@ interface InterviewDetail {
 export default function InterviewDetail() {
   const params = useParams()
   const router = useRouter()
+  const { info: subInfo } = useSubscription()
+  const isFreeUser = subInfo?.tier === "free"
   const [interview, setInterview] = useState<InterviewDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [reviewing, setReviewing] = useState(false)
@@ -113,7 +118,21 @@ export default function InterviewDetail() {
       .catch(() => setLoading(false))
   }, [params.id])
 
+  // Pro 锁定引导：free 用户点击 AI 复盘类操作 → 提示 + 跳价格页
+  const goUpgrade = () => {
+    toast.add({
+      title: "Pro 会员专享",
+      description: "AI 深度复盘为 Pro 功能，升级后即可使用",
+      type: "info",
+    })
+    redirectToPricing()
+  }
+
   const handleAIReview = async (instruction?: string) => {
+    if (isFreeUser) {
+      goUpgrade()
+      return
+    }
     setReviewing(true)
     setError(null)
     try {
@@ -122,6 +141,10 @@ export default function InterviewDetail() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ interviewId: params.id, instruction }),
       })
+      if (res.status === 402) {
+        goUpgrade()
+        return
+      }
       if (!res.ok) {
         let msg = "AI 复盘失败"
         try {
@@ -158,6 +181,10 @@ export default function InterviewDetail() {
 
   // 按题重新生成 AI 分析（支持自定义要求）
   const handleRegenQuestion = async (questionId: string) => {
+    if (isFreeUser) {
+      goUpgrade()
+      return
+    }
     if (regenerating) return
     setRegenerating(questionId)
     try {
@@ -171,6 +198,10 @@ export default function InterviewDetail() {
           instruction: regenInstr,
         }),
       })
+      if (res.status === 402) {
+        goUpgrade()
+        return
+      }
       if (!res.ok) {
         let msg = "重新生成失败"
         try {
@@ -423,6 +454,11 @@ export default function InterviewDetail() {
             </div>
             {interview.questions.length === 0 ? (
               <p className="text-sm text-muted-foreground">请先录入面试问题</p>
+            ) : isFreeUser ? (
+              <Button onClick={goUpgrade} className="gap-2">
+                <Lock className="size-4" />
+                Pro 会员专享 · 升级解锁
+              </Button>
             ) : (
               <Button onClick={() => handleAIReview()} disabled={reviewing} className="gap-2">
                 {reviewing ? (

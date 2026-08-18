@@ -62,13 +62,37 @@ model User {
   resumeFileName   String?            // 原始 PDF 文件名，仅用于前端展示
   resumeUpdatedAt  DateTime?          // 简历最后更新时间（手动维护）
 
-  accounts       Account[]
-  sessions       Session[]
-  interviews     Interview[]
-  skillProfiles  UserSkillProfile[]
-  tags           Tag[]
-  applications   JobApplication[]
+  // 会员（付费墙）：proExpiresAt 为唯一 pro 判定源（now < proExpiresAt → pro）
+  proExpiresAt   DateTime?  // 会员/试用到期时间
+  trialClaimedAt DateTime?  // 试用领取时间（防重复，每账号一次）
+
+  accounts           Account[]
+  sessions           Session[]
+  interviews         Interview[]
+  skillProfiles      UserSkillProfile[]
+  tags               Tag[]
+  applications       JobApplication[]
   coachConversations CoachConversation[]
+  subscriptionOrders SubscriptionOrder[]
+}
+
+// ────────── 订阅订单（付费墙，v1 仅 Mock 渠道） ──────────
+model SubscriptionOrder {
+  id              String    @id @default(cuid())
+  userId          String
+  plan            String    // month | quarter | year
+  amount          Int       // 金额（分：¥29 → 2900；试用 0）
+  status          String    // pending | paid | refunded
+  source          String    // trial | mock（v2: wechat | alipay）
+  providerOrderId String?   // 第三方渠道单号（渠道回填，mock 为 null）
+  paidAt          DateTime? // 支付成功时间
+  expiresAt       DateTime? // 本单生效后的会员到期时间（续费叠加用）
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
 }
 
 // ────────── 公司 ──────────

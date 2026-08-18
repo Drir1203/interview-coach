@@ -1,7 +1,9 @@
 import { NextRequest } from "next/server"
+import { auth } from "@/auth"
 import prisma from "@/lib/db"
 import { aiReview, aiReviewQuestion } from "@/lib/ai-review"
 import { updateSkillProfile } from "@/lib/skill-profile"
+import { requirePro } from "@/lib/tier"
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +12,15 @@ export async function POST(req: NextRequest) {
 
     if (!interviewId) {
       return Response.json({ error: "interviewId 必填" }, { status: 400 })
+    }
+
+    // 付费墙：AI 深度复盘仅 Pro 会员可用（未登录豁免，保持门禁匿名链路可用）
+    const session = await auth()
+    if (session?.user?.id) {
+      const pro = await requirePro(session.user.id)
+      if (!pro.ok) {
+        return Response.json({ error: pro.error, code: pro.code }, { status: 402 })
+      }
     }
 
     // 用户自定义要求（如"更深入分析"），仅当是合法字符串时带入提示词

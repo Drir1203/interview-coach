@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import { hash } from "bcryptjs"
 import prisma from "@/lib/db"
+import { ensureTrialOnRegister } from "@/lib/tier"
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,6 +30,9 @@ export async function POST(req: NextRequest) {
         passwordHash,
       },
     })
+
+    // 注册即送 7 天 Pro 试用（内部吞错，不阻断注册）
+    await ensureTrialOnRegister(user.id)
 
     return Response.json({
       id: user.id,

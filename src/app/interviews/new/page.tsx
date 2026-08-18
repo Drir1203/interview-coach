@@ -15,6 +15,8 @@ import Link from "next/link"
 import { AudioRecorder } from "@/components/AudioRecorder"
 import { OptionChips } from "@/components/OptionChips"
 import { POPULAR_POSITIONS, POPULAR_INDUSTRIES, POPULAR_TAGS } from "@/lib/popular-options"
+import { redirectToPricing } from "@/lib/api"
+import { toast } from "@/components/ui/toast"
 
 interface QuestionEntry {
   order: number
@@ -87,6 +89,15 @@ export default function NewInterview() {
         }),
       })
 
+      if (res.status === 402) {
+        toast.add({
+          title: "免费额度已用完",
+          description: "免费用户最多 5 场面试，升级 Pro 解锁无限记录",
+          type: "warning",
+        })
+        redirectToPricing()
+        return
+      }
       if (!res.ok) throw new Error("保存失败")
       const data = await res.json()
       router.push(`/interviews/${data.id}`)

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { User, Info, Database, CheckCircle2, Lock, Loader2, Settings } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { User, Info, Database, CheckCircle2, Lock, Loader2, Settings, Crown } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { Badge } from "@/components/ui/badge"
@@ -9,11 +10,15 @@ import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/useAuth"
+import { useSubscription } from "@/hooks/useSubscription"
 import { toast } from "@/components/ui/toast"
 import { ResumeCard } from "@/components/settings/resume-card"
+import { formatDate } from "@/lib/utils"
 
 export default function SettingsPage() {
+  const router = useRouter()
   const { user: session } = useAuth()
+  const { info } = useSubscription()
 
   const [oldPassword, setOldPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
@@ -77,6 +82,54 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* 会员（付费墙） */}
+      <Card className="animate-fade-up" style={{ animationDelay: "70ms" }}>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Crown className="size-4 text-amber-500" />
+            <CardTitle className="text-base">会员</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">当前档位</span>
+            {info?.tier === "pro" ? (
+              <span className="flex items-center gap-2">
+                <Badge className="bg-amber-500 text-white">Pro</Badge>
+                {info.trialActive && <Badge variant="secondary">试用中</Badge>}
+              </span>
+            ) : (
+              <Badge variant="outline">免费</Badge>
+            )}
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">有效期</span>
+            <span>
+              {info?.tier === "pro"
+                ? info.source === "trial"
+                  ? `7 天试用 · 剩余 ${info.daysLeft ?? 0} 天`
+                  : formatDate(info.proExpiresAt ?? "")
+                : "—"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">面试记录</span>
+            <span>{info ? `${info.interviewCount}/${info.freeLimit}` : "—"}</span>
+          </div>
+          <Separator />
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              variant={info?.tier === "pro" ? "outline" : "default"}
+              onClick={() => router.push("/pricing")}
+            >
+              <Crown className="mr-1 size-3" />
+              {info?.tier === "pro" ? "管理会员" : "升级 Pro"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="animate-fade-up" style={{ animationDelay: "90ms" }}>
         <ResumeCard />

@@ -22,6 +22,7 @@ import {
   LineChart,
   TrendingUp,
   BookOpen,
+  Crown,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { signOut } from "next-auth/react"
@@ -176,6 +177,26 @@ export function Sidebar() {
 
       {/* 底部：设置 + 深色 + 用户，全部用 D 风格 lucide 图标方块（与上方一致） */}
       <div className="border-t p-2.5">
+        {/* 价格 / 会员：Pro 角标用 /api/me 返回的实时 tier */}
+        <Link
+          href="/pricing"
+          onClick={() => setOpen(false)}
+          className={cn(
+            "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors",
+            pathname === "/pricing" ? "bg-muted/60" : "text-muted-foreground hover:bg-muted"
+          )}
+        >
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+            <Crown className="size-4" />
+          </span>
+          <span className="text-[13px]">价格 / 会员</span>
+          {session?.tier === "pro" && (
+            <span className="ml-auto rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+              Pro
+            </span>
+          )}
+        </Link>
+
         <NavItem href="/settings" label="设置" icon={Settings} tint={{ bg: "bg-slate-100", text: "text-slate-600", bgActive: "bg-slate-200" }} pathname={pathname} onClick={() => setOpen(false)} />
 
         {/* 深色模式：与上方 nav 完全一致的图标方块行，点击切换 */}

@@ -1,0 +1,131 @@
+import prisma from "@/lib/db"
+import type { PrismaClient } from "../generated/prisma"
+
+// 会员判定唯一真源：User.proExpiresAt（now < proExpiresAt → pro）。
+// requirePro 每次实时查 DB，不缓存 JWT——会员状态会变（购买/过期），缓存会不一致。
+
+export const FREE_INTERVIEW_LIMIT = 5
+export const TRIAL_DAYS = 7
+
+// 未登录用户桶（匿名写走 __anon__；历史 default）。付费墙豁免，保持门禁匿名链路可用。
+export const ANON_USER_IDS = new Set(["__anon__", "default"])
+
+export type Tier = "free" | "pro"
+
+export interface TierInfo {
+  tier: Tier
+  proExpiresAt: Date | null
+  trialClaimedAt: Date | null
+  trialActive: boolean // trialClaimedAt 存在（与是否过期无关）
+  source: string | null // 最近一条 paid/trial 订单来源
+  daysLeft: number | null // pro 剩余天数（非 pro 为 null）
+}
+
+export type QuotaResult =
+  | { ok: true; remaining?: number }
+  | { ok: false; error: string; code: string }
+
+// 会员状态：单次查询 user 会员字段 + 最近一条 paid/trial 订单的 source
+export async function getTier(userId: string, db: PrismaClient = prisma): Promise<TierInfo> {
+  const [user, lastOrder] = await Promise.all([
+    db.user.findUnique({
+      where: { id: userId },
+      select: { proExpiresAt: true, trialClaimedAt: true },
+    }),
+    db.subscriptionOrder.findFirst({
+      where: { userId, status: { in: ["paid", "trial"] } },
+      orderBy: { createdAt: "desc" },
+      select: { source: true },
+    }),
+  ])
+
+  const now = new Date()
+  const proExpiresAt = user?.proExpiresAt ?? null
+  const trialClaimedAt = user?.trialClaimedAt ?? null
+  const isPro = !!proExpiresAt && proExpiresAt > now
+
+  return {
+    tier: isPro ? "pro" : "free",
+    proExpiresAt,
+    trialClaimedAt,
+    trialActive: !!trialClaimedAt,
+    source: lastOrder?.source ?? null,
+    daysLeft: isPro && proExpiresAt ? Math.ceil((proExpiresAt.getTime() - now.getTime()) / 86400000) : null,
+  }
+}
+
+// Pro 功能拦截（AI 深度复盘等）。未登录桶豁免。
+export async function requirePro(
+  userId: string,
+  db: PrismaClient = prisma
+): Promise<{ ok: true } | { ok: false; error: string; code: string }> {
+  if (ANON_USER_IDS.has(userId)) return { ok: true }
+  const info = await getTier(userId, db)
+  if (info.tier === "pro") return { ok: true }
+  return { ok: false, error: "该功能仅 Pro 会员可用，请升级", code: "PAYMENT_REQUIRED" }
+}
+
+// 领取 7 天试用：事务内防并发重复（每账号一次，trialClaimedAt 记录）
+export async function claimTrial(
+  userId: string,
+  db: PrismaClient = prisma
+): Promise<{ ok: boolean; error?: string }> {
+  if (ANON_USER_IDS.has(userId)) return { ok: false, error: "未登录用户不能领取试用" }
+
+  return db.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: { trialClaimedAt: true },
+    })
+    if (!user) return { ok: false, error: "用户不存在" }
+    if (user.trialClaimedAt) return { ok: false, error: "试用已领取" }
+
+    const now = new Date()
+    const expiresAt = new Date(now.getTime() + TRIAL_DAYS * 86400000)
+    await tx.user.update({
+      where: { id: userId },
+      data: { proExpiresAt: expiresAt, trialClaimedAt: now },
+    })
+    // 试用也记一条金额 0 订单，便于审计/对账
+    await tx.subscriptionOrder.create({
+      data: {
+        userId,
+        plan: "month",
+        amount: 0,
+        status: "paid",
+        source: "trial",
+        expiresAt,
+      },
+    })
+    return { ok: true }
+  })
+}
+
+// 注册成功后的试用钩子：试用发放失败不阻断注册（仅记日志）
+export async function ensureTrialOnRegister(userId: string): Promise<void> {
+  try {
+    await claimTrial(userId)
+  } catch (err) {
+    console.error("试用发放失败:", err)
+  }
+}
+
+// 面试场次限额（免费用户最多 5 场）。pro 不限；未登录桶豁免。
+export async function assertInterviewQuota(
+  userId: string,
+  db: PrismaClient = prisma
+): Promise<QuotaResult> {
+  if (ANON_USER_IDS.has(userId)) return { ok: true }
+  const info = await getTier(userId, db)
+  if (info.tier === "pro") return { ok: true }
+
+  const count = await db.interview.count({ where: { userId } })
+  if (count >= FREE_INTERVIEW_LIMIT) {
+    return {
+      ok: false,
+      error: `免费用户最多 ${FREE_INTERVIEW_LIMIT} 场面试，升级 Pro 解锁无限`,
+      code: "PAYMENT_REQUIRED",
+    }
+  }
+  return { ok: true, remaining: FREE_INTERVIEW_LIMIT - count }
+}
