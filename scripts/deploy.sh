@@ -7,7 +7,7 @@
 # 否则 npm run build 覆盖 .next 时，运行中的 next start 读到损坏的 manifest → 500
 # ============================================================
 set -e
-SERVER="root@47.116.138.61"
+SERVER="ubuntu@43.129.23.197"   # 腾讯云香港（免备案，2026-08-17 迁移）
 KEY="$HOME/.ssh/deploy_key"
 DIR="/opt/interview-coach"
 
@@ -37,6 +37,5 @@ ssh -i "$KEY" "$SERVER" "cd $DIR && pm2 start ecosystem.config.cjs && pm2 save"
 
 echo "=== 7/7 验证 ==="
 sleep 4
-curl -s -k -L -o /dev/null -w "i面试面板: %{http_code}\n" --max-time 15 "https://47.116.138.61/interview/"
-curl -s -k -o /dev/null -w "crossborder health: %{http_code}\n" --max-time 10 "https://47.116.138.61/health"
+curl -s -L -o /dev/null -w "AI面师面板: %{http_code}\n" --max-time 15 "https://mianshi.pro/interview/"
 echo "✅ 部署完成"
