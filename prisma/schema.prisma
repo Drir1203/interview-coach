@@ -273,3 +273,12 @@ model CoachMessage {
 
   @@index([conversationId, createdAt])
 }
+
+// ────────── 管理后台账号（独立于用户体系） ──────────
+model AdminUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server"
-import { timingSafeEqual } from "node:crypto"
 import { auth } from "@/auth"
 import prisma from "@/lib/db"
 import { activateSubscription } from "@/lib/payment/activate"
+import { requireAdmin } from "@/lib/payment/admin-session"
 
 // Mock 手动开通/模拟支付成功：
-// - 生产环境：仅管理员（X-Admin-Key = PAYMENT_ADMIN_KEY）可激活任意订单
+// - 管理员（admin_session 登录）任意订单可激活（生产/本地均可用）
 // - 本地/测试：本人 pending 订单自助激活（前端「模拟支付成功」按钮）
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
@@ -15,19 +15,12 @@ export async function POST(req: NextRequest) {
   }
 
   const isProduction = process.env.NODE_ENV === "production"
+  const adminAuth = await requireAdmin(req)
 
-  if (isProduction) {
-    const adminKey = process.env.PAYMENT_ADMIN_KEY || ""
-    if (!adminKey) {
-      return Response.json({ error: "管理员密钥未配置" }, { status: 500 })
-    }
-    const provided = req.headers.get("x-admin-key") || ""
-    const ok =
-      provided.length === adminKey.length && timingSafeEqual(Buffer.from(provided), Buffer.from(adminKey))
-    if (!ok) {
-      return Response.json({ error: "未授权" }, { status: 401 })
-    }
-  } else {
+  if (adminAuth.ok) {
+    // 管理员放行，可激活任意订单
+  } else if (!isProduction) {
+    // 非生产：本人 pending 订单自助激活（模拟支付）
     const session = await auth()
     if (!session?.user?.id) {
       return Response.json({ error: "请先登录" }, { status: 401 })
@@ -36,6 +29,8 @@ export async function POST(req: NextRequest) {
     if (!order || order.userId !== session.user.id) {
       return Response.json({ error: "订单不存在" }, { status: 404 })
     }
+  } else {
+    return Response.json({ error: "未授权" }, { status: 401 })
   }
 
   const result = await activateSubscription(orderId)

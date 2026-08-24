@@ -51,6 +51,9 @@ ecosystem.config.cjs
 # 运行时日志
 logs/
 
+# Git Bash 崩溃转储（Windows）
+bash.exe.stackdump
+
 # 小程序 npm（DevTools 构建生成，不入库）
 /miniprogram/node_modules/
 /miniprogram/miniprogram_npm/
