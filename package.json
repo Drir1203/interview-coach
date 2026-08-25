@@ -14,11 +14,14 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@alicloud/avatar20220130": "^2.5.2",
+    "@alicloud/ice20201109": "^6.20.2",
     "@auth/prisma-adapter": "^2.11.3",
     "@base-ui/react": "^1.6.0",
     "@ffmpeg/core": "^0.12.6",
     "@ffmpeg/ffmpeg": "^0.12.10",
     "@prisma/client": "^5.22.0",
+    "aliyun-auikit-aicall": "^2.10.5",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

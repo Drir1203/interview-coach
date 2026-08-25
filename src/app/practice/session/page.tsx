@@ -22,6 +22,11 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import {
+  VideoInterviewCall,
+  type VideoSessionInfo,
+  type VideoCallEndedBy,
+} from "@/components/video-interview-call"
 
 interface Summary {
   overallScore: number
@@ -39,6 +44,8 @@ function SessionInner() {
   const sessionId = searchParams.get("id") || ""
   const company = searchParams.get("company") || "未知公司"
   const position = searchParams.get("position") || "未知岗位"
+  const mode = searchParams.get("mode") || "text"
+  const roundTypeParam = searchParams.get("roundType") || "first"
 
   const [messages, setMessages] = useState<
     { role: "assistant" | "user"; content: string; voiceState?: VoiceState }[]
@@ -50,6 +57,14 @@ function SessionInner() {
   const [isRecording, setIsRecording] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [recordError, setRecordError] = useState("")
+  const [degraded, setDegraded] = useState(false)
+  const [videoSession, setVideoSession] = useState<VideoSessionInfo | null>(null)
+  const [videoResult, setVideoResult] = useState<{
+    transcript: string
+    endedBy: VideoCallEndedBy
+    error?: string
+  } | null>(null)
+  const loadedRef = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -61,7 +76,32 @@ function SessionInner() {
   // 初始化：获取第一个问题
   useEffect(() => {
     const load = async () => {
+      // 防 React StrictMode 开发态双执行：避免重复创建阿里云实例（计费）
+      if (loadedRef.current) return
+      loadedRef.current = true
       try {
+        // AI 语音面试模式：先尝试视频面试服务，未开通/未接线 → 降级文字模式（C4）
+        if (mode === "video") {
+          const vres = await fetch("/interview/api/video-interview/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              company,
+              position,
+              roundType: roundTypeParam,
+              grill: searchParams.get("grill") === "1",
+            }),
+          })
+          if (vres.ok) {
+            const vdata = await vres.json()
+            if (vdata.mode === "video") {
+              setVideoSession(vdata)
+              return
+            }
+          }
+          setDegraded(true)
+        }
+
         const res = await fetch("/interview/api/mock", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -69,7 +109,8 @@ function SessionInner() {
             action: "start",
             company,
             position,
-            roundType: "first",
+            roundType: roundTypeParam,
+            resumeMode: searchParams.get("grill") === "1",
           }),
         })
 
@@ -287,6 +328,77 @@ function SessionInner() {
     }
   }
 
+  // AI 语音面试：通话结束 → 展示转写记录
+  if (videoResult) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        <div className="flex items-center gap-4">
+          <Link href="/practice">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="size-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">AI 面试结束</h1>
+            <p className="text-sm text-muted-foreground">
+              {company} · {position}
+            </p>
+          </div>
+        </div>
+
+        {videoResult.error && (
+          <div className="flex items-start gap-2 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+            <AlertCircle className="mt-0.5 size-4 shrink-0" />
+            <span>{videoResult.error}</span>
+          </div>
+        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="size-4 text-primary" />
+              面试记录
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {videoResult.transcript ? (
+              <pre className="whitespace-pre-wrap font-sans text-sm leading-7 text-muted-foreground">
+                {videoResult.transcript}
+              </pre>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                没有获取到面试记录。
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-center gap-3">
+          <Link href="/practice">
+            <Button variant="outline">再来一场</Button>
+          </Link>
+          <Link href="/">
+            <Button>返回首页</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // AI 语音面试：通话进行中
+  if (videoSession) {
+    return (
+      <VideoInterviewCall
+        session={videoSession}
+        company={company}
+        position={position}
+        onFinished={(transcript, endedBy, error) =>
+          setVideoResult({ transcript, endedBy, error })
+        }
+      />
+    )
+  }
+
   if (error && messages.length === 0) {
     return (
       <div className="mx-auto max-w-2xl space-y-4 py-16 text-center">
@@ -399,6 +511,12 @@ function SessionInner() {
 
   return (
     <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-3xl flex-col">
+      {degraded && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+          <AlertCircle className="mt-0.5 size-4 shrink-0" />
+          <span>AI 语音面试暂不可用，已切换到文字模式。</span>
+        </div>
+      )}
       {/* 顶部信息 */}
       <div className="flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-3">

@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 import { ROUND_TYPES } from "@/types"
 
 export default function PracticePage() {
@@ -18,6 +19,7 @@ export default function PracticePage() {
   const [starting, setStarting] = useState(false)
   const [grillMode, setGrillMode] = useState(false)
   const [hasResume, setHasResume] = useState(false)
+  const [mode, setMode] = useState<"text" | "video">("text")
 
   // 检查用户是否已上传简历（简历深挖模式的前提）
   useEffect(() => {
@@ -33,7 +35,15 @@ export default function PracticePage() {
     if (!position.trim()) return
     setStarting(true)
 
+    const base = `company=${encodeURIComponent(company || "未知公司")}&position=${encodeURIComponent(position)}&roundType=${roundType}${grillMode ? "&grill=1" : ""}`
+
     try {
+      // AI 语音面试：不在列表页预启动，面试页再尝试视频面试/降级（C4）
+      if (mode === "video") {
+        router.push(`/practice/session?mode=video&${base}`)
+        return
+      }
+
       const res = await fetch("/interview/api/mock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -51,7 +61,7 @@ export default function PracticePage() {
 
       // 跳转到面试页面
       router.push(
-        `/practice/session?id=${data.sessionId}&company=${encodeURIComponent(company || "未知公司")}&position=${encodeURIComponent(position)}`
+        `/practice/session?id=${data.sessionId}&${base}`
       )
     } catch (err: any) {
       alert("启动模拟面试失败：" + err.message)
@@ -148,6 +158,38 @@ export default function PracticePage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">面试形态</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setMode("text")}
+                className={cn(
+                  "rounded-lg border p-3 text-left transition",
+                  mode === "text"
+                    ? "border-primary bg-primary/5"
+                    : "hover:border-primary/50"
+                )}
+              >
+                <p className="text-sm font-medium">文字模式</p>
+                <p className="text-xs text-muted-foreground">打字回答，零门槛</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("video")}
+                className={cn(
+                  "rounded-lg border p-3 text-left transition",
+                  mode === "video"
+                    ? "border-primary bg-primary/5"
+                    : "hover:border-primary/50"
+                )}
+              >
+                <p className="text-sm font-medium">AI 语音面试</p>
+                <p className="text-xs text-muted-foreground">AI 面试官语音提问（未开通自动降级文字）</p>
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center justify-between rounded-lg border p-3">
