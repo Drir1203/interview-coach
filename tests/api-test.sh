@@ -48,14 +48,14 @@ echo "===================================="
 echo ""
 
 # ─── 1. 页面可达性 ───
-echo "[1/5] 页面可达性"
+echo "[1/6] 页面可达性"
 test "首页" "GET" "/" "" "200" "面试"
 test "登录页" "GET" "/auth/login" "" "200" "登录"
 test "注册页" "GET" "/auth/register" "" "200" "注册"
 
 # ─── 2. 注册用户 ───
 echo ""
-echo "[2/5] 用户注册"
+echo "[2/6] 用户注册"
 TEST_EMAIL="test-$(date +%s)@test.com"
 TEST_PASS="test123456"
 
@@ -72,7 +72,7 @@ fi
 
 # ─── 3. API 接口 ───
 echo ""
-echo "[3/5] API 接口"
+echo "[3/6] API 接口"
 
 # 创建面试
 IV_RESP=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/interviews" \
@@ -154,7 +154,7 @@ fi
 
 # ─── 4. 模拟面试 ───
 echo ""
-echo "[4/5] 模拟面试"
+echo "[4/6] 模拟面试"
 
 MOCK_RESP=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/mock" \
   -H "Content-Type: application/json" \
@@ -181,7 +181,7 @@ fi
 
 # ─── 5. 转写接口 ───
 echo ""
-echo "[5/5] 音频转写"
+echo "[5/6] 音频转写"
 
 # 生成测试音频文件
 TEST_AUDIO="test-audio.wav"
@@ -216,6 +216,77 @@ else
   echo -e "  音频转写: ${RED}❌ (HTTP $TRANS_CODE)${NC}"
   echo "  Error: $TRANS_BODY"
   FAIL=$((FAIL + 1))
+fi
+
+# ─── 6. 管理后台（管理员会话） ───
+echo ""
+echo "[6/6] 管理后台"
+
+ADMIN_USER="admin-test-$(date +%s)"
+ADMIN_PASS="admin-test-pass-1"
+node scripts/create-admin.js "$ADMIN_USER" "$ADMIN_PASS" >/dev/null 2>&1
+
+# 未登录访问管理端 → 一律 401
+test "未登录 stats" "GET" "/api/admin/stats" "" "401" ""
+test "未登录 users" "GET" "/api/admin/users" "" "401" ""
+test "未登录 orders 筛选" "GET" "/api/payment/admin/orders?status=pending" "" "401" ""
+test "未登录 grant" "POST" "/api/admin/users/foo/grant" '{"plan":"month"}' "401" ""
+test "未登录 revoke" "POST" "/api/admin/users/foo/revoke" '{}' "401" ""
+test "未登录 reset-trial" "POST" "/api/admin/users/foo/reset-trial" '{}' "401" ""
+
+# 登录管理员。注意：生产构建 cookie 带 Secure，http://localhost 下 curl 不会自动回带 →
+# 手动从 Set-Cookie 头提取 admin_session 值，用 Cookie 头显式携带（绕过 Secure 限制）。
+ADMIN_TOKEN=$(curl -s -D - -o /dev/null -X POST "$BASE_URL/api/admin/login" \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"$ADMIN_USER\",\"password\":\"$ADMIN_PASS\"}" | \
+  grep -i '^set-cookie: admin_session=' | head -1 | sed 's/^[Ss]et-[Cc]ookie: admin_session=//; s/;.*//')
+
+if [ -n "$ADMIN_TOKEN" ]; then
+  echo -e "  管理员登录: ${GREEN}✅${NC}"; PASS=$((PASS + 1))
+else
+  echo -e "  管理员登录: ${RED}❌ (无 cookie)${NC}"; FAIL=$((FAIL + 1))
+fi
+
+# 带管理员会话的请求
+admin_test() {
+  local name="$1"; local method="$2"; local url="$3"; local data="$4"
+  local expect_status="$5"; local expect_contains="$6"
+  echo -n "  $name ... "
+  local RESP
+  if [ -n "$data" ]; then
+    RESP=$(curl -s -H "Cookie: admin_session=$ADMIN_TOKEN" -w "\n%{http_code}" -X "$method" "$BASE_URL$url" \
+      -H "Content-Type: application/json" -d "$data" 2>/dev/null)
+  else
+    RESP=$(curl -s -H "Cookie: admin_session=$ADMIN_TOKEN" -w "\n%{http_code}" -X "$method" "$BASE_URL$url" 2>/dev/null)
+  fi
+  local HTTP_CODE BODY
+  HTTP_CODE=$(echo "$RESP" | tail -1)
+  BODY=$(echo "$RESP" | sed '$d')
+  if [ "$HTTP_CODE" = "$expect_status" ]; then
+    if [ -n "$expect_contains" ] && ! echo "$BODY" | grep -q "$expect_contains"; then
+      echo -e "${RED}❌ (缺少'$expect_contains')${NC}"; FAIL=$((FAIL + 1)); return
+    fi
+    echo -e "${GREEN}✅${NC}"; PASS=$((PASS + 1))
+  else
+    echo -e "${RED}❌ (期望 $expect_status, 得到 $HTTP_CODE)${NC}"; FAIL=$((FAIL + 1))
+  fi
+}
+
+admin_test "stats 概览" "GET" "/api/admin/stats" "" "200" "totalUsers"
+admin_test "用户搜索" "GET" "/api/admin/users?q=$TEST_EMAIL" "" "200" "email"
+
+# 用搜索拿到本次注册的测试用户 id → 跑 grant / revoke / reset-trial 全流程
+U_RESP=$(curl -s -H "Cookie: admin_session=$ADMIN_TOKEN" "$BASE_URL/api/admin/users?q=$TEST_EMAIL")
+TEST_UID=$(echo "$U_RESP" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+if [ -n "$TEST_UID" ]; then
+  admin_test "手动开通 Pro" "POST" "/api/admin/users/$TEST_UID/grant" '{"plan":"month"}' "200" "proExpiresAt"
+  admin_test "订单筛选 source=admin" "GET" "/api/payment/admin/orders?status=paid&source=admin" "" "200" "admin"
+  admin_test "订单筛选非法状态 400" "GET" "/api/payment/admin/orders?status=bogus" "" "400" "状态"
+  admin_test "撤销 Pro" "POST" "/api/admin/users/$TEST_UID/revoke" '{}' "200" "ok"
+  admin_test "重置试用" "POST" "/api/admin/users/$TEST_UID/reset-trial" '{}' "200" "ok"
+else
+  echo -e "  获取测试用户 id: ${RED}❌${NC}"; FAIL=$((FAIL + 1))
 fi
 
 # ─── 结果 ───
