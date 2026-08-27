@@ -289,6 +289,79 @@ else
   echo -e "  获取测试用户 id: ${RED}❌${NC}"; FAIL=$((FAIL + 1))
 fi
 
+# ─── 6b. 支付收款码 / 人工确认（notify + 收款设置） ───
+echo ""
+echo "── 6b. 支付收款码 / 人工确认 ──"
+
+# 未登录声明「我已转账」 → 401
+test "未登录 notify" "POST" "/api/payment/order/foo/notify" '{}' "401" ""
+
+# 管理端收款设置：保存 / 非法URL / 读取
+admin_test "保存收款设置" "PUT" "/api/admin/payment-config" \
+  '{"wechatQrUrl":"https://cdn.example.com/wechat.png","alipayQrUrl":"https://cdn.example.com/alipay.png","accountHint":"张三"}' \
+  "200" "wechatQrUrl"
+admin_test "收款设置非法URL 400" "PUT" "/api/admin/payment-config" \
+  '{"wechatQrUrl":"javascript:alert(1)"}' "400" "http"
+admin_test "读取收款设置" "GET" "/api/admin/payment-config" "" "200" "alipayQrUrl"
+
+# 用户登录（NextAuth credentials）→ 下单 → 我已转账 → 管理员确认收款 → 闭环。
+# 注意：① CSRF 校验需把 csrf-token cookie 回传 → 用 cookie jar；② middleware 强制 secureCookie，
+# session cookie 带 __Secure- 前缀 → 整段捕获 name=value。
+AUTH_JAR="/tmp/interview-auth-jar.txt"; rm -f "$AUTH_JAR"
+CSRF=$(curl -s -c "$AUTH_JAR" "$BASE_URL/api/auth/csrf" | grep -o '"csrfToken":"[^"]*"' | head -1 | cut -d'"' -f4)
+CB_HEADERS=$(curl -s -b "$AUTH_JAR" -D - -o /dev/null -X POST "$BASE_URL/api/auth/callback/credentials" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode "csrfToken=$CSRF" \
+  --data-urlencode "email=$TEST_EMAIL" \
+  --data-urlencode "password=$TEST_PASS")
+rm -f "$AUTH_JAR"
+USER_COOKIE=$(echo "$CB_HEADERS" | grep -i '^set-cookie:.*session-token=' | head -1 | sed 's/^[Ss]et-[Cc]ookie: \([^=]*\)=\([^;]*\).*/\1=\2/')
+
+if [ -n "$USER_COOKIE" ]; then
+  echo -e "  用户登录(NextAuth): ${GREEN}✅${NC}"; PASS=$((PASS + 1))
+else
+  echo -e "  用户登录(NextAuth): ${RED}❌ (无 session cookie)${NC}"; FAIL=$((FAIL + 1))
+fi
+
+user_test() {
+  local name="$1"; local method="$2"; local url="$3"; local data="$4"
+  local expect_status="$5"; local expect_contains="$6"
+  echo -n "  $name ... "
+  local RESP
+  if [ -n "$data" ]; then
+    RESP=$(curl -s -H "Cookie: $USER_COOKIE" -w "\n%{http_code}" -X "$method" "$BASE_URL$url" \
+      -H "Content-Type: application/json" -d "$data" 2>/dev/null)
+  else
+    RESP=$(curl -s -H "Cookie: $USER_COOKIE" -w "\n%{http_code}" -X "$method" "$BASE_URL$url" 2>/dev/null)
+  fi
+  local HTTP_CODE BODY
+  HTTP_CODE=$(echo "$RESP" | tail -1)
+  BODY=$(echo "$RESP" | sed '$d')
+  if [ "$HTTP_CODE" = "$expect_status" ]; then
+    if [ -n "$expect_contains" ] && ! echo "$BODY" | grep -q "$expect_contains"; then
+      echo -e "${RED}❌ (缺少'$expect_contains')${NC}"; FAIL=$((FAIL + 1)); return
+    fi
+    echo -e "${GREEN}✅${NC}"; PASS=$((PASS + 1))
+  else
+    echo -e "${RED}❌ (期望 $expect_status, 得到 $HTTP_CODE)${NC}"; FAIL=$((FAIL + 1))
+  fi
+}
+
+ORDER_RESP=$(curl -s -H "Cookie: $USER_COOKIE" -X POST "$BASE_URL/api/payment/order" \
+  -H "Content-Type: application/json" -d '{"plan":"month"}')
+ORDER_ID=$(echo "$ORDER_RESP" | grep -o '"orderId":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+if [ -n "$ORDER_ID" ]; then
+  echo -e "  下单创建订单: ${GREEN}✅${NC}"; PASS=$((PASS + 1))
+  user_test "我已转账声明" "POST" "/api/payment/order/$ORDER_ID/notify" '{}' "200" "ok"
+  user_test "重复声明幂等拒绝" "POST" "/api/payment/order/$ORDER_ID/notify" '{}' "400" "已标记"
+  admin_test "订单列表带已通知标记" "GET" "/api/payment/admin/orders?status=pending&source=mock" "" "200" "$ORDER_ID"
+  admin_test "管理员确认收款开通" "POST" "/api/payment/mock/approve" "{\"orderId\":\"$ORDER_ID\"}" "200" "ok"
+  user_test "paid 后不可再声明" "POST" "/api/payment/order/$ORDER_ID/notify" '{}' "400" "待支付"
+else
+  echo -e "  下单创建订单: ${RED}❌ (无 orderId)${NC}"; FAIL=$((FAIL + 1))
+fi
+
 # ─── 结果 ───
 echo ""
 echo "===================================="

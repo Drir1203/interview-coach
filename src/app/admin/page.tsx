@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { KeyRound, LayoutDashboard, Loader2, Lock, LogOut, Receipt, ShieldCheck, User, Users } from "lucide-react"
+import { KeyRound, LayoutDashboard, Loader2, Lock, LogOut, Receipt, Settings, ShieldCheck, User, Users } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import { api } from "@/lib/api"
 import { StatsPanel } from "@/components/admin/stats-panel"
 import { OrdersPanel } from "@/components/admin/orders-panel"
 import { UsersPanel } from "@/components/admin/users-panel"
+import { PaymentConfigPanel } from "@/components/admin/payment-config-panel"
 
 // 管理后台：独立管理员账号登录（admin_session cookie），登录后三栏——看板 / 订单 / 用户。
 // 会话失效（任一子面板 401）→ 统一回到登录表单。
@@ -156,6 +157,9 @@ export default function AdminPage() {
           <TabsTrigger value="users">
             <Users /> 用户
           </TabsTrigger>
+          <TabsTrigger value="settings">
+            <Settings /> 收款设置
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="stats" className="mt-4">
           <StatsPanel onUnauthenticated={handleUnauthenticated} />
@@ -165,6 +169,9 @@ export default function AdminPage() {
         </TabsContent>
         <TabsContent value="users" className="mt-4">
           <UsersPanel onUnauthenticated={handleUnauthenticated} />
+        </TabsContent>
+        <TabsContent value="settings" className="mt-4">
+          <PaymentConfigPanel onUnauthenticated={handleUnauthenticated} />
         </TabsContent>
       </Tabs>
     </div>

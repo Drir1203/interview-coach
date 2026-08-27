@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   }
 
   const now = new Date()
-  const [totalUsers, proUsers, trialClaimed, paidAgg, paidOrders, pendingOrders] =
+  const [totalUsers, proUsers, trialClaimed, paidAgg, paidOrders, pendingOrders, notifiedPendingOrders] =
     await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { proExpiresAt: { gt: now } } }),
@@ -22,6 +22,9 @@ export async function GET(req: NextRequest) {
       }),
       prisma.subscriptionOrder.count({ where: { status: "paid" } }),
       prisma.subscriptionOrder.count({ where: { status: "pending" } }),
+      prisma.subscriptionOrder.count({
+        where: { status: "pending", userNotifiedAt: { not: null } },
+      }),
     ])
 
   return Response.json({
@@ -32,6 +35,7 @@ export async function GET(req: NextRequest) {
       totalRevenueCents: paidAgg._sum.amount ?? 0,
       paidOrders,
       pendingOrders,
+      notifiedPendingOrders,
     },
   })
 }

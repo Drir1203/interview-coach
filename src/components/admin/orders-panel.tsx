@@ -20,6 +20,7 @@ export interface AdminOrder {
   status: "pending" | "paid"
   source: string
   createdAt: string
+  userNotifiedAt: string | null
   paidAt: string | null
   expiresAt: string | null
   user: { name: string | null; email: string | null } | null
@@ -163,12 +164,18 @@ export function OrdersPanel({ onUnauthenticated }: Props) {
                         {isPending ? "待开通" : "已开通"}
                       </Badge>
                       <Badge variant="outline">{SOURCE_LABELS[o.source] ?? o.source}</Badge>
+                      {o.userNotifiedAt && (
+                        <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-600">
+                          <Check className="size-3" /> 已通知
+                        </Badge>
+                      )}
                     </div>
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
                       {o.user?.email || "—"} · {plan?.label ?? o.plan} ¥{(o.amount / 100).toFixed(2)}
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       下单 {formatDate(o.createdAt)}
+                      {o.userNotifiedAt ? ` · 已通知 ${formatDate(o.userNotifiedAt)}` : ""}
                       {o.paidAt ? ` · 开通 ${formatDate(o.paidAt)}` : ""}
                     </p>
                   </div>

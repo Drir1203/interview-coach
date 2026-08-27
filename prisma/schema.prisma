@@ -85,6 +85,7 @@ model SubscriptionOrder {
   status          String    // pending | paid | refunded
   source          String    // trial | mock（v2: wechat | alipay）
   providerOrderId String?   // 第三方渠道单号（渠道回填，mock 为 null）
+  userNotifiedAt  DateTime? // 用户标记「我已转账」时间（仅声明，不改变订单状态）
   paidAt          DateTime? // 支付成功时间
   expiresAt       DateTime? // 本单生效后的会员到期时间（续费叠加用）
   createdAt       DateTime  @default(now())
@@ -281,4 +282,14 @@ model AdminUser {
   passwordHash String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+// ────────── 收款设置（单例，id=1 恒为唯一行） ──────────
+// 个人收款码（微信/支付宝）+ 账户提示文案；价格页据此展示收款码，管理员后台在线编辑。
+model PaymentConfig {
+  id          Int      @id @default(1)
+  wechatQrUrl String?  // 微信收款码图片 URL（http/https）
+  alipayQrUrl String?  // 支付宝收款码图片 URL（http/https）
+  accountHint String?  // 收款账户提示文案（如：微信收款·张三）
+  updatedAt   DateTime @updatedAt
 }

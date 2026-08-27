@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Crown, Check, Loader2, Sparkles, User as UserIcon } from "lucide-react"
+import { Crown, Check, Loader2, Sparkles, User as UserIcon, QrCode } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,12 @@ import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { api, redirectToLogin } from "@/lib/api"
+import type { PaymentConfigData } from "@/lib/payment/payment-config"
 import { formatDate } from "@/lib/utils"
+
+// 手动模式轮询：间隔 + 连续失败上限（达到上限停止静默重试，提示用户手动刷新）
+const POLL_INTERVAL_MS = 3000
+const POLL_MAX_FAILURES = 10
 
 interface OrderResult {
   orderId: string
@@ -19,7 +24,10 @@ interface OrderResult {
   mockAction: "auto" | "manual"
   mockToken?: string
   payUrl?: string
+  paymentConfig?: PaymentConfigData
 }
+
+type QrChannel = "wechat" | "alipay"
 
 const PLANS = [
   {
@@ -68,6 +76,9 @@ export default function PricingPage() {
   const [orderingPlan, setOrderingPlan] = useState<string | null>(null)
   const [order, setOrder] = useState<OrderResult | null>(null)
   const [activating, setActivating] = useState(false)
+  const [notified, setNotified] = useState(false) // 本订单用户是否已点「我已转账」
+  const [qrChannel, setQrChannel] = useState<QrChannel>("wechat")
+  const [notifying, setNotifying] = useState(false)
 
   const isAuthed = status === "authenticated"
   const isPro = info?.tier === "pro"
@@ -77,12 +88,17 @@ export default function PricingPage() {
     document.getElementById("plans")?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
 
-  // 手动模式（生产）：轮询订单状态直到管理员开通
+  // 手动模式（生产）：轮询订单状态直到管理员开通；同时恢复「我已转账」声明状态（刷新不丢失）。
+  // 连续失败达到上限即停止，避免无限静默重试（提示用户手动刷新）。
   useEffect(() => {
     if (!order || order.mockAction !== "manual") return
+    let failures = 0
     const timer = setInterval(async () => {
       try {
-        const data = await api.get<{ status: string }>(`/payment/order/${order.orderId}`)
+        const data = await api.get<{ status: string; userNotifiedAt?: string | null }>(
+          `/payment/order/${order.orderId}`
+        )
+        failures = 0
         if (data.status === "paid") {
           clearInterval(timer)
           toast.add({ title: "Pro 已开通", description: "刷新会员状态…", type: "success" })
@@ -90,11 +106,21 @@ export default function PricingPage() {
           reload()
           reloadUser()
           if (from) router.push(from)
+        } else {
+          setNotified(!!data.userNotifiedAt)
         }
       } catch {
-        // 轮询失败静默重试
+        failures += 1
+        if (failures >= POLL_MAX_FAILURES) {
+          clearInterval(timer)
+          toast.add({
+            title: "订单状态查询失败",
+            description: "请稍后手动刷新页面查看开通结果",
+            type: "warning",
+          })
+        }
       }
-    }, 3000)
+    }, POLL_INTERVAL_MS)
     return () => clearInterval(timer)
   }, [order, from, reload, reloadUser, router])
 
@@ -107,10 +133,17 @@ export default function PricingPage() {
     try {
       const data = await api.post<OrderResult>("/payment/order", { plan: planId })
       setOrder(data)
+      setNotified(false)
+      const hasQr = data.paymentConfig?.wechatQrUrl || data.paymentConfig?.alipayQrUrl
+      if (!data.paymentConfig?.wechatQrUrl && data.paymentConfig?.alipayQrUrl) {
+        setQrChannel("alipay")
+      } else {
+        setQrChannel("wechat")
+      }
       if (data.mockAction === "manual") {
         toast.add({
           title: "订单已提交",
-          description: "等待管理员开通后自动刷新，也可联系平台开通",
+          description: hasQr ? "请扫码转账后点击「我已转账」" : "等待管理员开通后自动刷新，也可联系平台开通",
           type: "info",
         })
       }
@@ -146,6 +179,34 @@ export default function PricingPage() {
       setActivating(false)
     }
   }
+
+  // 用户「我已转账」声明：标记订单，管理员据此确认收款（不自动开通，仍由管理员放行）
+  const handleNotify = async () => {
+    if (!order) return
+    setNotifying(true)
+    try {
+      await api.post(`/payment/order/${order.orderId}/notify`, {})
+      setNotified(true)
+      toast.add({
+        title: "已通知平台",
+        description: "管理员核对到账后会自动开通，请稍候",
+        type: "success",
+      })
+    } catch (err) {
+      toast.add({
+        title: "通知失败",
+        description: err instanceof Error ? err.message : "请稍后重试",
+        type: "error",
+      })
+    } finally {
+      setNotifying(false)
+    }
+  }
+
+  const qrConfig = order?.paymentConfig
+  const hasQr = !!(qrConfig?.wechatQrUrl || qrConfig?.alipayQrUrl)
+  const activeQrUrl = qrChannel === "wechat" ? qrConfig?.wechatQrUrl : qrConfig?.alipayQrUrl
+  const showChannelSwitch = !!(qrConfig?.wechatQrUrl && qrConfig?.alipayQrUrl)
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -269,6 +330,71 @@ export default function PricingPage() {
                   {activating ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
                   {activating ? "开通中…" : "模拟支付成功"}
                 </Button>
+              </div>
+            ) : hasQr ? (
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-4">
+                {/* 收款码 */}
+                <div className="flex flex-col items-center gap-2">
+                  {activeQrUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={activeQrUrl}
+                      alt={qrChannel === "wechat" ? "微信收款码" : "支付宝收款码"}
+                      className="h-44 w-44 rounded-lg border bg-white object-contain"
+                    />
+                  ) : (
+                    <div className="flex h-44 w-44 flex-col items-center justify-center gap-2 rounded-lg border bg-muted/50 text-xs text-muted-foreground">
+                      <QrCode className="size-6" />
+                      收款码待配置
+                    </div>
+                  )}
+                  {showChannelSwitch && (
+                    <div className="flex gap-1.5">
+                      {[
+                        { key: "wechat" as const, label: "微信收款" },
+                        { key: "alipay" as const, label: "支付宝收款" },
+                      ].map((c) => (
+                        <button
+                          key={c.key}
+                          onClick={() => setQrChannel(c.key)}
+                          className={
+                            "rounded-md px-2.5 py-1 text-xs transition-colors " +
+                            (qrChannel === c.key
+                              ? "bg-primary text-primary-foreground"
+                              : "border bg-background text-muted-foreground hover:bg-muted")
+                          }
+                        >
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {/* 说明 + 声明按钮 */}
+                <div className="flex flex-1 flex-col gap-2">
+                  <p className="text-sm font-medium">
+                    扫码转账 ¥{(order.amount / 100).toFixed(2)} 后，点击下方按钮通知平台
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    订单号：{order.orderId.slice(-8)} · 请转账后截图留证，方便核对
+                  </p>
+                  {qrConfig?.accountHint && (
+                    <p className="text-xs text-muted-foreground">{qrConfig.accountHint}</p>
+                  )}
+                  {notified ? (
+                    <div className="flex items-start gap-2 rounded-lg border border-emerald-500/40 bg-emerald-50 p-3 dark:bg-emerald-500/10">
+                      <Check className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                      <p className="text-xs text-muted-foreground">
+                        已通知平台，等待管理员确认到账后自动开通。开通后页面将自动刷新。
+                      </p>
+                    </div>
+                  ) : (
+                    <Button onClick={handleNotify} disabled={notifying} className="w-full gap-2 sm:w-auto">
+                      {notifying ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                      {notifying ? "提交中…" : "我已转账，等待确认"}
+                    </Button>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="flex items-start gap-2 rounded-lg border bg-muted/50 p-3">

@@ -69,4 +69,11 @@ export const api = {
       body: data === undefined ? undefined : JSON.stringify(data),
     })
   },
+  put<T = unknown>(path: string, data?: unknown) {
+    return apiFetch<T>(path, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: data === undefined ? undefined : JSON.stringify(data),
+    })
+  },
 }

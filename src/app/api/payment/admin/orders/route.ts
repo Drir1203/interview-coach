@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
       status: o.status,
       source: o.source,
       createdAt: o.createdAt,
+      userNotifiedAt: o.userNotifiedAt,
       paidAt: o.paidAt,
       expiresAt: o.expiresAt,
       user: o.user,

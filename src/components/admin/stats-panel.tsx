@@ -4,7 +4,7 @@
 // 数据来自 /api/admin/stats 一次性聚合。
 
 import { useCallback, useEffect, useState } from "react"
-import { Crown, Gift, Loader2, Receipt, Users, Wallet } from "lucide-react"
+import { Bell, Crown, Gift, Loader2, Receipt, Users, Wallet } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/toast"
@@ -17,6 +17,7 @@ export interface AdminStats {
   totalRevenueCents: number
   paidOrders: number
   pendingOrders: number
+  notifiedPendingOrders: number
 }
 
 interface Props {
@@ -80,6 +81,7 @@ export function StatsPanel({ onUnauthenticated }: Props) {
     { label: "领取试用", value: stats.trialClaimed.toLocaleString(), icon: Gift, accent: "text-emerald-500" },
     { label: "累计实收（元）", value: (stats.totalRevenueCents / 100).toFixed(2), icon: Wallet, accent: "text-sky-500" },
     { label: "待开通订单", value: stats.pendingOrders.toLocaleString(), icon: Receipt, accent: "text-rose-500" },
+    { label: "已通知待确认", value: stats.notifiedPendingOrders.toLocaleString(), icon: Bell, accent: "text-emerald-600" },
   ]
 
   return (

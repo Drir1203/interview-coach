@@ -21,5 +21,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     plan: order.plan,
     amount: order.amount,
     createdAt: order.createdAt,
+    userNotifiedAt: order.userNotifiedAt,
   })
 }
