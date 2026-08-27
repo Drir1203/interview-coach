@@ -362,6 +362,40 @@ else
   echo -e "  下单创建订单: ${RED}❌ (无 orderId)${NC}"; FAIL=$((FAIL + 1))
 fi
 
+# ─── 6c. AI 成本计量：当日超限 → 429 ───
+echo ""
+echo "── 6c. AI 成本计量（当日限额 429）──"
+
+# 直接向本地 DB 插入一条超大 AiUsage，模拟当日 token 已耗尽（free 30k / pro 300k 均被 2M 击穿）
+AI_USAGE_SEED="$(node -e "
+const { PrismaClient } = require('./src/generated/prisma');
+const p = new PrismaClient();
+(async () => {
+  await p.aiUsage.create({
+    data: { userId: '$TEST_UID', feature: 'coach', model: 'deepseek', inputTokens: 999999, outputTokens: 999999 },
+  });
+  console.log('OK');
+  await p.\$disconnect();
+})().catch(async (e) => { console.error(e); await p.\$disconnect(); process.exit(1); });
+")"
+
+if [ "$AI_USAGE_SEED" = "OK" ] && [ -n "$USER_COOKIE" ] && [ -n "$TEST_UID" ]; then
+  echo -e "  注入超限 AiUsage: ${GREEN}✅${NC}"; PASS=$((PASS + 1))
+  user_test "AI 当日超限 429" "POST" "/api/coach" \
+    '{"messages":[{"role":"user","content":"你好，请给我一些面试建议"}]}' "429" "今日"
+  # 清理注入行，避免污染本地看板成本数字
+  node -e "
+const { PrismaClient } = require('./src/generated/prisma');
+const p = new PrismaClient();
+(async () => {
+  await p.aiUsage.deleteMany({ where: { userId: '$TEST_UID', inputTokens: 999999 } });
+  await p.\$disconnect();
+})().catch(() => process.exit(0));
+"
+else
+  echo -e "  注入超限 AiUsage: ${RED}❌ (seed=$AI_USAGE_SEED uid=$TEST_UID)${NC}"; FAIL=$((FAIL + 1))
+fi
+
 # ─── 结果 ───
 echo ""
 echo "===================================="

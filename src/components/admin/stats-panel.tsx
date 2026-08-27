@@ -4,7 +4,7 @@
 // 数据来自 /api/admin/stats 一次性聚合。
 
 import { useCallback, useEffect, useState } from "react"
-import { Bell, Crown, Gift, Loader2, Receipt, Users, Wallet } from "lucide-react"
+import { Bell, Coins, Crown, Cpu, Gift, Loader2, Receipt, Users, Wallet, Zap } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/toast"
@@ -18,6 +18,12 @@ export interface AdminStats {
   paidOrders: number
   pendingOrders: number
   notifiedPendingOrders: number
+  aiCost: {
+    callsToday: number
+    tokensToday: number
+    costYuan: number
+    byModel: { model: string; calls: number; inputTokens: number; outputTokens: number }[]
+  }
 }
 
 interface Props {
@@ -84,6 +90,11 @@ export function StatsPanel({ onUnauthenticated }: Props) {
     { label: "已通知待确认", value: stats.notifiedPendingOrders.toLocaleString(), icon: Bell, accent: "text-emerald-600" },
   ]
 
+  const aiByModel = stats.aiCost.byModel.map((m) => {
+    const tokens = m.inputTokens + m.outputTokens
+    return { ...m, tokens }
+  })
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -102,8 +113,45 @@ export function StatsPanel({ onUnauthenticated }: Props) {
           )
         })}
       </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <Card>
+          <CardContent className="flex flex-col gap-2 py-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Cpu className="size-4 text-violet-500" /> 今日 AI 调用
+            </div>
+            <div className="text-xl font-semibold tabular-nums">{stats.aiCost.callsToday.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex flex-col gap-2 py-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Zap className="size-4 text-violet-500" /> 今日 AI tokens
+            </div>
+            <div className="text-xl font-semibold tabular-nums">
+              {(stats.aiCost.tokensToday / 1000).toFixed(1)}k
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex flex-col gap-2 py-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Coins className="size-4 text-violet-500" /> 今日 AI 成本（估算）
+            </div>
+            <div className="text-xl font-semibold tabular-nums">¥{stats.aiCost.costYuan.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+      </div>
+      {aiByModel.length > 0 && (
+        <p className="px-1 text-xs text-muted-foreground">
+          按模型：
+          {aiByModel
+            .map((m) => `${m.model} ${(m.tokens / 1000).toFixed(1)}kt · ${m.calls} 次`)
+            .join(" ｜ ")}
+        </p>
+      )}
       <p className="px-1 text-xs text-muted-foreground">
-        已支付订单 {stats.paidOrders} 单；金额单位为分存储，此处换算为元展示。
+        已支付订单 {stats.paidOrders} 单；金额单位为分存储，此处换算为元展示。AI 成本为估算单价。
       </p>
     </div>
   )
