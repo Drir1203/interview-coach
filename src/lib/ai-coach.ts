@@ -1,5 +1,19 @@
 import prisma from "@/lib/db"
 import { ROUND_TYPE_LABELS, INTERVIEW_RESULTS } from "@/types"
+import { ANON_USER_IDS, getTier } from "@/lib/tier"
+import {
+  AiQuotaError,
+  AI_DAILY_TOKEN_LIMIT,
+  AI_SINGLE_REQUEST_TOKEN_LIMIT,
+  AI_RATE_LIMIT,
+  FixedWindowRateLimiter,
+  checkDailyQuota,
+  checkSingleQuota,
+  estimateMessagesTokens,
+  estimateTokens,
+  normalizeUsage,
+} from "@/lib/payment/ai-quota"
+import { buildProviderChain, type AiProvider } from "@/lib/payment/ai-model-tier"
 
 export interface CoachMessage {
   role: "user" | "assistant"
@@ -98,15 +112,24 @@ export async function buildUserContext(userId: string): Promise<string> {
   return lines.join("\n")
 }
 
-// ────────── 多模型链调用(OpenAI 兼容) ──────────
+// ────────── 多模型链调用(OpenAI 兼容 / Anthropic) ──────────
+
+// 链上每次调用的结构化结果：真实 usage 优先，缺失时用估算兜底（供计量写入）
+interface ChainResult {
+  content: string
+  model: string // deepseek | qwen | anthropic | mock
+  inputTokens: number
+  outputTokens: number
+}
 
 async function callOpenAICompatible(
   system: string,
   messages: CoachMessage[],
   apiKey: string,
   baseUrl: string,
-  model: string
-): Promise<string> {
+  model: string,
+  provider: "deepseek" | "qwen"
+): Promise<ChainResult> {
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
@@ -129,14 +152,20 @@ async function callOpenAICompatible(
   const data = await response.json()
   const content = data?.choices?.[0]?.message?.content
   if (!content) throw new Error("AI 返回内容为空")
-  return content
+  const usage = normalizeUsage("openai", data.usage)
+  return {
+    content,
+    model: provider,
+    inputTokens: usage?.inputTokens ?? estimateMessagesTokens(messages, system),
+    outputTokens: usage?.outputTokens ?? estimateTokens(content),
+  }
 }
 
 async function callAnthropic(
   system: string,
   messages: CoachMessage[],
   apiKey: string
-): Promise<string> {
+): Promise<ChainResult> {
   const baseUrl = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com"
   const model = process.env.AI_MODEL || "claude-sonnet-4-20250514"
 
@@ -164,7 +193,13 @@ async function callAnthropic(
   const data = await response.json()
   const content = data.content?.[0]?.text
   if (!content) throw new Error("AI 返回内容为空")
-  return content
+  const usage = normalizeUsage("anthropic", data.usage)
+  return {
+    content,
+    model: "anthropic",
+    inputTokens: usage?.inputTokens ?? estimateMessagesTokens(messages, system),
+    outputTokens: usage?.outputTokens ?? estimateTokens(content),
+  }
 }
 
 // ────────── Mock 兜底 ──────────
@@ -190,46 +225,131 @@ function mockCoachReply(messages: CoachMessage[]): string {
 // 无 Key 时的兜底(由各功能提供自己的 mock 回复)
 type MockFn = (messages: CoachMessage[]) => string
 
-export async function chatWithFallback(
+// 按序尝试 provider 链，全部失败则 mock 兜底。chain 为 null 时用全链（匿名豁免路径）。
+async function runChain(
   system: string,
   messages: CoachMessage[],
-  mockFn?: MockFn
-): Promise<string> {
-  // 1. DeepSeek(首选)
-  const deepseekKey = process.env.DEEPSEEK_API_KEY
-  if (deepseekKey) {
+  mockFn: MockFn | undefined,
+  chain: AiProvider[] | null
+): Promise<ChainResult> {
+  const order: AiProvider[] = chain ?? ["deepseek", "qwen", "anthropic"]
+  for (const provider of order) {
     try {
-      return await callOpenAICompatible(system, messages, deepseekKey, "https://api.deepseek.com/v1", "deepseek-chat")
+      if (provider === "deepseek") {
+        const key = process.env.DEEPSEEK_API_KEY
+        if (!key) continue
+        return await callOpenAICompatible(system, messages, key, "https://api.deepseek.com/v1", "deepseek-chat", "deepseek")
+      }
+      if (provider === "qwen") {
+        const key = process.env.DASHSCOPE_API_KEY
+        if (!key) continue
+        return await callOpenAICompatible(system, messages, key, "https://dashscope.aliyuncs.com/compatible-mode/v1", "qwen-max", "qwen")
+      }
+      if (provider === "anthropic") {
+        const key = process.env.ANTHROPIC_API_KEY
+        if (!key) continue
+        return await callAnthropic(system, messages, key)
+      }
     } catch (err) {
-      console.error("DeepSeek 调用失败,尝试备用:", err)
-    }
-  }
-
-  // 2. DashScope(Qwen)
-  const dashscopeKey = process.env.DASHSCOPE_API_KEY
-  if (dashscopeKey) {
-    try {
-      return await callOpenAICompatible(
-        system, messages, dashscopeKey, "https://dashscope.aliyuncs.com/compatible-mode/v1", "qwen-max"
-      )
-    } catch (err) {
-      console.error("DashScope 调用失败,尝试备用:", err)
-    }
-  }
-
-  // 3. Anthropic
-  const anthropicKey = process.env.ANTHROPIC_API_KEY
-  if (anthropicKey) {
-    try {
-      return await callAnthropic(system, messages, anthropicKey)
-    } catch (err) {
-      console.error("Anthropic 调用失败:", err)
+      console.error(`${provider} 调用失败,尝试备用:`, err)
     }
   }
 
   // 无可用 Key → Mock 兜底
   await new Promise((r) => setTimeout(r, 800))
-  return mockFn ? mockFn(messages) : "（当前未配置 AI API Key,无法生成内容。）"
+  const content = mockFn ? mockFn(messages) : "（当前未配置 AI API Key,无法生成内容。）"
+  return { content, model: "mock", inputTokens: 0, outputTokens: 0 }
+}
+
+// 限流器：单实例进程内固定窗口（同 admin/login 模式）
+const aiRateLimiter = new FixedWindowRateLimiter(AI_RATE_LIMIT.perMinute, AI_RATE_LIMIT.windowMs)
+
+export interface ChatOptions {
+  userId?: string
+  feature?: string // coach | report | prep | experience | application
+}
+
+// 计量 + 限流 + 模型分层（CP2/CP3/CP4/D4）：
+// 先限流 → 再查当日累计限额 → 再单次预估限额 → 按分层链调用 → 写入真实/估算用量。
+async function meterAndCall(
+  system: string,
+  messages: CoachMessage[],
+  mockFn: MockFn | undefined,
+  opts: ChatOptions
+): Promise<string> {
+  const userId = opts.userId as string
+  const feature = opts.feature || "coach"
+
+  // CP4 分钟限流（统一档位）
+  if (!aiRateLimiter.tryAcquire(userId, Date.now())) {
+    throw new AiQuotaError("RATE_LIMITED", "操作太频繁，请稍后再试")
+  }
+
+  // 分层（D4）：Pro = Claude 优先链；免费 = 仅廉价链，永不触 Claude
+  const { tier } = await getTier(userId)
+  const chain = buildProviderChain(tier, {
+    deepseek: !!process.env.DEEPSEEK_API_KEY,
+    qwen: !!process.env.DASHSCOPE_API_KEY,
+    anthropic: !!process.env.ANTHROPIC_API_KEY,
+  })
+
+  // CP2 当日累计限额
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const agg = await prisma.aiUsage.aggregate({
+    where: { userId, createdAt: { gte: todayStart } },
+    _sum: { inputTokens: true, outputTokens: true },
+  })
+  const usedToday = (agg._sum.inputTokens ?? 0) + (agg._sum.outputTokens ?? 0)
+  const daily = checkDailyQuota(usedToday, AI_DAILY_TOKEN_LIMIT[tier])
+  if (!daily.ok) throw new AiQuotaError(daily.code, daily.error)
+
+  // CP3 单次预估限额（事前护栏）
+  const estimated = estimateMessagesTokens(messages, system)
+  const single = checkSingleQuota(estimated, AI_SINGLE_REQUEST_TOKEN_LIMIT[tier])
+  if (!single.ok) throw new AiQuotaError(single.code, single.error)
+
+  // 调用分层链 + 写入计量（best-effort：计量是旁路副作用，失败不阻断已成功的回复）
+  const result = await runChain(system, messages, mockFn, chain)
+  try {
+    await prisma.aiUsage.create({
+      data: {
+        userId,
+        feature,
+        model: result.model,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+      },
+    })
+  } catch (err) {
+    console.error("AI 计量写入失败（不影响回复）:", err)
+  }
+  return result.content
+}
+
+export async function chatWithFallback(
+  system: string,
+  messages: CoachMessage[],
+  mockFn?: MockFn,
+  opts?: ChatOptions
+): Promise<string> {
+  const userId = opts?.userId
+  // 匿名桶（__anon__/default）豁免计量与配额（D2），但限流 + 免费链仍生效（安全评审 C1）：
+  // 匿名永不触 Claude，堵「退出登录即可白嫖最贵模型」的成本倒挂。
+  if (userId && !ANON_USER_IDS.has(userId)) {
+    return meterAndCall(system, messages, mockFn, { userId, feature: opts?.feature })
+  }
+  const anonKey = userId || "__anon__"
+  if (!aiRateLimiter.tryAcquire(anonKey, Date.now())) {
+    throw new AiQuotaError("RATE_LIMITED", "操作太频繁，请稍后再试")
+  }
+  const chain = buildProviderChain("free", {
+    deepseek: !!process.env.DEEPSEEK_API_KEY,
+    qwen: !!process.env.DASHSCOPE_API_KEY,
+    anthropic: false, // free 链永不含 anthropic；显式 false 双保险
+  })
+  const result = await runChain(system, messages, mockFn, chain)
+  return result.content
 }
 
 // ────────── 主入口:教练对话 ──────────
@@ -237,5 +357,5 @@ export async function chatWithFallback(
 export async function coachChat(userId: string, messages: CoachMessage[]): Promise<string> {
   const userContext = await buildUserContext(userId)
   const system = `${COACH_SYSTEM_PROMPT}\n\n## 【用户数据】\n${userContext}`
-  return chatWithFallback(system, messages, mockCoachReply)
+  return chatWithFallback(system, messages, mockCoachReply, { userId, feature: "coach" })
 }

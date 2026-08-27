@@ -119,5 +119,8 @@ export async function generatePrepPlan(
   const prompt = buildPrepPrompt(company, position, roundType, userContext, experiencesText, sourceNote)
   const messages: CoachMessage[] = [{ role: "user", content: prompt }]
 
-  return chatWithFallback(system, messages, () => mockPrepReply(company, position))
+  return chatWithFallback(system, messages, () => mockPrepReply(company, position), {
+    userId,
+    feature: "prep",
+  })
 }

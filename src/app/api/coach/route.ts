@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import { auth } from "@/auth"
 import { coachChat } from "@/lib/ai-coach"
+import { AiQuotaError } from "@/lib/payment/ai-quota"
 import prisma from "@/lib/db"
 
 interface RawMsg {
@@ -104,6 +105,9 @@ export async function POST(req: NextRequest) {
 
     return Response.json({ reply, conversationId: conversation.id })
   } catch (err) {
+    if (err instanceof AiQuotaError) {
+      return Response.json({ error: err.message }, { status: 429 })
+    }
     console.error("AI 教练调用失败:", err)
     return Response.json({ error: "教练暂时开小差了,请稍后再试" }, { status: 500 })
   }

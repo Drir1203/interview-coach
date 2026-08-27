@@ -2,6 +2,7 @@ import { NextRequest } from "next/server"
 import { auth } from "@/auth"
 import prisma from "@/lib/db"
 import { generateApplicationStrategy } from "@/lib/ai-application"
+import { AiQuotaError } from "@/lib/payment/ai-quota"
 
 // POST /api/applications/[id]/strategy - 为求职进度生成 AI 下一步行动策略
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -31,6 +32,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
     return Response.json({ strategy })
   } catch (err) {
+    if (err instanceof AiQuotaError) {
+      return Response.json({ error: err.message }, { status: 429 })
+    }
     console.error("生成求职策略失败:", err)
     return Response.json({ error: "生成失败，请稍后再试" }, { status: 500 })
   }

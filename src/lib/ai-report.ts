@@ -138,6 +138,9 @@ export async function generateGrowthReport(userId: string): Promise<{ report: st
   const data = await loadReportData(userId)
   const prompt = buildReportPrompt(data)
   const messages: CoachMessage[] = [{ role: "user", content: prompt }]
-  const report = await chatWithFallback(REPORT_SYSTEM_PROMPT, messages, () => mockReportReply(data))
+  const report = await chatWithFallback(REPORT_SYSTEM_PROMPT, messages, () => mockReportReply(data), {
+    userId,
+    feature: "report",
+  })
   return { report, data }
 }

@@ -93,5 +93,8 @@ export async function generateApplicationStrategy(
   const prompt = buildStrategyPrompt(app, userContext)
   const messages: CoachMessage[] = [{ role: "user", content: prompt }]
 
-  return chatWithFallback(system, messages, () => mockStrategy(app))
+  return chatWithFallback(system, messages, () => mockStrategy(app), {
+    userId,
+    feature: "application",
+  })
 }

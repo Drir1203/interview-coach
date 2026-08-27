@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import { auth } from "@/auth"
 import { generatePrepPlan } from "@/lib/ai-prep"
+import { AiQuotaError } from "@/lib/payment/ai-quota"
 
 // POST /api/prep - 面试前押题,生成个性化准备方案
 export async function POST(req: NextRequest) {
@@ -25,6 +26,9 @@ export async function POST(req: NextRequest) {
     const plan = await generatePrepPlan(userId, company, position, roundType)
     return Response.json({ plan })
   } catch (err) {
+    if (err instanceof AiQuotaError) {
+      return Response.json({ error: err.message }, { status: 429 })
+    }
     console.error("押题生成失败:", err)
     return Response.json({ error: "生成失败,请稍后再试" }, { status: 500 })
   }

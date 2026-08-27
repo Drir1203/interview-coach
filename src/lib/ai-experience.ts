@@ -89,6 +89,7 @@ function mockAbstract(
 // ────────── 主入口：把面试问题抽象成面经草稿 ──────────
 
 export async function abstractExperiences(
+  userId: string,
   company: string,
   position: string,
   roundType: string,
@@ -112,7 +113,7 @@ ${source}
 
   const messages: CoachMessage[] = [{ role: "user", content: prompt }]
   const raw = await chatWithFallback(ABSTRACT_SYSTEM_PROMPT, messages, () =>
-    JSON.stringify(mockAbstract(questions))
+    JSON.stringify(mockAbstract(questions)), { userId, feature: "experience" }
   )
   const parsed = parseAbstractJson(raw)
 

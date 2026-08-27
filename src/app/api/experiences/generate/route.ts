@@ -2,6 +2,7 @@ import { NextRequest } from "next/server"
 import prisma from "@/lib/db"
 import { auth } from "@/auth"
 import { abstractExperiences } from "@/lib/ai-experience"
+import { AiQuotaError } from "@/lib/payment/ai-quota"
 
 function getUserId(session: any): string {
   return session?.user?.id || "__anon__"
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     const entries = await abstractExperiences(
+      userId,
       interview.company.name,
       interview.position,
       interview.roundType,
@@ -59,6 +61,9 @@ export async function POST(req: NextRequest) {
 
     return Response.json({ entries })
   } catch (err) {
+    if (err instanceof AiQuotaError) {
+      return Response.json({ error: err.message }, { status: 429 })
+    }
     console.error("生成面经草稿失败:", err)
     return Response.json({ error: "生成失败" }, { status: 500 })
   }

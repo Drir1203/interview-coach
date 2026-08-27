@@ -293,3 +293,19 @@ model PaymentConfig {
   accountHint String?  // 收款账户提示文案（如：微信收款·张三）
   updatedAt   DateTime @updatedAt
 }
+
+// ────────── AI 调用计量（P0-1 成本护栏） ──────────
+// 每条 = 一次 AI 调用的真实 token 用量。独立表不挂 User FK：
+// 用户注销也不丢成本历史；匿名桶（__anon__/default）豁免，不写此表。
+model AiUsage {
+  id           String   @id @default(cuid())
+  userId       String   // 实际用户 id（匿名豁免不写）
+  feature      String   // coach | report | prep | experience | application
+  model        String   // deepseek | qwen | anthropic | mock
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
