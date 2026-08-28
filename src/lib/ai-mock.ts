@@ -10,6 +10,8 @@ export interface MockSession {
   startedAt: string
   endedAt?: string
   summary?: MockSummary
+  // real-AI 模式保留完整对话（assistant/user 交替），供统一 AI 链 prompt 与落库配对
+  history?: { role: "assistant" | "user"; content: string }[]
 }
 
 export interface MockQA {

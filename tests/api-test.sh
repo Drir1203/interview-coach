@@ -396,6 +396,66 @@ else
   echo -e "  注入超限 AiUsage: ${RED}❌ (seed=$AI_USAGE_SEED uid=$TEST_UID)${NC}"; FAIL=$((FAIL + 1))
 fi
 
+# ─── 6d. 模拟面试闭环：登录用户 → 落库 type=mock → 画像 ───
+echo ""
+echo "── 6d. 模拟面试闭环（登录用户落库）──"
+
+if [ -n "$USER_COOKIE" ] && [ -n "$TEST_UID" ]; then
+  MOCK_RESP=$(curl -s -H "Cookie: $USER_COOKIE" -w "\n%{http_code}" -X POST "$BASE_URL/api/mock" \
+    -H "Content-Type: application/json" \
+    -d '{"action":"start","company":"字节跳动","position":"算法工程师","roundType":"first"}')
+  MOCK_CODE=$(echo "$MOCK_RESP" | tail -1)
+  MOCK_BODY=$(echo "$MOCK_RESP" | sed '$d')
+
+  if [ "$MOCK_CODE" = "200" ]; then
+    MOCK_ID=$(echo "$MOCK_BODY" | grep -o '"sessionId":"[^"]*"' | head -1 | cut -d'"' -f4)
+    if [ -n "$MOCK_ID" ]; then
+      echo -e "  登录用户模拟面试启动: ${GREEN}✅${NC}"; PASS=$((PASS + 1))
+      user_test "登录用户模拟应答" "POST" "/api/mock" \
+        "{\"action\":\"respond\",\"sessionId\":\"$MOCK_ID\",\"answer\":\"我做过推荐系统，有3年算法经验\"}" "200" ""
+      user_test "登录用户结束模拟" "POST" "/api/mock" \
+        "{\"action\":\"end\",\"sessionId\":\"$MOCK_ID\"}" "200" "overallScore"
+
+      # 落库断言：Interview(type=mock) + questions>0（画像为 info，AI 总结评分映射非确定性）
+      MOCK_DB="$(node -e "
+const { PrismaClient } = require('./src/generated/prisma');
+const p = new PrismaClient();
+(async () => {
+  const iv = await p.interview.findFirst({ where: { userId: '$TEST_UID', type: 'mock' }, orderBy: { createdAt: 'desc' }, include: { questions: true, company: { select: { name: true } } } });
+  const prof = await p.userSkillProfile.findMany({ where: { userId: '$TEST_UID' }, select: { category: true, interviewCount: true } });
+  await p.\$disconnect();
+  if (!iv) { console.log('NO_INTERVIEW'); return; }
+  const cats = prof.map(x => x.category + ':' + x.interviewCount).join(',') || 'none';
+  console.log((iv.type === 'mock' && iv.questions.length > 0 ? 'OK' : 'BAD') + '|' + iv.company.name + '|q=' + iv.questions.length + '|score=' + (iv.overallScore ?? 'null') + '|profile=' + cats);
+})().catch(async (e) => { console.error('ERR ' + e.message); await p.\$disconnect(); process.exit(1); });
+")"
+      if echo "$MOCK_DB" | grep -q "^OK|"; then
+        echo -e "  模拟面试落库(type=mock): ${GREEN}✅${NC} ($MOCK_DB)"; PASS=$((PASS + 1))
+      else
+        echo -e "  模拟面试落库(type=mock): ${RED}❌ ($MOCK_DB)${NC}"; FAIL=$((FAIL + 1))
+      fi
+
+      # 清理测试数据：mock 面试 + 逐题（保留画像，测试用户是新鲜的，无污染）
+      node -e "
+const { PrismaClient } = require('./src/generated/prisma');
+const p = new PrismaClient();
+(async () => {
+  const ivs = await p.interview.findMany({ where: { userId: '$TEST_UID', type: 'mock' }, select: { id: true } });
+  for (const iv of ivs) { await p.interviewQuestion.deleteMany({ where: { interviewId: iv.id } }); }
+  await p.interview.deleteMany({ where: { userId: '$TEST_UID', type: 'mock' } });
+  await p.\$disconnect();
+})().catch(() => process.exit(0));
+"
+    else
+      echo -e "  登录用户模拟面试启动: ${RED}❌ (无sessionId)${NC}"; FAIL=$((FAIL + 1))
+    fi
+  else
+    echo -e "  登录用户模拟面试启动: ${RED}❌ (HTTP $MOCK_CODE: $(echo "$MOCK_BODY" | head -c 200))${NC}"; FAIL=$((FAIL + 1))
+  fi
+else
+  echo -e "  登录用户模拟面试: ${RED}❌ (未登录)${NC}"; FAIL=$((FAIL + 1))
+fi
+
 # ─── 结果 ───
 echo ""
 echo "===================================="

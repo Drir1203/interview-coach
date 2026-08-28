@@ -117,6 +117,7 @@ model Interview {
   companyId String
   position  String
   roundType String
+  type      String   @default("real") // real | mock（模拟面试落库标识，mock 不与真实面试混淆）
   result    String? // pass | fail | waiting | unknown
 
   userNotes String?
@@ -300,7 +301,7 @@ model PaymentConfig {
 model AiUsage {
   id           String   @id @default(cuid())
   userId       String   // 实际用户 id（匿名豁免不写）
-  feature      String   // coach | report | prep | experience | application
+  feature      String   // coach | report | prep | experience | application | mock
   model        String   // deepseek | qwen | anthropic | mock
   inputTokens  Int      @default(0)
   outputTokens Int      @default(0)

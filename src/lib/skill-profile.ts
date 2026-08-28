@@ -1,8 +1,12 @@
 import prisma from "@/lib/db"
+import type { PrismaClient } from "@/generated/prisma"
 
 // 从用户所有已复盘面试的逐题分类评分,重算各维度平均分,写入 UserSkillProfile
-export async function updateSkillProfile(userId: string): Promise<void> {
-  const interviews = await prisma.interview.findMany({
+export async function updateSkillProfile(
+  userId: string,
+  db: PrismaClient = prisma
+): Promise<void> {
+  const interviews = await db.interview.findMany({
     where: { userId, status: "ai_reviewed" },
     select: {
       questions: {
@@ -23,13 +27,13 @@ export async function updateSkillProfile(userId: string): Promise<void> {
 
   for (const [category, scores] of Object.entries(catScores)) {
     const avg = scores.reduce((a, b) => a + b, 0) / scores.length
-    const last = await prisma.interviewQuestion.findFirst({
+    const last = await db.interviewQuestion.findFirst({
       where: { interview: { userId, status: "ai_reviewed" }, aiCategory: category, aiScore: { not: null } },
       orderBy: { interview: { date: "desc" } },
       select: { aiScore: true, interview: { select: { date: true } } },
     })
 
-    await prisma.userSkillProfile.upsert({
+    await db.userSkillProfile.upsert({
       where: { userId_category: { userId, category } },
       update: {
         averageScore: Math.round(avg * 10) / 10,

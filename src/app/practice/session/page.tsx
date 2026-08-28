@@ -114,7 +114,17 @@ function SessionInner() {
           }),
         })
 
-        if (!res.ok) throw new Error("启动失败")
+        if (!res.ok) {
+          // 透出后端错误文案（如免费场次 402「升级 Pro 解锁无限」）
+          let msg = "启动失败"
+          try {
+            const b = await res.json()
+            if (b?.error) msg = b.error
+          } catch {
+            /* 非 JSON 错误体，用默认文案 */
+          }
+          throw new Error(msg)
+        }
         const data = await res.json()
 
         // 更新 sessionId
