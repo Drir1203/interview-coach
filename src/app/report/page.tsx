@@ -5,6 +5,7 @@ import { LineChart, Loader2, RefreshCw, TrendingUp, Trophy, Target, ClipboardLis
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { PageHeader } from "@/components/layout/PageHeader"
+import { Markdown } from "@/components/ui/markdown"
 
 interface ReportStats {
   total: number
@@ -132,7 +133,7 @@ export default function ReportPage() {
               <p className="text-sm">AI 正在分析你的成长轨迹…(约 20-40 秒)</p>
             </div>
           ) : report ? (
-            <div className="whitespace-pre-wrap text-sm leading-relaxed">{report}</div>
+            <Markdown content={report} />
           ) : (
             <div className="py-12 text-center text-sm text-muted-foreground">
               {error ? "生成失败,请重试" : "暂无数据"}

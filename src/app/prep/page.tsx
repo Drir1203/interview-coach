@@ -5,6 +5,7 @@ import { Target, Loader2, Sparkles, Building2, Briefcase } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Markdown } from "@/components/ui/markdown"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { ROUND_TYPES } from "@/types"
 
@@ -108,9 +109,7 @@ export default function PrepPage() {
       {plan && (
         <Card className="animate-fade-up" style={{ animationDelay: "100ms" }}>
           <CardContent className="p-5">
-            <div className="prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">
-              {plan}
-            </div>
+            <Markdown content={plan} />
           </CardContent>
         </Card>
       )}

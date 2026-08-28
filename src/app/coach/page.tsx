@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { PageHeader } from "@/components/layout/PageHeader"
+import { Markdown } from "@/components/ui/markdown"
 import {
   Dialog,
   DialogContent,
@@ -374,7 +375,7 @@ export default function CoachPage() {
                     <Sparkles className="size-4" />
                     AI 面试教练 · 已了解你的面试数据
                   </div>
-                  <div className="text-sm whitespace-pre-wrap leading-relaxed">{m.content}</div>
+                  <Markdown content={m.content} />
                 </div>
               ) : (
                 <div key={m.id || i} className={cn("flex gap-3", m.role === "user" && "flex-row-reverse")}>
@@ -390,14 +391,15 @@ export default function CoachPage() {
                       <User className="size-4 text-muted-foreground" />
                     )}
                   </div>
-                  <div
-                    className={cn(
-                      "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap",
-                      m.role === "assistant" ? "bg-muted/60" : "bg-primary text-primary-foreground"
-                    )}
-                  >
-                    {m.content}
-                  </div>
+                  {m.role === "assistant" ? (
+                    <div className="max-w-[80%] rounded-2xl bg-muted/60 px-4 py-2.5">
+                      <Markdown content={m.content} />
+                    </div>
+                  ) : (
+                    <div className="max-w-[80%] whitespace-pre-wrap rounded-2xl bg-primary px-4 py-2.5 text-sm text-primary-foreground">
+                      {m.content}
+                    </div>
+                  )}
                 </div>
               )
             )}

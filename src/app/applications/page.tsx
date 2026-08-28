@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/PageHeader"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Markdown } from "@/components/ui/markdown"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Select,
@@ -320,9 +321,7 @@ export default function ApplicationsPage() {
                         <Sparkles className="size-3.5 text-primary" />
                         AI 下一步行动建议
                       </div>
-                      <div className="prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">
-                        {strategy}
-                      </div>
+                      <Markdown content={strategy} />
                     </div>
                   )}
                 </CardContent>
