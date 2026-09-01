@@ -139,7 +139,8 @@ export function LandingPage() {
             AI 面师 — 你的 AI 面试教练
           </h1>
           <p className="mt-4 max-w-lg text-lg text-muted-foreground">
-            记录真实面试 → AI 复盘 → 押题 → 模拟面试 → 成长。一个平台管理你的求职全生命周期。
+            真实面试自动 AI 复盘 · AI 面试官随时模拟 · 考前智能押题备战。
+            一个平台，让每一次面试都成为你更强的理由。
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link href="/auth/register">

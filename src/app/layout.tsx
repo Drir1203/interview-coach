@@ -11,13 +11,13 @@ export const metadata: Metadata = {
     default: "AI 面师 - 你的 AI 面试教练",
     template: "%s | AI 面师",
   },
-  description: "AI 面试教练 — 记录面试 / AI 复盘 / 押题 / 模拟面试，一个平台管理求职全流程",
+  description: "真实面试自动 AI 复盘 · AI 面试官随时模拟 · 考前智能押题备战 —— 一个平台，让每一次面试都成为你更强的理由",
   icons: {
     icon: [{ url: "/interview/logo.svg", type: "image/svg+xml" }],
   },
   openGraph: {
     title: "AI 面师 - 你的 AI 面试教练",
-    description: "记录真实面试 → AI 复盘 → 押题 → 模拟面试，一个平台管理求职全生命周期",
+    description: "真实面试自动 AI 复盘 · AI 面试官随时模拟 · 考前智能押题备战，让每一次面试都成为你更强的理由",
     type: "website",
     siteName: "AI 面师",
   },
