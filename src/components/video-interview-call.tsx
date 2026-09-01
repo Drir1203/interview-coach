@@ -3,11 +3,17 @@
 // AI 语音面试通话组件（阿里云 AI 实时互动 + ARTC）。
 // 生命周期：init 引擎 → call 入会 → 面试官语音面试 → 结束（用户点击 / 面试官宣布结束 / 异常）→
 //           调 /api/video-interview/end 停实例并取转写 → 交给父组件展示。
+//
+// 视觉层（v2026-09-02）：会议式双画面 —— SVG 面试官形象（agentState 驱动口型/呼吸/思考动效）
+//   + 名牌 + 可选自拍摄像头 + 置底字幕条 + 会议式控制条。通话/落库逻辑一行未动。
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Loader2, Mic, MicOff, PhoneOff, AlertCircle, Brain } from "lucide-react"
+import { Loader2, Mic, MicOff, PhoneOff, Video, VideoOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { visualStateFromAgentState } from "@/lib/interview-visuals"
+import { InterviewerAvatar } from "@/components/interviewer-avatar"
+import { SelfCamera } from "@/components/self-camera"
 
 export interface VideoSessionInfo {
   sessionId: string
@@ -46,9 +52,21 @@ export function VideoInterviewCall({ session, company, position, roundType, onFi
 
   const [phase, setPhase] = useState<"connecting" | "connected" | "error">("connecting")
   const [agentText, setAgentText] = useState("正在接通面试官…")
+  const [agentState, setAgentState] = useState<number | undefined>(undefined)
   const [subtitle, setSubtitle] = useState("")
   const [muted, setMuted] = useState(false)
   const [elapsed, setElapsed] = useState(0)
+  const [cameraOn, setCameraOn] = useState(false)
+  const [cameraSupported, setCameraSupported] = useState(true)
+
+  // 挂载后校正摄像头可用性（非 HTTPS / 无 getUserMedia → 隐藏开关）
+  useEffect(() => {
+    const ok =
+      typeof window !== "undefined" &&
+      window.isSecureContext &&
+      !!navigator.mediaDevices?.getUserMedia
+    setCameraSupported(ok)
+  }, [])
 
   // 通话计时
   useEffect(() => {
@@ -131,6 +149,7 @@ export function VideoInterviewCall({ session, company, position, roundType, onFi
         })
         engine.on("agentStateChanged", (state: number) => {
           // AICallAgentState: 1 聆听 / 2 思考 / 3 讲话
+          setAgentState(state)
           const text = state === 3 ? "面试官正在提问…" : state === 2 ? "面试官思考中…" : "面试官正在聆听…"
           setAgentText(text)
         })
@@ -189,50 +208,85 @@ export function VideoInterviewCall({ session, company, position, roundType, onFi
 
   const hangUp = () => void finalize("user")
 
+  const handleCameraUnavailable = useCallback(() => {
+    setCameraSupported(false)
+    setCameraOn(false)
+  }, [])
+
+  const toggleCamera = () => setCameraOn((v) => !v)
+
+  const visualState = visualStateFromAgentState(agentState)
+
   return (
-    <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-md flex-col items-center justify-center gap-8">
-      {/* 顶部信息 */}
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Brain className="size-4 text-primary" />
-          <span className="font-medium">AI 语音面试</span>
+    <div className="mx-auto flex h-[calc(100vh-4rem)] w-full max-w-lg flex-col gap-3 px-4 pb-4">
+      {/* 面试间主画面 */}
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 shadow-lg">
+        {/* 氛围背景：顶部光晕 + 细网格 */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.18),transparent_55%)]" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.04] [background-image:linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)] [background-size:36px_36px]" />
+
+        <div className="relative flex flex-col items-center gap-4">
+          <InterviewerAvatar state={visualState} phase={phase} />
+          {/* 面试官名牌 + 状态点 + 计时 */}
+          <div className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 backdrop-blur-sm">
+            <span
+              className={cn(
+                "size-2 rounded-full",
+                phase === "connected"
+                  ? "bg-emerald-400"
+                  : phase === "error"
+                    ? "bg-red-400"
+                    : "animate-pulse bg-amber-400"
+              )}
+            />
+            <span className="text-sm font-medium text-white">面试官</span>
+            <span className="text-xs text-white/60">
+              {company} · {position}
+            </span>
+            <span className="text-xs tabular-nums text-white/40">{fmt(elapsed)}</span>
+          </div>
+          <p className="min-h-5 text-center text-sm text-white/70">{agentText}</p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {company} · {position}
-        </p>
+
+        {/* 自拍小窗（右上角，可选） */}
+        {cameraSupported && cameraOn && (
+          <div className="absolute right-3 top-3">
+            <SelfCamera enabled onUnavailable={handleCameraUnavailable} />
+          </div>
+        )}
+
+        {/* 错误覆盖 */}
+        {phase === "error" && (
+          <div className="absolute inset-x-0 bottom-4 flex justify-center px-6">
+            <p className="text-center text-sm text-red-300">
+              通话失败：{agentText}
+              <br />
+              <Button variant="ghost" size="sm" className="mt-2 text-white" onClick={hangUp}>
+                结束并返回
+              </Button>
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* 面试官形象 */}
-      <div
-        className={cn(
-          "flex size-28 items-center justify-center rounded-full bg-primary/10",
-          phase === "connected" && "animate-pulse"
-        )}
-      >
-        {phase === "connecting" ? (
-          <Loader2 className="size-10 animate-spin text-primary" />
-        ) : phase === "error" ? (
-          <AlertCircle className="size-10 text-destructive" />
+      {/* 字幕条 */}
+      <div className="min-h-14 rounded-2xl border border-border/60 bg-card/60 px-4 py-3 backdrop-blur">
+        {subtitle && phase === "connected" ? (
+          <p
+            className={cn(
+              "text-center text-sm",
+              visualState.talking ? "font-medium text-foreground" : "text-muted-foreground"
+            )}
+          >
+            {subtitle}
+          </p>
         ) : (
-          <Brain className="size-10 text-primary" />
+          <p className="text-center text-xs text-muted-foreground">面试官的提问将显示在这里</p>
         )}
       </div>
 
-      {/* 状态文本 */}
-      <div className="flex flex-col items-center gap-2">
-        <p className="text-lg font-medium">{agentText}</p>
-        <p className="text-xs text-muted-foreground">{fmt(elapsed)}</p>
-      </div>
-
-      {/* 实时字幕 */}
-      {subtitle && phase === "connected" && (
-        <p className="min-h-12 max-w-sm rounded-lg bg-muted px-4 py-2 text-center text-sm text-muted-foreground">
-          {subtitle}
-        </p>
-      )}
-
-      {/* 通话控制 */}
-      <div className="flex items-center gap-6">
+      {/* 会议式控制条 */}
+      <div className="flex items-center justify-center gap-5">
         <Button
           variant="outline"
           size="icon"
@@ -243,6 +297,20 @@ export function VideoInterviewCall({ session, company, position, roundType, onFi
         >
           {muted ? <MicOff className="size-6" /> : <Mic className="size-6" />}
         </Button>
+
+        {cameraSupported && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-14 rounded-full"
+            onClick={toggleCamera}
+            title={cameraOn ? "关闭摄像头" : "打开摄像头"}
+            disabled={phase !== "connected"}
+          >
+            {cameraOn ? <Video className="size-6" /> : <VideoOff className="size-6" />}
+          </Button>
+        )}
+
         <Button
           variant="destructive"
           size="icon"
@@ -258,16 +326,6 @@ export function VideoInterviewCall({ session, company, position, roundType, onFi
           )}
         </Button>
       </div>
-
-      {phase === "error" && (
-        <p className="max-w-sm text-center text-sm text-destructive">
-          通话失败：{agentText}
-          <br />
-          <Button variant="ghost" size="sm" className="mt-2" onClick={hangUp}>
-            结束并返回
-          </Button>
-        </p>
-      )}
     </div>
   )
 }

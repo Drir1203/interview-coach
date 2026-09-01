@@ -119,3 +119,80 @@ body {
     transform: none;
   }
 }
+
+/* ── AI 面试官形象动效（interviewer-avatar.tsx）────────────────
+   口型 / 呼吸 / 眨眼 / 点头 / 思考点。SVG 元素用 transform-box
+   fill-box 让 transform-origin 对齐元素自身中心。 */
+@keyframes mouth-talk {
+  0%,
+  100% {
+    transform: scaleY(0.12);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+@keyframes avatar-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+@keyframes avatar-blink {
+  0%,
+  91%,
+  100% {
+    transform: scaleY(1);
+  }
+  94%,
+  96% {
+    transform: scaleY(0.08);
+  }
+}
+@keyframes avatar-nod {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+@keyframes think-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+}
+.avatar-mouth-talking {
+  animation: mouth-talk 0.5s ease-in-out infinite;
+}
+.avatar-breathe {
+  animation: avatar-breathe 3.2s ease-in-out infinite;
+}
+.avatar-blink {
+  animation: avatar-blink 4.4s ease-in-out infinite;
+}
+.avatar-nod {
+  animation: avatar-nod 0.5s ease-in-out infinite;
+}
+.avatar-think-dot {
+  animation: think-pulse 0.9s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .avatar-mouth-talking,
+  .avatar-breathe,
+  .avatar-blink,
+  .avatar-nod,
+  .avatar-think-dot {
+    animation: none;
+  }
+}
