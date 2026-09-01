@@ -1,17 +1,20 @@
 "use client"
 
+// 独立营销首页（未登录访问 / 时渲染）。已登录用户会被 middleware 重定向到 /dashboard。
+// 自带头部导航 + Hero + 功能 + 优势 + CTA + 页脚，全屏无 Sidebar。
+
 import Link from "next/link"
 import {
   ArrowRight,
   Sparkles,
   Mic,
-  Briefcase,
   Target,
   LineChart,
   AudioLines,
   RefreshCw,
   Smartphone,
-  Users,
+  Library,
+  Crown,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -21,15 +24,16 @@ interface FeatureItem {
   icon: LucideIcon
   title: string
   desc: string
+  href?: string
 }
 
 const features: FeatureItem[] = [
   { icon: Sparkles, title: "AI 复盘", desc: "记录真实面试，AI 自动生成结构化复盘与改进建议" },
-  { icon: Mic, title: "模拟面试", desc: "多轮模拟面试，随时开练，不怕冷场" },
-  { icon: Briefcase, title: "求职进度", desc: "投递、面试、Offer 一个看板全掌握" },
+  { icon: AudioLines, title: "AI 语音面试", desc: "AI 面试官语音提问，口型 / 思考动效还原真实面试氛围" },
+  { icon: Mic, title: "模拟面试", desc: "文字 + 语音双模式，多轮模拟随时开练，不怕冷场" },
   { icon: Target, title: "面经押题", desc: "AI 押题 + 面经库，提前准备不慌乱" },
+  { icon: Library, title: "我的题库", desc: "上传面试题文档，AI 按你的题目出题练习" },
   { icon: LineChart, title: "成长报告", desc: "阶段成长总结，看得见的进步" },
-  { icon: AudioLines, title: "语音模拟", desc: "语音作答，还原真实面试节奏" },
 ]
 
 const advantages: FeatureItem[] = [
@@ -44,9 +48,10 @@ const advantages: FeatureItem[] = [
     desc: "电脑、手机随时记录与复盘，数据实时同步",
   },
   {
-    icon: Users,
-    title: "面经网络效应",
-    desc: "面试数据汇聚成面经，用的人越多，参考越准",
+    icon: Crown,
+    title: "Pro 会员",
+    desc: "无限记录 + AI 深度复盘 + 语音面试，¥29/月起",
+    href: "/pricing",
   },
 ]
 
@@ -80,10 +85,10 @@ function HeroVisual() {
         </div>
       </div>
 
-      {/* 浮动小卡：模拟面试 */}
+      {/* 浮动小卡：AI 语音面试 */}
       <div className="absolute right-0 top-0 flex items-center gap-2 rounded-xl bg-card px-3 py-2 shadow-card-hover ring-1 ring-foreground/5">
-        <Mic className="size-4 text-indigo-600" />
-        <span className="text-xs font-medium">模拟面试 进行中</span>
+        <AudioLines className="size-4 text-indigo-600" />
+        <span className="text-xs font-medium">AI 语音面试</span>
       </div>
 
       {/* 浮动小卡：押题 */}
@@ -98,6 +103,35 @@ function HeroVisual() {
 export function LandingPage() {
   return (
     <div className="animate-fade-up">
+      {/* 顶部导航：sticky，已登录 / 未登录都可看 */}
+      <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+          <Link href="/" className="flex items-center gap-2">
+            <Logo size="sm" />
+          </Link>
+          <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
+            <a href="#features" className="transition-colors hover:text-foreground">
+              功能
+            </a>
+            <Link href="/pricing" className="transition-colors hover:text-foreground">
+              定价
+            </Link>
+          </nav>
+          <div className="flex items-center gap-2">
+            <Link href="/auth/login">
+              <Button variant="ghost" size="sm" className="px-3">
+                登录
+              </Button>
+            </Link>
+            <Link href="/auth/register">
+              <Button size="sm" className="px-3">
+                免费开始
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </header>
+
       {/* Hero：左对齐 */}
       <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:py-24 lg:grid-cols-2">
         <div className="text-left">
@@ -105,7 +139,7 @@ export function LandingPage() {
             AI 面师 — 你的 AI 面试教练
           </h1>
           <p className="mt-4 max-w-lg text-lg text-muted-foreground">
-            记录真实面试 → AI 复盘 → 押题 → 成长。一个平台管理你的求职全生命周期。
+            记录真实面试 → AI 复盘 → 押题 → 模拟面试 → 成长。一个平台管理你的求职全生命周期。
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link href="/auth/register">
@@ -127,7 +161,7 @@ export function LandingPage() {
       {/* 功能：6 卡 2×3 */}
       <section id="features" className="mx-auto max-w-6xl px-4 py-16">
         <h2 className="text-center text-2xl font-bold md:text-3xl">一个平台，覆盖求职全流程</h2>
-        <p className="mt-2 text-center text-muted-foreground">记录、复盘、押题、管理，一站式完成</p>
+        <p className="mt-2 text-center text-muted-foreground">记录、复盘、押题、模拟面试，一站式完成</p>
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => {
             const Icon = f.icon
@@ -152,13 +186,24 @@ export function LandingPage() {
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 md:grid-cols-3">
           {advantages.map((a) => {
             const Icon = a.icon
-            return (
-              <div key={a.title} className="text-center">
+            const content = (
+              <>
                 <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
                   <Icon className="size-6" />
                 </div>
                 <h3 className="mt-4 font-semibold">{a.title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{a.desc}</p>
+              </>
+            )
+            return (
+              <div key={a.title} className="text-center">
+                {a.href ? (
+                  <Link href={a.href} className="block transition-opacity hover:opacity-80">
+                    {content}
+                  </Link>
+                ) : (
+                  content
+                )}
               </div>
             )
           })}
@@ -184,9 +229,20 @@ export function LandingPage() {
 
       {/* 页脚 */}
       <footer className="border-t py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 text-sm text-muted-foreground">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 text-sm text-muted-foreground">
           <Logo size="sm" />
           <p>© 2026 AI 面师 · 你的 AI 面试教练</p>
+          <div className="flex items-center gap-4">
+            <Link href="/pricing" className="transition-colors hover:text-foreground">
+              定价
+            </Link>
+            <Link href="/auth/login" className="transition-colors hover:text-foreground">
+              登录
+            </Link>
+            <Link href="/auth/register" className="transition-colors hover:text-foreground">
+              注册
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

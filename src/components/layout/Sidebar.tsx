@@ -23,6 +23,7 @@ import {
   TrendingUp,
   BookOpen,
   Crown,
+  Library,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { signOut } from "next-auth/react"
@@ -53,6 +54,7 @@ const navGroups = [
     items: [
       { href: "/interviews", label: "面试记录", icon: Briefcase, tint: { bg: "bg-blue-100", text: "text-blue-600", bgActive: "bg-blue-200" } },
       { href: "/practice", label: "模拟面试", icon: GraduationCap, tint: { bg: "bg-fuchsia-100", text: "text-fuchsia-600", bgActive: "bg-fuchsia-200" } },
+      { href: "/question-bank", label: "我的题库", icon: Library, tint: { bg: "bg-lime-100", text: "text-lime-600", bgActive: "bg-lime-200" } },
       { href: "/companies", label: "公司看板", icon: Building2, tint: { bg: "bg-cyan-100", text: "text-cyan-600", bgActive: "bg-cyan-200" } },
     ],
   },
@@ -149,7 +151,7 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto px-2.5 py-1">
         {/* 总览：独立顶层项（无冗余组标题） */}
         <div className="pb-1 pt-2">
-          <NavItem href="/" label="总览" icon={LayoutDashboard} tint={{ bg: "bg-sky-100", text: "text-sky-600", bgActive: "bg-sky-200" }} pathname={pathname} onClick={() => setOpen(false)} />
+          <NavItem href="/dashboard" label="总览" icon={LayoutDashboard} tint={{ bg: "bg-sky-100", text: "text-sky-600", bgActive: "bg-sky-200" }} pathname={pathname} onClick={() => setOpen(false)} />
         </div>
 
         {navGroups.map((group) => (

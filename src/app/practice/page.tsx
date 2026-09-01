@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { GraduationCap, Target, Brain, Loader2, ArrowRight, Mic, Upload, Trash2 } from "lucide-react"
+import { GraduationCap, Target, Brain, Loader2, ArrowRight, Mic, Library } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { Button } from "@/components/ui/button"
@@ -22,7 +23,6 @@ export default function PracticePage() {
   const [mode, setMode] = useState<"text" | "video">("text")
   const [banks, setBanks] = useState<{ id: string; name: string; questionCount: number }[]>([])
   const [selectedBankId, setSelectedBankId] = useState("")
-  const [uploading, setUploading] = useState(false)
 
   // 检查用户是否已上传简历（简历深挖模式的前提）
   useEffect(() => {
@@ -51,46 +51,6 @@ export default function PracticePage() {
       if (b) setBanks(b)
     })
   }, [])
-
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    try {
-      const formData = new FormData()
-      formData.append("file", file)
-      const res = await fetch("/interview/api/question-bank", { method: "POST", body: formData })
-      if (!res.ok) {
-        const b = await res.json().catch(() => null)
-        throw new Error(b?.error || "上传失败")
-      }
-      const data = await res.json()
-      alert(`已识别 ${data.questionCount} 题`)
-      setSelectedBankId(data.id)
-      const list = await loadBanks()
-      if (list) setBanks(list)
-    } catch (err: any) {
-      alert("上传题库失败：" + err.message)
-    } finally {
-      setUploading(false)
-      e.target.value = ""
-    }
-  }
-
-  const handleDeleteBank = async (id: string) => {
-    if (!confirm("确认删除该题库？")) return
-    try {
-      const res = await fetch(`/interview/api/question-bank?id=${encodeURIComponent(id)}`, { method: "DELETE" })
-      if (!res.ok) {
-        const b = await res.json().catch(() => null)
-        throw new Error(b?.error || "删除失败")
-      }
-      setBanks((prev) => prev.filter((b) => b.id !== id))
-      if (selectedBankId === id) setSelectedBankId("")
-    } catch (err: any) {
-      alert("删除题库失败：" + err.message)
-    }
-  }
 
   const handleStart = async () => {
     if (!position.trim()) return
@@ -309,59 +269,43 @@ export default function PracticePage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed p-3 text-sm text-muted-foreground transition hover:border-primary/50">
-            {uploading ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Upload className="size-4" />
-            )}
-            <span>{uploading ? "AI 识别中..." : "上传面试题文档（仅解析前 6000 字符）"}</span>
-            <input
-              type="file"
-              accept=".pdf,.txt"
-              className="hidden"
-              disabled={uploading}
-              onChange={handleUpload}
-            />
-          </label>
-
-          {banks.length > 0 && (
+          {banks.length > 0 ? (
             <div className="space-y-1">
               {banks.map((b) => (
-                <div
+                <label
                   key={b.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border p-2"
+                  className="flex min-w-0 cursor-pointer items-center gap-2 rounded-lg border p-2 text-sm"
                 >
-                  <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-sm">
-                    <input
-                      type="radio"
-                      name="questionBank"
-                      className="size-4 accent-[#6366f1]"
-                      checked={selectedBankId === b.id}
-                      onChange={() => setSelectedBankId(b.id)}
-                    />
-                    <span className="truncate">{b.name}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">{b.questionCount} 题</span>
-                  </label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-1 text-destructive hover:text-destructive"
-                    onClick={() => handleDeleteBank(b.id)}
-                  >
-                    <Trash2 className="size-3" />
-                    删除
-                  </Button>
-                </div>
+                  <input
+                    type="radio"
+                    name="questionBank"
+                    className="size-4 accent-[#6366f1]"
+                    checked={selectedBankId === b.id}
+                    onChange={() => setSelectedBankId(b.id)}
+                  />
+                  <span className="truncate">{b.name}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{b.questionCount} 题</span>
+                </label>
               ))}
             </div>
+          ) : (
+            <p className="py-2 text-sm text-muted-foreground">
+              未上传题库时，AI 按岗位自动出题；上传后可选指定题库。
+            </p>
           )}
 
           <p className="text-xs text-muted-foreground">
             {banks.length > 0
               ? "选择题库后开始模拟面试，AI 将按题库顺序提问。"
-              : "未上传题库时，AI 按岗位自动出题；上传后可选指定题库。"}
+              : "可在「我的题库」上传面试题文档，AI 面试官按你的题目提问。"}
           </p>
+
+          <Link href="/question-bank" className="block">
+            <Button variant="outline" size="sm" className="w-full gap-2">
+              <Library className="size-4" />
+              管理我的题库
+            </Button>
+          </Link>
         </CardContent>
       </Card>
     </div>

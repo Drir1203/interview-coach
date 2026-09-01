@@ -56,7 +56,7 @@ export default function RegisterPage() {
         window.location.href = "/interview/auth/login"
         return
       }
-      window.location.href = "/interview/"
+      window.location.href = "/interview/dashboard"
       router.refresh()
     } catch {
       setError("注册失败，请重试")

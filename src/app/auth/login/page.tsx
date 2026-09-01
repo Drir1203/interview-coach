@@ -61,7 +61,7 @@ function LoginForm() {
         return
       }
 
-      window.location.href = callbackUrl || "/interview/"
+      window.location.href = callbackUrl || "/interview/dashboard"
     } catch {
       setError("登录失败，请重试")
       setLoading(false)
