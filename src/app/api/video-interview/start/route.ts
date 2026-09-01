@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server"
 import { auth } from "@/auth"
+import prisma from "@/lib/db"
 import { buildUserContext } from "@/lib/ai-coach"
 import { buildInterviewerPrompt } from "@/lib/ai-interview/prompt"
 import { resolveProvider, startInterview } from "@/lib/ai-interview/service"
 import type { StartInterviewParams } from "@/lib/ai-interview/types"
+import type { BankQuestion } from "@/lib/question-bank"
 import { assertVideoQuota } from "@/lib/tier"
 
 // POST /api/video-interview/start —— 启动 AI 视频面试
@@ -17,7 +19,7 @@ export async function POST(req: NextRequest) {
   const userId = session.user.id
 
   const body = await req.json().catch(() => ({}))
-  const { company, position, roundType, grill } = body
+  const { company, position, roundType, grill, questionBankId } = body
   if (!company || !position) {
     return Response.json({ error: "缺少公司/岗位" }, { status: 400 })
   }
@@ -31,6 +33,24 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: quota.error, code: quota.code }, { status })
   }
 
+  // 自定义题库：用户指定本人题库 → 面试官按题库顺序提问（不属主 404 / 空题库 400）
+  let customQuestions: BankQuestion[] | undefined
+  if (questionBankId) {
+    const bank = await prisma.questionBank.findUnique({ where: { id: questionBankId } })
+    if (!bank || bank.userId !== userId) {
+      return Response.json({ error: "题库不存在" }, { status: 404 })
+    }
+    try {
+      const parsed = JSON.parse(bank.questions ?? "[]")
+      customQuestions = Array.isArray(parsed) ? parsed : []
+    } catch {
+      customQuestions = []
+    }
+    if (customQuestions.length === 0) {
+      return Response.json({ error: "题库为空" }, { status: 400 })
+    }
+  }
+
   // C6 背景注入：能力画像 + 面试历史作为面试官背景
   const userContext = await buildUserContext(userId)
   const prompt = buildInterviewerPrompt({
@@ -39,6 +59,7 @@ export async function POST(req: NextRequest) {
     roundType,
     grill: !!grill,
     userContext,
+    customQuestions,
   })
 
   const params: StartInterviewParams = {

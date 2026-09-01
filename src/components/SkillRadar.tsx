@@ -22,6 +22,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   project_deep_dive: "项目深挖",
   system_design: "系统设计",
   hr: "HR 面试",
+  custom: "自定义题库",
 }
 
 interface Props {

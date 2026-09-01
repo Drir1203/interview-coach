@@ -46,6 +46,7 @@ function SessionInner() {
   const position = searchParams.get("position") || "未知岗位"
   const mode = searchParams.get("mode") || "text"
   const roundTypeParam = searchParams.get("roundType") || "first"
+  const questionBankId = searchParams.get("questionBankId") || ""
 
   const [messages, setMessages] = useState<
     { role: "assistant" | "user"; content: string; voiceState?: VoiceState }[]
@@ -91,6 +92,7 @@ function SessionInner() {
               position,
               roundType: roundTypeParam,
               grill: searchParams.get("grill") === "1",
+              ...(questionBankId ? { questionBankId } : {}),
             }),
           })
           if (!vres.ok) {
@@ -119,6 +121,7 @@ function SessionInner() {
             position,
             roundType: roundTypeParam,
             resumeMode: searchParams.get("grill") === "1",
+            ...(questionBankId ? { questionBankId } : {}),
           }),
         })
 

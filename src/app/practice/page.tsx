@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { GraduationCap, Target, Brain, Loader2, ArrowRight, Mic } from "lucide-react"
+import { GraduationCap, Target, Brain, Loader2, ArrowRight, Mic, Upload, Trash2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { Button } from "@/components/ui/button"
@@ -20,6 +20,9 @@ export default function PracticePage() {
   const [grillMode, setGrillMode] = useState(false)
   const [hasResume, setHasResume] = useState(false)
   const [mode, setMode] = useState<"text" | "video">("text")
+  const [banks, setBanks] = useState<{ id: string; name: string; questionCount: number }[]>([])
+  const [selectedBankId, setSelectedBankId] = useState("")
+  const [uploading, setUploading] = useState(false)
 
   // 检查用户是否已上传简历（简历深挖模式的前提）
   useEffect(() => {
@@ -31,11 +34,70 @@ export default function PracticePage() {
       .catch(() => {})
   }, [])
 
+  // 加载我的题库列表（未登录 → 401 → null，显示「登录后可用」）
+  const loadBanks = async (): Promise<{ id: string; name: string; questionCount: number }[] | null> => {
+    try {
+      const res = await fetch("/interview/api/question-bank")
+      if (!res.ok) return null
+      const data = await res.json()
+      return data.banks ?? []
+    } catch {
+      return null
+    }
+  }
+
+  useEffect(() => {
+    loadBanks().then((b) => {
+      if (b) setBanks(b)
+    })
+  }, [])
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      const res = await fetch("/interview/api/question-bank", { method: "POST", body: formData })
+      if (!res.ok) {
+        const b = await res.json().catch(() => null)
+        throw new Error(b?.error || "上传失败")
+      }
+      const data = await res.json()
+      alert(`已识别 ${data.questionCount} 题`)
+      setSelectedBankId(data.id)
+      const list = await loadBanks()
+      if (list) setBanks(list)
+    } catch (err: any) {
+      alert("上传题库失败：" + err.message)
+    } finally {
+      setUploading(false)
+      e.target.value = ""
+    }
+  }
+
+  const handleDeleteBank = async (id: string) => {
+    if (!confirm("确认删除该题库？")) return
+    try {
+      const res = await fetch(`/interview/api/question-bank?id=${encodeURIComponent(id)}`, { method: "DELETE" })
+      if (!res.ok) {
+        const b = await res.json().catch(() => null)
+        throw new Error(b?.error || "删除失败")
+      }
+      setBanks((prev) => prev.filter((b) => b.id !== id))
+      if (selectedBankId === id) setSelectedBankId("")
+    } catch (err: any) {
+      alert("删除题库失败：" + err.message)
+    }
+  }
+
   const handleStart = async () => {
     if (!position.trim()) return
     setStarting(true)
 
-    const base = `company=${encodeURIComponent(company || "未知公司")}&position=${encodeURIComponent(position)}&roundType=${roundType}${grillMode ? "&grill=1" : ""}`
+    const bankSuffix = selectedBankId ? `&questionBankId=${encodeURIComponent(selectedBankId)}` : ""
+    const base = `company=${encodeURIComponent(company || "未知公司")}&position=${encodeURIComponent(position)}&roundType=${roundType}${grillMode ? "&grill=1" : ""}${bankSuffix}`
 
     try {
       // AI 语音面试：不在列表页预启动，面试页再尝试视频面试/降级（C4）
@@ -53,6 +115,7 @@ export default function PracticePage() {
           position: position.trim(),
           roundType,
           resumeMode: grillMode,
+          ...(selectedBankId ? { questionBankId: selectedBankId } : {}),
         }),
       })
 
@@ -206,16 +269,18 @@ export default function PracticePage() {
             <div className="space-y-1">
               <p className="text-sm font-medium">简历深挖模式</p>
               <p className="text-xs text-muted-foreground">
-                {hasResume
-                  ? "AI 面试官盯着你简历的漏洞、夸大和矛盾点拷打你"
-                  : "需先在「设置」上传简历才能使用"}
+                {selectedBankId
+                  ? "已选「我的题库」，面试按你的题目进行"
+                  : hasResume
+                    ? "AI 面试官盯着你简历的漏洞、夸大和矛盾点拷打你"
+                    : "需先在「设置」上传简历才能使用"}
               </p>
             </div>
             <input
               type="checkbox"
               className="size-5 accent-[#6366f1]"
               checked={grillMode}
-              disabled={!hasResume}
+              disabled={!hasResume || !!selectedBankId}
               onChange={(e) => setGrillMode(e.target.checked)}
             />
           </div>
@@ -232,6 +297,71 @@ export default function PracticePage() {
             )}
             {starting ? "准备中..." : "开始模拟面试"}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* 我的题库：上传面试题文档，AI 按你的题目进行模拟面试 */}
+      <Card className="animate-fade-up" style={{ animationDelay: "200ms" }}>
+        <CardHeader>
+          <CardTitle className="text-base">我的题库</CardTitle>
+          <CardDescription>
+            上传面试题文档（PDF/txt），AI 面试官按你的题目顺序提问（文字与 AI 语音面试均支持）
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed p-3 text-sm text-muted-foreground transition hover:border-primary/50">
+            {uploading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Upload className="size-4" />
+            )}
+            <span>{uploading ? "AI 识别中..." : "上传面试题文档（仅解析前 6000 字符）"}</span>
+            <input
+              type="file"
+              accept=".pdf,.txt"
+              className="hidden"
+              disabled={uploading}
+              onChange={handleUpload}
+            />
+          </label>
+
+          {banks.length > 0 && (
+            <div className="space-y-1">
+              {banks.map((b) => (
+                <div
+                  key={b.id}
+                  className="flex items-center justify-between gap-2 rounded-lg border p-2"
+                >
+                  <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="questionBank"
+                      className="size-4 accent-[#6366f1]"
+                      checked={selectedBankId === b.id}
+                      onChange={() => setSelectedBankId(b.id)}
+                    />
+                    <span className="truncate">{b.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{b.questionCount} 题</span>
+                  </label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-destructive hover:text-destructive"
+                    onClick={() => handleDeleteBank(b.id)}
+                  >
+                    <Trash2 className="size-3" />
+                    删除
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <p className="text-xs text-muted-foreground">
+            {banks.length > 0
+              ? "选择题库后开始模拟面试，AI 将按题库顺序提问。"
+              : "未上传题库时，AI 按岗位自动出题；上传后可选指定题库。"}
+          </p>
         </CardContent>
       </Card>
     </div>

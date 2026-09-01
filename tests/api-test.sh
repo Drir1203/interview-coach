@@ -456,6 +456,133 @@ else
   echo -e "  登录用户模拟面试: ${RED}❌ (未登录)${NC}"; FAIL=$((FAIL + 1))
 fi
 
+# ─── 6e. 我的题库：上传/列表/删除 + 自定义 mock 闭环 ───
+echo ""
+echo "── 6e. 我的题库（自定义上传 → 按题库模拟面试）──"
+
+# 未登录 401 门禁
+test "未登录题库列表 401" "GET" "/api/question-bank" "" "401" ""
+test "未登录题库上传 401" "POST" "/api/question-bank" "" "401" ""
+test "未登录题库删除 401" "DELETE" "/api/question-bank?id=foo" "" "401" ""
+
+if [ -n "$USER_COOKIE" ] && [ -n "$TEST_UID" ]; then
+  # 登录用户空 txt 上传 → 400（AI 前短路，确定性）。
+  # 注意：mingw curl 无法读取 Git Bash 虚拟路径 /tmp/...（exit 26）→ 用仓库内相对路径。
+  : > ./bank-empty-test.txt
+  EMPTY_CODE=$(curl -s -H "Cookie: $USER_COOKIE" -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/question-bank" \
+    -F "file=@./bank-empty-test.txt;type=text/plain")
+  rm -f ./bank-empty-test.txt
+  if [ "$EMPTY_CODE" = "400" ]; then
+    echo -e "  空 txt 上传 400（AI 前短路）: ${GREEN}✅${NC}"; PASS=$((PASS + 1))
+  else
+    echo -e "  空 txt 上传 400（AI 前短路）: ${RED}❌ (HTTP $EMPTY_CODE)${NC}"; FAIL=$((FAIL + 1))
+  fi
+
+  # prisma 直种题库（AI 提取 happy path 依赖外部 key，由单测覆盖）
+  BANK_SEED="$(node -e "
+const { PrismaClient } = require('./src/generated/prisma');
+const p = new PrismaClient();
+(async () => {
+  const bank = await p.questionBank.create({
+    data: {
+      userId: '$TEST_UID',
+      name: '测试题库',
+      rawText: '第一题：请介绍你的项目\n第二题：为什么离开上一家公司\n第三题：你的职业规划是什么',
+      questions: JSON.stringify([
+        { question: '第一题：请介绍你的项目', answer: '参考要点A' },
+        { question: '第二题：为什么离开上一家公司' },
+        { question: '第三题：你的职业规划是什么' }
+      ]),
+      questionCount: 3,
+    },
+  });
+  console.log(bank.id);
+  await p.\$disconnect();
+})().catch(async (e) => { console.error('ERR ' + e.message); await p.\$disconnect(); process.exit(1); });
+")"
+  BANK_ID=$(echo "$BANK_SEED" | grep -oE '^[a-z0-9]+$' | head -1)
+
+  if [ -n "$BANK_ID" ]; then
+    echo -e "  直种题库: ${GREEN}✅${NC}"; PASS=$((PASS + 1))
+    user_test "题库列表含新题库" "GET" "/api/question-bank" "" "200" "$BANK_ID"
+
+    # 匿名用题库 start → 401；登录用户用不存在题库 → 404
+    test "匿名用题库 401" "POST" "/api/mock" \
+      '{"action":"start","company":"字节跳动","position":"后端","roundType":"first","questionBankId":"anon-bank"}' "401" ""
+    user_test "不存在题库 404" "POST" "/api/mock" \
+      '{"action":"start","company":"字节跳动","position":"后端","roundType":"first","questionBankId":"no-such-bank"}' "404" "题库不存在"
+
+    # 自定义 mock 全循环：首题命中题库 → 3×应答（逐题推进）→ 到底自动收尾
+    CM_RESP=$(curl -s -H "Cookie: $USER_COOKIE" -w "\n%{http_code}" -X POST "$BASE_URL/api/mock" \
+      -H "Content-Type: application/json" \
+      -d "{\"action\":\"start\",\"company\":\"字节跳动\",\"position\":\"后端开发\",\"roundType\":\"first\",\"questionBankId\":\"$BANK_ID\"}")
+    CM_CODE=$(echo "$CM_RESP" | tail -1)
+    CM_BODY=$(echo "$CM_RESP" | sed '$d')
+
+    if [ "$CM_CODE" = "200" ]; then
+      CM_ID=$(echo "$CM_BODY" | grep -o '"sessionId":"[^"]*"' | head -1 | cut -d'"' -f4)
+      if echo "$CM_BODY" | grep -q "第一题：请介绍你的项目" && [ -n "$CM_ID" ]; then
+        echo -e "  自定义 mock 启动（首题命中题库）: ${GREEN}✅${NC}"; PASS=$((PASS + 1))
+        # 应答用 ASCII（Windows curl argv 传中文会按 ANSI 码页转码乱码，断言会失真）；
+        # 题库中文来自 seed/服务器响应，不受影响。
+        user_test "自定义应答 1 → 题库第二题" "POST" "/api/mock" \
+          "{\"action\":\"respond\",\"sessionId\":\"$CM_ID\",\"answer\":\"answer-1\"}" "200" "第二题"
+        user_test "自定义应答 2 → 题库第三题" "POST" "/api/mock" \
+          "{\"action\":\"respond\",\"sessionId\":\"$CM_ID\",\"answer\":\"answer-2\"}" "200" "第三题"
+        user_test "自定义应答 3（到底收尾）" "POST" "/api/mock" \
+          "{\"action\":\"respond\",\"sessionId\":\"$CM_ID\",\"answer\":\"answer-3\"}" "200" "overallScore"
+
+        # DB 断言：type=mock 最新场、逐题匹配题库顺序、aiCategory=custom、A1 回归（userAnswer=作答，referenceAnswer 独立不泄漏）
+        CM_DB="$(node -e "
+const { PrismaClient } = require('./src/generated/prisma');
+const p = new PrismaClient();
+(async () => {
+  const iv = await p.interview.findFirst({ where: { userId: '$TEST_UID', type: 'mock' }, orderBy: { createdAt: 'desc' }, include: { questions: { orderBy: { order: 'asc' } } } });
+  await p.\$disconnect();
+  if (!iv) { console.log('NO_INTERVIEW'); return; }
+  const qs = iv.questions;
+  const okType = iv.type === 'mock';
+  const okCount = qs.length === 3;
+  const okCustom = qs.every(q => q.aiCategory === 'custom');
+  const okOrder = qs.map(q => q.questionText).join('|') === '第一题：请介绍你的项目|第二题：为什么离开上一家公司|第三题：你的职业规划是什么';
+  const a1 = qs[0].userAnswer === 'answer-1' && qs[0].referenceAnswer === '参考要点A' && qs[0].userAnswer !== '参考要点A';
+  const ok = okType && okCount && okCustom && okOrder && a1;
+  console.log((ok ? 'OK' : 'BAD') + '|count=' + qs.length + '|custom=' + okCustom + '|order=' + okOrder + '|a1=' + a1 + '|ua0=' + qs[0].userAnswer + '|ref0=' + qs[0].referenceAnswer);
+})().catch(async (e) => { console.error('ERR ' + e.message); await p.\$disconnect(); process.exit(1); });
+")"
+        if echo "$CM_DB" | grep -q "^OK|"; then
+          echo -e "  自定义 mock 落库 + A1 回归: ${GREEN}✅${NC} ($CM_DB)"; PASS=$((PASS + 1))
+        else
+          echo -e "  自定义 mock 落库 + A1 回归: ${RED}❌ ($CM_DB)${NC}"; FAIL=$((FAIL + 1))
+        fi
+      else
+        echo -e "  自定义 mock 启动（首题命中题库）: ${RED}❌ ($CM_BODY)${NC}"; FAIL=$((FAIL + 1))
+      fi
+    else
+      echo -e "  自定义 mock 启动: ${RED}❌ (HTTP $CM_CODE: $(echo "$CM_BODY" | head -c 200))${NC}"; FAIL=$((FAIL + 1))
+    fi
+
+    # 属主删除题库 → 200
+    user_test "删除题库" "DELETE" "/api/question-bank?id=$BANK_ID" "" "200" "ok"
+  else
+    echo -e "  直种题库: ${RED}❌ (seed=$BANK_SEED)${NC}"; FAIL=$((FAIL + 1))
+  fi
+else
+  echo -e "  我的题库闭环: ${RED}❌ (未登录)${NC}"; FAIL=$((FAIL + 1))
+fi
+
+# 清理自定义 mock 面试（与 6d 同款，避免污染画像/场次计数）
+node -e "
+const { PrismaClient } = require('./src/generated/prisma');
+const p = new PrismaClient();
+(async () => {
+  const ivs = await p.interview.findMany({ where: { userId: '$TEST_UID', type: 'mock' }, select: { id: true } });
+  for (const iv of ivs) { await p.interviewQuestion.deleteMany({ where: { interviewId: iv.id } }); }
+  await p.interview.deleteMany({ where: { userId: '$TEST_UID', type: 'mock' } });
+  await p.\$disconnect();
+})().catch(() => process.exit(0));
+"
+
 # ─── 结果 ───
 echo ""
 echo "===================================="

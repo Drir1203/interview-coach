@@ -88,4 +88,36 @@ describe("buildInterviewerPrompt（纯函数）", () => {
     expect(p).toContain("候选人背景")
     expect(p).toContain("候选人简历摘要")
   })
+
+  it("customQuestions → 注入【指定题库】段并含首题", () => {
+    const p = buildInterviewerPrompt({
+      company: "字节",
+      position: "后端",
+      customQuestions: [
+        { question: "第一题：请介绍你的项目", answer: "要点A" },
+        { question: "第二题：为什么离开上一家公司" },
+      ],
+    })
+    expect(p).toContain("【指定题库】")
+    expect(p).toContain("第一题：请介绍你的项目")
+    expect(p).toContain("第二题：为什么离开上一家公司")
+  })
+
+  it("未传 customQuestions → 不含【指定题库】段（默认行为不变）", () => {
+    const p = buildInterviewerPrompt({ company: "字节", position: "后端" })
+    expect(p).not.toContain("【指定题库】")
+  })
+
+  it("customQuestions + 超长背景 → 仍 ≤3072 且规则/题库在前段", () => {
+    const p = buildInterviewerPrompt({
+      company: "A",
+      position: "B",
+      customQuestions: [{ question: "题库题：请介绍你的项目" }],
+      userContext: "u".repeat(5000),
+      resumeText: "r".repeat(5000),
+    })
+    expect(p.length).toBeLessThanOrEqual(MAX_INTERVIEWER_PROMPT_LENGTH)
+    expect(p).toContain("面试规则")
+    expect(p).toContain("【指定题库】")
+  })
 })

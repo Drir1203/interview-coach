@@ -2,6 +2,8 @@
 // 注意：阿里云 LLM 人设上限 ≤3072 字符，组装后必须截断。
 // 本函数是纯函数（可单测）；用户上下文由 buildUserContext 预先生成后传入。
 
+import type { BankQuestion } from "@/lib/question-bank"
+
 export interface InterviewerPromptInput {
   company: string
   position: string
@@ -9,6 +11,7 @@ export interface InterviewerPromptInput {
   grill?: boolean
   userContext?: string
   resumeText?: string
+  customQuestions?: BankQuestion[] // 自定义题库：按用户上传的题目顺序提问
 }
 
 export const MAX_INTERVIEWER_PROMPT_LENGTH = 3072
@@ -42,6 +45,15 @@ export function buildInterviewerPrompt(input: InterviewerPromptInput): string {
 
   if (grill) {
     parts.push("", "压力面模式：针对候选人回答中的漏洞、夸大和矛盾点进行尖锐追问，像资深面试官拷打候选人，但保持专业。")
+  }
+
+  if (input.customQuestions && input.customQuestions.length > 0) {
+    const rendered = input.customQuestions.map((q, i) => `${i + 1}. ${q.question}`).join("\n")
+    parts.push(
+      "",
+      "【指定题库】请严格按下列题目顺序逐一提问，可对关键回答做一次追问；不要跳过、不要自出题：",
+      truncate(rendered, 1100)
+    )
   }
 
   if (input.userContext) {

@@ -12,8 +12,12 @@ import {
   buildMockStartPrompt,
   buildMockRespondPrompt,
   buildMockSummaryPrompt,
+  firstCustomQuestion,
+  advanceCustom,
+  buildCustomRespondPrompt,
   type MockSummary,
 } from "@/lib/ai-mock"
+import type { BankQuestion } from "@/lib/question-bank"
 
 // 内存会话存储（有状态会话，结束落库后保留）
 const sessions = new Map<string, any>()
@@ -34,6 +38,9 @@ const MOCK_SYSTEM_PROMPT =
 // 全链失败时的续问兜底（真实模式中途无可用模型时，不让面试中断）
 const GENERIC_FOLLOW_UP =
   "【反馈】AI 暂时不可用。请继续：简单总结一下你的核心优势和最有代表性的项目亮点。"
+
+// 自定义题库模式的通用反馈兜底（AI 不可用时照常推进下一题）
+const GENERIC_CUSTOM_FEEDBACK = "回答已记录。让我们进入下一题。"
 
 // 从 AI 返回文本中提取 JSON 总结（健壮降级：剥离 markdown 围栏/前后杂质）
 function parseSummaryJson(raw: string): MockSummary | null {
@@ -94,7 +101,7 @@ async function finalizeSession(session: any): Promise<Response> {
   if (!session.summary) {
     const ruleSummary = generateMockSummary(session)
     let summary = ruleSummary
-    if (session.mode === "real") {
+    if (session.mode === "real" || session.mode === "custom") {
       try {
         const prompt = buildMockSummaryPrompt(session.history, session.grillMode)
         const text = await chatWithFallback(
@@ -139,12 +146,59 @@ function ruleRespond(session: any, answer: string): Promise<Response> {
   )
 }
 
+// 自定义题库应答：AI 只出反馈，下一题由 advanceCustom 按题库顺序推进（A2）
+async function customRespond(session: any, answer: string): Promise<Response> {
+  const currentQA = session.questions[session.questions.length - 1]
+  currentQA.answer = answer
+  session.history.push({ role: "user", content: answer })
+
+  let feedback: string
+  try {
+    const prompt = buildCustomRespondPrompt(
+      currentQA.question,
+      answer,
+      currentQA.referenceAnswer,
+      session.grillMode
+    )
+    feedback = await chatWithFallback(
+      MOCK_SYSTEM_PROMPT,
+      [{ role: "user", content: prompt }],
+      () => GENERIC_CUSTOM_FEEDBACK,
+      { userId: session.userId, feature: "mock" }
+    )
+  } catch (err) {
+    // D3 同款静默降级：配额耗尽/链路失败 → 通用反馈继续，不硬中断
+    if (err instanceof AiQuotaError) {
+      feedback = GENERIC_CUSTOM_FEEDBACK
+    } else {
+      console.error("自定义题反馈 AI 失败，使用通用反馈:", err)
+      feedback = GENERIC_CUSTOM_FEEDBACK
+    }
+  }
+  currentQA.feedback = feedback
+
+  const advanced = advanceCustom(session)
+  if (advanced.isComplete) {
+    return finalizeSession(session)
+  }
+  const nextQA = advanced.next!
+  session.history.push({ role: "assistant", content: nextQA.question })
+  return Response.json({
+    feedback,
+    question: nextQA.question,
+    round: session.currentRound,
+    isComplete: false,
+    isFollowUp: false,
+  })
+}
+
 async function handleStart(
   company: string,
   position: string,
   roundType: string,
   userId: string,
-  resumeMode?: boolean
+  resumeMode?: boolean,
+  questionBankId?: string
 ) {
   // 简历深挖模式：读取用户简历
   let resume: string | undefined
@@ -160,6 +214,54 @@ async function handleStart(
     if (!quota.ok) {
       return Response.json({ error: quota.error, code: quota.code }, { status: 402 })
     }
+  }
+
+  // 自定义题库模式：用户指定本人题库 → 按题库顺序提问（配额门之后，规则基线之前）
+  if (questionBankId) {
+    if (ANON_USER_IDS.has(userId)) {
+      return Response.json({ error: "请先登录" }, { status: 401 })
+    }
+    const bank = await prisma.questionBank.findUnique({ where: { id: questionBankId } })
+    if (!bank || bank.userId !== userId) {
+      return Response.json({ error: "题库不存在" }, { status: 404 })
+    }
+    let list: BankQuestion[]
+    try {
+      const parsed = JSON.parse(bank.questions ?? "[]")
+      list = Array.isArray(parsed) ? parsed : []
+    } catch {
+      list = []
+    }
+    if (list.length === 0) {
+      return Response.json({ error: "题库为空" }, { status: 400 })
+    }
+
+    const q1 = firstCustomQuestion(list)
+    const sessionId = `custom_${Date.now()}`
+    sweepExpiredSessions(Date.now())
+    sessions.set(sessionId, {
+      id: sessionId,
+      company,
+      position,
+      roundType,
+      userId,
+      mode: "custom",
+      grillMode: false,
+      // questions 只预置首题，随答题逐题 push（A2）
+      questions: [q1],
+      customBank: list,
+      history: [{ role: "assistant", content: q1.question }],
+      currentRound: 1,
+      startedAt: new Date().toISOString(),
+    })
+    return Response.json({
+      sessionId,
+      question: q1.question,
+      round: 1,
+      totalRounds: list.length,
+      isComplete: false,
+      grillMode: false,
+    })
   }
 
   // 规则 mock 作兜底基线（题库/轮次/首题）
@@ -225,6 +327,11 @@ async function handleRespond(sessionId: string, answer: string, callerId: string
     return Response.json({ error: "无权操作该面试会话" }, { status: 403 })
   }
 
+  // 自定义题库模式：AI 只出反馈，题库顺序推进
+  if (session.mode === "custom") {
+    return customRespond(session, answer)
+  }
+
   // 真实 AI 模式：由 history + 统一 AI 链驱动
   if (session.mode === "real") {
     session.history.push({ role: "user", content: answer })
@@ -277,12 +384,12 @@ async function handleEnd(sessionId: string, callerId: string) {
 // POST /api/mock - 开始 / 继续 / 结束模拟面试
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { action, sessionId, company, position, roundType, answer, resumeMode } = body
+  const { action, sessionId, company, position, roundType, answer, resumeMode, questionBankId } = body
 
   if (action === "start") {
     const session = await auth()
     const userId = session?.user?.id || "__anon__"
-    return handleStart(company, position, roundType, userId, resumeMode)
+    return handleStart(company, position, roundType, userId, resumeMode, questionBankId)
   }
 
   if (action === "respond" || action === "end") {

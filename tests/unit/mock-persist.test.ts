@@ -135,6 +135,30 @@ describe("buildMockInterviewInput", () => {
     expect(last.aiCategory).toBe("system_design")
   })
 
+  it("自定义题库 referenceAnswer → 透传到 input；缺省为 null", () => {
+    const s: MockSession = {
+      ...mockSession,
+      questions: [
+        {
+          question: "第一题：请介绍你的项目",
+          answer: "我的回答",
+          referenceAnswer: "参考要点：STAR",
+          category: "custom",
+          round: 1,
+        },
+        {
+          question: "第二题：为什么离开上一家公司",
+          answer: "因为成长",
+          category: "custom",
+          round: 2,
+        },
+      ],
+    }
+    const input = buildMockInterviewInput(s)!
+    expect(input.questions[0].referenceAnswer).toBe("参考要点：STAR")
+    expect(input.questions[1].referenceAnswer).toBeNull()
+  })
+
   it("real-AI 会话（只有 history）→ 按配对生成题目", () => {
     const s: MockSession = {
       ...mockSession,
@@ -184,6 +208,7 @@ describe("persistMockInterview", () => {
       questionText: "自我介绍",
       aiCategory: "behavioral",
       aiScore: 8,
+      referenceAnswer: null,
     })
     // updateSkillProfile 以注入的 db 调用（画像闭环）
     expect(updateSpy).toHaveBeenCalledWith("u1", mockDb)

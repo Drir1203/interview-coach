@@ -1,5 +1,7 @@
 // AI 模拟面试引擎
 
+import type { BankQuestion } from "@/lib/question-bank"
+
 export interface MockSession {
   id: string
   company: string
@@ -12,11 +14,14 @@ export interface MockSession {
   summary?: MockSummary
   // real-AI 模式保留完整对话（assistant/user 交替），供统一 AI 链 prompt 与落库配对
   history?: { role: "assistant" | "user"; content: string }[]
+  // 自定义题库模式：全量题目快照；questions 只预置首题，随答题逐题 push（A2 镜像 rule 增长）
+  customBank?: BankQuestion[]
 }
 
 export interface MockQA {
   question: string
-  answer?: string
+  answer?: string // 用户作答（A1：不得预置参考答案）
+  referenceAnswer?: string // 自定义题库文档自带的参考答案（对比反馈用，≠ answer）
   feedback?: string
   category: string
   round: number
@@ -334,4 +339,67 @@ ${history.map((m) => `${m.role === "assistant" ? "面试官" : "候选人"}：${
     }
   ]${dims}
 }`
+}
+
+// ---- 自定义题库模式（用户上传文档 → AI 提取题目 → 按序提问） ----
+
+// 首题预置：answer 留空直到用户作答（A1），参考答案放独立字段
+export function firstCustomQuestion(bank: BankQuestion[]): MockQA {
+  const first = bank[0]
+  const qa: MockQA = {
+    question: first.question,
+    category: "custom",
+    round: 1,
+  }
+  if (first.answer) qa.referenceAnswer = first.answer
+  return qa
+}
+
+// 逐题推进：镜像 rule 模式增长（questions 不预置全表，A2）。
+// currentRound 语义与 mockRespond 一致 = 当前/下一题轮次。
+export function advanceCustom(
+  session: MockSession
+): { next?: MockQA; isComplete: boolean } {
+  const bank = session.customBank ?? []
+  const idx = session.currentRound - 1 // 0 基：当前题在 customBank 的下标
+  if (idx < 0 || idx + 1 >= bank.length) {
+    return { isComplete: true }
+  }
+  const next = bank[idx + 1]
+  const qa: MockQA = {
+    question: next.question,
+    category: "custom",
+    round: session.currentRound + 1,
+  }
+  if (next.answer) qa.referenceAnswer = next.answer
+  session.questions.push(qa)
+  session.currentRound = idx + 2
+  return { next: qa, isComplete: false }
+}
+
+// 自定义题应答 prompt：只输出反馈，下一题由 advanceCustom 按题库顺序推进
+export function buildCustomRespondPrompt(
+  currentQuestion: string,
+  userAnswer: string,
+  referenceAnswer?: string,
+  grillMode?: boolean
+): string {
+  let prompt = `这是基于自定义题库的模拟面试。当前题目：
+${currentQuestion}
+
+候选人的回答是：
+${userAnswer}
+${referenceAnswer ? `\n文档附带的参考答案要点（仅用于对比反馈，不要照读）：\n${referenceAnswer}` : ""}
+
+请只输出对该回答的简短反馈（1-2 句话，指出优点与可改进点），不要提出下一个问题。`
+
+  if (grillMode) {
+    prompt += `
+
+## 压力面试模式（务必执行）
+- 若回答含糊、夸大、缺乏量化，在反馈中明确指出并给出一句追问建议
+- 保持专业但有压力感；仍只输出反馈，不改变下一题顺序`
+  }
+
+  return prompt
 }

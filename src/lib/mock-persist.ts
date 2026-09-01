@@ -39,6 +39,7 @@ export interface MockInterviewInput {
     order: number
     questionText: string
     userAnswer: string | null
+    referenceAnswer: string | null // 自定义题库文档自带的参考答案（≠ userAnswer）
     aiScore: number | null
     aiFeedback: string | null
     aiCategory: string | null
@@ -60,17 +61,21 @@ export function buildMockInterviewInput(session: MockSession): MockInterviewInpu
     if (!fbByQ.has(qs.question)) fbByQ.set(qs.question, qs.feedback)
   }
 
-  let qas: { question: string; answer: string | null; category: string }[]
+  let qas: { question: string; answer: string | null; referenceAnswer: string | null; category: string }[]
   if (session.questions && session.questions.length > 0) {
     qas = session.questions.map((q) => ({
       question: q.question,
       answer: q.answer ?? null,
+      referenceAnswer: q.referenceAnswer ?? null,
       category: q.category,
     }))
   } else {
-    qas = pairHistoryForMock(session.history ?? []).map(
-      (p, i) => ({ question: p.question, answer: p.answer, category: "other" })
-    )
+    qas = pairHistoryForMock(session.history ?? []).map((p, i) => ({
+      question: p.question,
+      answer: p.answer,
+      referenceAnswer: null,
+      category: "other",
+    }))
   }
   if (qas.length === 0) return null
 
@@ -89,6 +94,7 @@ export function buildMockInterviewInput(session: MockSession): MockInterviewInpu
       order: i + 1,
       questionText: q.question,
       userAnswer: q.answer,
+      referenceAnswer: q.referenceAnswer,
       aiScore: scoreByQ.get(q.question) ?? null,
       aiFeedback: fbByQ.get(q.question) ?? null,
       aiCategory: q.category,
@@ -129,6 +135,7 @@ export async function persistMockInterview(
           order: q.order,
           questionText: q.questionText,
           userAnswer: q.userAnswer,
+          referenceAnswer: q.referenceAnswer,
           aiScore: q.aiScore,
           aiFeedback: q.aiFeedback,
           aiCategory: q.aiCategory,
