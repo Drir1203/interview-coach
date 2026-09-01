@@ -4,7 +4,7 @@
 // 数据来自 /api/admin/stats 一次性聚合。
 
 import { useCallback, useEffect, useState } from "react"
-import { Bell, Coins, Crown, Cpu, Gift, Loader2, Receipt, Users, Wallet, Zap } from "lucide-react"
+import { Bell, Clock, Coins, Crown, Cpu, Gift, Loader2, Receipt, Users, Video, Wallet, Zap } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/toast"
@@ -23,6 +23,13 @@ export interface AdminStats {
     tokensToday: number
     costYuan: number
     byModel: { model: string; calls: number; inputTokens: number; outputTokens: number }[]
+  }
+  // AI 语音面试（阿里云按分钟计费）
+  videoInterview: {
+    today: number
+    total: number
+    minutesTotal: number
+    costYuan: number
   }
 }
 
@@ -139,6 +146,50 @@ export function StatsPanel({ onUnauthenticated }: Props) {
               <Coins className="size-4 text-violet-500" /> 今日 AI 成本（估算）
             </div>
             <div className="text-xl font-semibold tabular-nums">¥{stats.aiCost.costYuan.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* AI 语音面试：阿里云按分钟计费，场次/时长/估算成本 */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <Card>
+          <CardContent className="flex flex-col gap-2 py-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Video className="size-4 text-cyan-500" /> 今日视频面试
+            </div>
+            <div className="text-xl font-semibold tabular-nums">
+              {stats.videoInterview.today.toLocaleString()} 场
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex flex-col gap-2 py-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Video className="size-4 text-cyan-500" /> 累计视频面试
+            </div>
+            <div className="text-xl font-semibold tabular-nums">
+              {stats.videoInterview.total.toLocaleString()} 场
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex flex-col gap-2 py-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="size-4 text-cyan-500" /> 视频通话时长
+            </div>
+            <div className="text-xl font-semibold tabular-nums">
+              {stats.videoInterview.minutesTotal.toLocaleString()} 分
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex flex-col gap-2 py-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Coins className="size-4 text-cyan-500" /> 视频成本（估算）
+            </div>
+            <div className="text-xl font-semibold tabular-nums">
+              ¥{stats.videoInterview.costYuan.toFixed(2)}
+            </div>
           </CardContent>
         </Card>
       </div>

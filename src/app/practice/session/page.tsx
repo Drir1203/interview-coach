@@ -63,6 +63,7 @@ function SessionInner() {
     transcript: string
     endedBy: VideoCallEndedBy
     error?: string
+    interviewId?: string
   } | null>(null)
   const loadedRef = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -92,14 +93,21 @@ function SessionInner() {
               grill: searchParams.get("grill") === "1",
             }),
           })
-          if (vres.ok) {
+          if (!vres.ok) {
+            const vbody = await vres.json().catch(() => null)
+            // 配额拦截（402 免费 5 场 / 429 Pro 每日 3 场）→ 直出原因，不静默降级文字 mock
+            if (vres.status === 402 || vres.status === 429) {
+              throw new Error(vbody?.error || "AI 语音面试次数已用完")
+            }
+            setDegraded(true) // 401 未登录 / 503 未开通等 → 降级文字模式（C4）
+          } else {
             const vdata = await vres.json()
             if (vdata.mode === "video") {
               setVideoSession(vdata)
               return
             }
+            setDegraded(true) // 阿里云未开通 → 降级文字模式（C4）
           }
-          setDegraded(true)
         }
 
         const res = await fetch("/interview/api/mock", {
@@ -384,11 +392,16 @@ function SessionInner() {
         </Card>
 
         <div className="flex justify-center gap-3">
+          {videoResult.interviewId && (
+            <Link href={`/interviews/${videoResult.interviewId}`}>
+              <Button>查看面试记录</Button>
+            </Link>
+          )}
           <Link href="/practice">
             <Button variant="outline">再来一场</Button>
           </Link>
           <Link href="/">
-            <Button>返回首页</Button>
+            <Button variant="outline">返回首页</Button>
           </Link>
         </div>
       </div>
@@ -402,8 +415,9 @@ function SessionInner() {
         session={videoSession}
         company={company}
         position={position}
-        onFinished={(transcript, endedBy, error) =>
-          setVideoResult({ transcript, endedBy, error })
+        roundType={roundTypeParam}
+        onFinished={(transcript, endedBy, error, interviewId) =>
+          setVideoResult({ transcript, endedBy, error, interviewId })
         }
       />
     )

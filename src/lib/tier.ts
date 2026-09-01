@@ -6,6 +6,8 @@ import type { PrismaClient } from "../generated/prisma"
 
 export const FREE_INTERVIEW_LIMIT = 5
 export const TRIAL_DAYS = 7
+// AI 语音面试成本护栏：阿里云按分钟计费（纯语音 ≈¥1.5-2/场），Pro 会员也不放开，每日上限场次。
+export const VIDEO_DAILY_LIMIT = 3
 
 // 未登录用户桶（匿名写走 __anon__；历史 default）。付费墙豁免，保持门禁匿名链路可用。
 export const ANON_USER_IDS = new Set(["__anon__", "default"])
@@ -128,4 +130,30 @@ export async function assertInterviewQuota(
     }
   }
   return { ok: true, remaining: FREE_INTERVIEW_LIMIT - count }
+}
+
+// AI 语音面试配额（阿里云按分钟计费，免费/Pro 都要成本护栏）：
+// - 免费用户沿用 5 场总限额（assertInterviewQuota，视频计入同一计数）
+// - Pro 会员「不限场次」只对文字 mock 成立；视频面试每日最多 VIDEO_DAILY_LIMIT 场
+export async function assertVideoQuota(
+  userId: string,
+  db: PrismaClient = prisma
+): Promise<QuotaResult> {
+  if (ANON_USER_IDS.has(userId)) return { ok: true }
+  const info = await getTier(userId, db)
+  if (info.tier !== "pro") return assertInterviewQuota(userId, db)
+
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const count = await db.interview.count({
+    where: { userId, type: "video", createdAt: { gte: todayStart } },
+  })
+  if (count >= VIDEO_DAILY_LIMIT) {
+    return {
+      ok: false,
+      error: `今日 AI 语音面试已达上限（${VIDEO_DAILY_LIMIT} 场），明日再来`,
+      code: "VIDEO_DAILY_LIMIT",
+    }
+  }
+  return { ok: true, remaining: VIDEO_DAILY_LIMIT - count }
 }

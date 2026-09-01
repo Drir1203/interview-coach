@@ -19,7 +19,7 @@ interface InterviewSummary {
   position: string
   roundType: string
   status: string
-  type?: string // real | mock
+  type?: string // real | mock | video
   overallScore: number | null
   result: string | null
   company: { name: string; industry: string | null }
@@ -157,6 +157,11 @@ export default function InterviewList() {
                         {interview.type === "mock" && (
                           <Badge variant="outline" className="text-xs">
                             模拟
+                          </Badge>
+                        )}
+                        {interview.type === "video" && (
+                          <Badge variant="outline" className="text-xs">
+                            视频
                           </Badge>
                         )}
                         {interview.company.industry && (

@@ -22,7 +22,9 @@ interface Props {
   session: VideoSessionInfo
   company: string
   position: string
-  onFinished: (transcript: string, endedBy: VideoCallEndedBy, error?: string) => void
+  roundType?: string
+  // P3 落库后回传 interviewId，前端据此链到「面试记录」详情页
+  onFinished: (transcript: string, endedBy: VideoCallEndedBy, error?: string, interviewId?: string) => void
 }
 
 /** 面试官宣布结束的信号词 */
@@ -34,11 +36,13 @@ function fmt(sec: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
 }
 
-export function VideoInterviewCall({ session, company, position, onFinished }: Props) {
+export function VideoInterviewCall({ session, company, position, roundType, onFinished }: Props) {
   const engineRef = useRef<any>(null)
   const startedRef = useRef(false)
   const finalizingRef = useRef(false)
   const agentTextRef = useRef("")
+  // 通话秒数实时值（finalize 的 useCallback 闭包稳定，取时长用 ref 而非 state，避免读到旧值）
+  const elapsedSecRef = useRef(0)
 
   const [phase, setPhase] = useState<"connecting" | "connected" | "error">("connecting")
   const [agentText, setAgentText] = useState("正在接通面试官…")
@@ -48,7 +52,10 @@ export function VideoInterviewCall({ session, company, position, onFinished }: P
 
   // 通话计时
   useEffect(() => {
-    const t = setInterval(() => setElapsed((s) => s + 1), 1000)
+    const t = setInterval(() => {
+      setElapsed((s) => s + 1)
+      elapsedSecRef.current += 1
+    }, 1000)
     return () => clearInterval(t)
   }, [])
 
@@ -66,6 +73,7 @@ export function VideoInterviewCall({ session, company, position, onFinished }: P
       }
 
       let transcript = ""
+      let interviewId: string | undefined
       try {
         const res = await fetch("/interview/api/video-interview/end", {
           method: "POST",
@@ -73,18 +81,23 @@ export function VideoInterviewCall({ session, company, position, onFinished }: P
           body: JSON.stringify({
             sessionId: session.sessionId,
             imsSessionId: session.imsSessionId,
+            company,
+            position,
+            roundType,
+            durationSec: elapsedSecRef.current,
           }),
         })
         if (res.ok) {
           const data = await res.json()
           transcript = data.transcript ?? ""
+          interviewId = data.interviewId ?? undefined
         }
       } catch {
         // 转写获取失败也在下方给出错误提示
       }
-      onFinished(transcript, endedBy, error)
+      onFinished(transcript, endedBy, error, interviewId)
     },
-    [session, onFinished]
+    [session, onFinished, company, position, roundType]
   )
 
   // 启动通话

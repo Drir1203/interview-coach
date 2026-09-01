@@ -21,8 +21,10 @@ import {
   requirePro,
   claimTrial,
   assertInterviewQuota,
+  assertVideoQuota,
   ensureTrialOnRegister,
   FREE_INTERVIEW_LIMIT,
+  VIDEO_DAILY_LIMIT,
   ANON_USER_IDS,
 } from "@/lib/tier"
 
@@ -192,6 +194,63 @@ describe("assertInterviewQuota", () => {
 
     const res = await assertInterviewQuota("u1")
     expect(res.ok).toBe(true)
+    expect(mockDb.interview.count).not.toHaveBeenCalled()
+  })
+})
+
+describe("assertVideoQuota", () => {
+  it(`pro + 今日视频 < ${VIDEO_DAILY_LIMIT} 场 → 放行 + remaining`, async () => {
+    mockDb.user.findUnique.mockResolvedValue({
+      proExpiresAt: new Date(NOW.getTime() + DAY),
+      trialClaimedAt: null,
+    })
+    mockDb.subscriptionOrder.findFirst.mockResolvedValue({ source: "mock" })
+    mockDb.interview.count.mockResolvedValue(VIDEO_DAILY_LIMIT - 1)
+
+    const res = await assertVideoQuota("u1")
+    expect(res.ok).toBe(true)
+    if (res.ok) expect(res.remaining).toBe(1)
+    // 只统计今日 type=video 的场次（todayStart = 本地时区当日零点）
+    const where = mockDb.interview.count.mock.calls[0][0].where
+    expect(where.type).toBe("video")
+    expect(where.createdAt.gte).toBeInstanceOf(Date)
+    const expectedTodayStart = new Date()
+    expectedTodayStart.setHours(0, 0, 0, 0)
+    expect(where.createdAt.gte.toISOString()).toBe(expectedTodayStart.toISOString())
+  })
+
+  it(`pro + 今日视频达 ${VIDEO_DAILY_LIMIT} 场 → 拦截 VIDEO_DAILY_LIMIT`, async () => {
+    mockDb.user.findUnique.mockResolvedValue({
+      proExpiresAt: new Date(NOW.getTime() + DAY),
+      trialClaimedAt: null,
+    })
+    mockDb.subscriptionOrder.findFirst.mockResolvedValue({ source: "mock" })
+    mockDb.interview.count.mockResolvedValue(VIDEO_DAILY_LIMIT)
+
+    const res = await assertVideoQuota("u1")
+    expect(res.ok).toBe(false)
+    if (!res.ok) {
+      expect(res.code).toBe("VIDEO_DAILY_LIMIT")
+      expect(res.error).toContain(`${VIDEO_DAILY_LIMIT} 场`)
+    }
+  })
+
+  it("free → 走 assertInterviewQuota 5 场总限额（视频计入同一计数）", async () => {
+    mockDb.user.findUnique.mockResolvedValue({ proExpiresAt: null, trialClaimedAt: null })
+    mockDb.subscriptionOrder.findFirst.mockResolvedValue(null)
+    mockDb.interview.count.mockResolvedValue(FREE_INTERVIEW_LIMIT - 1)
+
+    const res = await assertVideoQuota("u1")
+    expect(res.ok).toBe(true)
+    // 免费分支不筛 type —— 与真实/模拟面试同表计数
+    const where = mockDb.interview.count.mock.calls[0][0].where
+    expect(where.type).toBeUndefined()
+  })
+
+  it("匿名桶 → 豁免，不查库", async () => {
+    const res = await assertVideoQuota("__anon__")
+    expect(res.ok).toBe(true)
+    expect(mockDb.user.findUnique).not.toHaveBeenCalled()
     expect(mockDb.interview.count).not.toHaveBeenCalled()
   })
 })

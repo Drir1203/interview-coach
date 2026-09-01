@@ -74,6 +74,8 @@ interface InterviewDetail {
   weaknessAreas: string | null
   userNotes: string | null
   result: string | null
+  transcript?: string | null // AI 语音面试原始转写
+  durationSec?: number | null // AI 语音面试通话时长（秒）
   company: { name: string; industry: string | null }
   questions: Question[]
   tags: { tag: { name: string; color: string } }[]
@@ -107,6 +109,8 @@ export default function InterviewDetail() {
   const [contributeStep, setContributeStep] = useState<"questions" | "draft">("questions")
   const [generating, setGenerating] = useState(false)
   const [draftEntries, setDraftEntries] = useState<DraftEntry[]>([])
+  // AI 语音面试原始转写是否展开（默认收起，转写可能很长）
+  const [showTranscript, setShowTranscript] = useState(false)
 
   useEffect(() => {
     fetch(`/interview/api/interviews/${params.id}`)
@@ -756,6 +760,37 @@ export default function InterviewDetail() {
               {interview.userNotes}
             </p>
           </CardContent>
+        </Card>
+      )}
+
+      {/* AI 语音面试：原始转写（与逐题问答并存，解析失败也不丢原文） */}
+      {interview.transcript && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between text-base">
+              原始转写
+              {interview.durationSec != null && (
+                <span className="text-xs font-normal text-muted-foreground">
+                  通话时长 {Math.floor(interview.durationSec / 60)} 分{" "}
+                  {interview.durationSec % 60} 秒
+                </span>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowTranscript((s) => !s)}
+              >
+                {showTranscript ? "收起" : "展开"}
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          {showTranscript && (
+            <CardContent>
+              <pre className="whitespace-pre-wrap font-sans text-sm leading-7 text-muted-foreground">
+                {interview.transcript}
+              </pre>
+            </CardContent>
+          )}
         </Card>
       )}
 

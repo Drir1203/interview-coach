@@ -3,6 +3,10 @@ import prisma from "@/lib/db"
 import { requireAdmin } from "@/lib/payment/admin-session"
 import { estimateAiCost } from "@/lib/payment/ai-quota"
 
+// AI 语音面试成本常量：纯语音 VoiceAgent 按分钟计费 ¥0.014/分钟（docs/video-interview-spec.md §6）。
+// 看板为估算值；真实账单以阿里云控制台为准。
+const VIDEO_COST_PER_MIN = 0.014
+
 // 管理端运营看板：核心指标聚合（一次性并行查询，无分页）
 // 鉴权：admin_session cookie；未登录或失效 → 401
 export async function GET(req: NextRequest) {
@@ -24,6 +28,9 @@ export async function GET(req: NextRequest) {
     pendingOrders,
     notifiedPendingOrders,
     aiUsageToday,
+    videoInterviewsToday,
+    videoInterviewsTotal,
+    videoSecondsAgg,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { proExpiresAt: { gt: now } } }),
@@ -42,6 +49,12 @@ export async function GET(req: NextRequest) {
       where: { createdAt: { gte: todayStart } },
       _count: { _all: true },
       _sum: { inputTokens: true, outputTokens: true },
+    }),
+    prisma.interview.count({ where: { type: "video", createdAt: { gte: todayStart } } }),
+    prisma.interview.count({ where: { type: "video" } }),
+    prisma.interview.aggregate({
+      where: { type: "video" },
+      _sum: { durationSec: true },
     }),
   ])
 
@@ -67,6 +80,14 @@ export async function GET(req: NextRequest) {
         tokensToday: aiCost.tokens,
         costYuan: aiCost.costYuan,
         byModel: aiByModel,
+      },
+      // AI 语音面试（阿里云按分钟计费）：场次/时长/估算成本
+      videoInterview: {
+        today: videoInterviewsToday,
+        total: videoInterviewsTotal,
+        minutesTotal: Math.round((videoSecondsAgg._sum.durationSec ?? 0) / 60),
+        costYuan:
+          Math.round(((videoSecondsAgg._sum.durationSec ?? 0) / 60) * VIDEO_COST_PER_MIN * 100) / 100,
       },
     },
   })

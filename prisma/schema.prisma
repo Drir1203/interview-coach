@@ -117,10 +117,14 @@ model Interview {
   companyId String
   position  String
   roundType String
-  type      String   @default("real") // real | mock（模拟面试落库标识，mock 不与真实面试混淆）
+  type      String   @default("real") // real | mock | video（mock/video 为 AI 面试落库标识，不与真实面试混淆）
   result    String? // pass | fail | waiting | unknown
 
   userNotes String?
+
+  // AI 语音面试归档：原始转写全文 + 通话时长（秒）。转写与逐题问答并存，解析失败不丢原文。
+  transcript String? @db.Text
+  durationSec Int?
 
   overallScore     Float?
   overallFeedback  String?

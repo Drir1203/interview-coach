@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Crown, Check, Loader2, Sparkles, User as UserIcon, QrCode } from "lucide-react"
+import { Crown, Check, Info, Loader2, Sparkles, User as UserIcon, QrCode } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -36,7 +36,12 @@ const PLANS = [
     price: "¥29",
     per: "/月",
     tagline: "按需解锁，灵活起步",
-    features: ["无限面试记录", "AI 深度复盘 + 逐题重新生成", "AI 教练 / 押题 / 成长报告全功能"],
+    features: [
+      "真实 / 模拟面试不限场次",
+      "AI 语音面试每日最多 3 场",
+      "AI 深度复盘 + 逐题重新生成",
+      "AI 教练 / 押题 / 成长报告全功能",
+    ],
     available: true,
     hot: false,
   },
@@ -407,6 +412,24 @@ export default function PricingPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* 计费说明：面试场次怎么算（免费 5 场合计 / Pro 不限） */}
+      <Card className="animate-fade-up">
+        <CardContent className="space-y-2 py-4 text-xs text-muted-foreground">
+          <p className="flex items-start gap-2">
+            <Info className="mt-0.5 size-3.5 shrink-0 text-primary" />
+            <span>
+              免费用户：真实面试、模拟面试、AI 语音面试合计最多 5 场（以落库场次为准），用完需升级 Pro 才能继续新建。
+            </span>
+          </p>
+          <p className="flex items-start gap-2">
+            <Check className="mt-0.5 size-3.5 shrink-0 text-primary" />
+            <span>
+              Pro 会员：真实 / 模拟面试不限场次；AI 语音面试（阿里云按分钟计费）每日最多 3 场，生成后自动归档，可随时查看转写与 AI 复盘。
+            </span>
+          </p>
+        </CardContent>
+      </Card>
 
       {!isAuthed && (
         <Card className="animate-fade-up">

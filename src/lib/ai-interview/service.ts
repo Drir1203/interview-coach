@@ -15,13 +15,13 @@ export { isAiInterviewEnabled } from "./config"
  */
 export async function startInterview(params: StartInterviewParams): Promise<StartInterviewResult> {
   const provider = resolveProvider()
-  if (!provider) return { mode: "text", reason: "阿里云 AI 面试未开通" }
+  if (!provider) return { mode: "text", reason: "AI 语音面试功能暂不可用，已切换到文字模式" }
   try {
     return await provider.start(params)
   } catch (err) {
     // C4 优雅降级：阿里云调用失败也不阻断用户，切回文字模拟面试
     console.error("[ai-interview] startInterview 调用失败，降级文字模式", err)
-    return { mode: "text", reason: "阿里云 AI 面试暂时不可用，已切换到文字模拟面试" }
+    return { mode: "text", reason: "AI 语音面试功能暂不可用，已切换到文字模式" }
   }
 }
 
