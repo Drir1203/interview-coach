@@ -11,6 +11,9 @@ export interface SubscriptionInfo {
   daysLeft: number | null
   interviewCount: number
   freeLimit: number
+  voiceCredits: number
+  voiceUsedThisMonth: number
+  voiceMonthlyQuota: number
 }
 
 // 会员状态 hook：读 /api/subscription（服务端 getTier 实时查 DB，付费判定权威仍在服务端）

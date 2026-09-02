@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Crown, Check, Info, Loader2, Sparkles, User as UserIcon, QrCode } from "lucide-react"
+import { Crown, Check, Info, Loader2, Sparkles, User as UserIcon, QrCode, Mic } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,8 @@ interface OrderResult {
   orderId: string
   amount: number
   mockAction: "auto" | "manual"
+  planKind?: "subscription" | "voice"
+  credits?: number | null
   mockToken?: string
   payUrl?: string
   paymentConfig?: PaymentConfigData
@@ -38,7 +40,7 @@ const PLANS = [
     tagline: "按需解锁，灵活起步",
     features: [
       "真实 / 模拟面试不限场次",
-      "AI 语音面试每日最多 3 场",
+      "AI 语音面试每月 15 场（试用期含 1 场）",
       "AI 深度复盘 + 逐题重新生成",
       "AI 教练 / 押题 / 成长报告全功能",
     ],
@@ -67,6 +69,14 @@ const PLANS = [
   },
 ]
 
+// AI 语音点数包：1 场 AI 语音面试 = 1 点，即时到账、永不过期；
+// Pro 月额度用尽 / 免费用户按量使用均在此购买。id 与后端 PLANS 对齐。
+const VOICE_PACKS = [
+  { id: "voice10", name: "语音 10 场", price: "¥29", unit: "¥2.9/场", note: "灵活尝鲜，适合低频加场" },
+  { id: "voice30", name: "语音 30 场", price: "¥69", unit: "¥2.3/场", note: "求职冲刺期之选", hot: true },
+  { id: "voice100", name: "语音 100 场", price: "¥199", unit: "¥2.0/场", note: "长期使用最划算" },
+]
+
 export default function PricingPage() {
   const router = useRouter()
   const { status, reload: reloadUser } = useAuth()
@@ -88,6 +98,7 @@ export default function PricingPage() {
   const isAuthed = status === "authenticated"
   const isPro = info?.tier === "pro"
   const isTrial = !!info?.trialActive
+  const orderIsVoice = order?.planKind === "voice"
 
   const scrollToPlans = () => {
     document.getElementById("plans")?.scrollIntoView({ behavior: "smooth", block: "start" })
@@ -106,7 +117,11 @@ export default function PricingPage() {
         failures = 0
         if (data.status === "paid") {
           clearInterval(timer)
-          toast.add({ title: "Pro 已开通", description: "刷新会员状态…", type: "success" })
+          toast.add({
+            title: orderIsVoice ? "语音点数已到账" : "Pro 已开通",
+            description: "刷新会员状态…",
+            type: "success",
+          })
           setOrder(null)
           reload()
           reloadUser()
@@ -169,7 +184,11 @@ export default function PricingPage() {
     setActivating(true)
     try {
       await api.post("/payment/mock/approve", { orderId: order.orderId })
-      toast.add({ title: "模拟支付成功", description: "Pro 会员已开通", type: "success" })
+      toast.add({
+        title: "模拟支付成功",
+        description: orderIsVoice ? `语音点数已到账 ${order?.credits ?? ""} 场` : "Pro 会员已开通",
+        type: "success",
+      })
       setOrder(null)
       reload()
       reloadUser()
@@ -240,10 +259,16 @@ export default function PricingPage() {
                   ? "正在查询会员状态…"
                   : isPro
                     ? info?.source === "trial"
-                      ? `7 天试用进行中，剩余 ${info.daysLeft ?? 0} 天`
-                      : `会员有效期至 ${formatDate(info?.proExpiresAt ?? "")}`
-                    : `已记录 ${info?.interviewCount ?? 0}/${info?.freeLimit ?? 5} 场面试，免费额度用完将无法新建`}
+                      ? `7 天试用 · 剩余 ${info.daysLeft ?? 0} 天 · AI 语音含 ${info.voiceMonthlyQuota} 场`
+                      : `会员有效期至 ${formatDate(info?.proExpiresAt ?? "")} · AI 语音已用 ${info?.voiceUsedThisMonth ?? 0}/${info?.voiceMonthlyQuota ?? 15} 场`
+                    : `已记录 ${info?.interviewCount ?? 0}/${info?.freeLimit ?? 5} 场文字面试 · AI 语音需点数包`}
               </p>
+              {!loading && (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  语音点数：
+                  <span className="font-medium text-foreground">{info?.voiceCredits ?? 0}</span> 场
+                </p>
+              )}
             </div>
           </div>
           {!isPro && !loading && (
@@ -316,13 +341,78 @@ export default function PricingPage() {
         ))}
       </div>
 
+      {/* AI 语音点数包：Pro 月额度用尽 / 免费用户按量加场 */}
+      <div className="animate-fade-up" style={{ animationDelay: "100ms" }}>
+        <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <Mic className="size-4 text-primary" />
+          <h2 className="text-sm font-semibold">AI 语音点数包</h2>
+          <span className="text-xs text-muted-foreground">
+            1 场 AI 语音面试 = 1 点 · 即时到账 · 长期有效 · 免费用户也可购买
+          </span>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {VOICE_PACKS.map((pack) => (
+            <Card
+              key={pack.id}
+              className={
+                "animate-fade-up relative flex flex-col border-primary/30 " +
+                (pack.hot ? "border-primary/60" : "")
+              }
+              style={{ animationDelay: "120ms" }}
+            >
+              {pack.hot && <Badge className="absolute -top-2 right-3">划算</Badge>}
+              <CardHeader>
+                <CardTitle className="text-base">{pack.name}</CardTitle>
+                <div className="mt-1 flex items-baseline gap-2">
+                  <span className="text-2xl font-bold">{pack.price}</span>
+                  <span className="text-sm text-muted-foreground">{pack.unit}</span>
+                </div>
+                <CardDescription>{pack.note}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-1 flex-col gap-4">
+                <ul className="flex-1 space-y-1.5">
+                  {["超出月度额度时自动扣点", "真实 AI 面试官语音对练", "生成后可看转写与 AI 复盘"].map(
+                    (f) => (
+                      <li key={f} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                        <Check className="mt-0.5 size-3 shrink-0 text-primary" />
+                        {f}
+                      </li>
+                    )
+                  )}
+                </ul>
+                {order ? (
+                  <Button className="w-full" variant="outline" disabled>
+                    订单已生成
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    disabled={orderingPlan === pack.id || activating}
+                    onClick={() => handleBuy(pack.id)}
+                  >
+                    {orderingPlan === pack.id ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Mic className="size-4" />
+                    )}
+                    购买点数
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
       {/* 订单操作区 */}
       {order && (
         <Card className="animate-fade-up">
           <CardHeader>
             <CardTitle className="text-base">订单 #{order.orderId.slice(-8)}</CardTitle>
             <CardDescription>
-              应付 ¥{(order.amount / 100).toFixed(2)} · 有效期 30 天（续费自动叠加）
+              应付 ¥{(order.amount / 100).toFixed(2)} ·{" "}
+              {orderIsVoice ? `即时到账 ${order.credits ?? ""} 场语音点数` : "有效期 30 天（续费自动叠加）"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -413,19 +503,25 @@ export default function PricingPage() {
         </Card>
       )}
 
-      {/* 计费说明：面试场次怎么算（免费 5 场合计 / Pro 不限） */}
+      {/* 计费说明：文字面试免费 5 场合计 / Pro 不限；AI 语音按月度额度 + 点数包 */}
       <Card className="animate-fade-up">
         <CardContent className="space-y-2 py-4 text-xs text-muted-foreground">
           <p className="flex items-start gap-2">
             <Info className="mt-0.5 size-3.5 shrink-0 text-primary" />
             <span>
-              免费用户：真实面试、模拟面试、AI 语音面试合计最多 5 场（以落库场次为准），用完需升级 Pro 才能继续新建。
+              免费用户：真实 / 模拟文字面试合计最多 5 场（以落库场次为准）；AI 语音面试按量计费，需购买语音点数包。
             </span>
           </p>
           <p className="flex items-start gap-2">
             <Check className="mt-0.5 size-3.5 shrink-0 text-primary" />
             <span>
-              Pro 会员：真实 / 模拟面试不限场次；AI 语音面试（阿里云按分钟计费）每日最多 3 场，生成后自动归档，可随时查看转写与 AI 复盘。
+              Pro 会员：真实 / 模拟面试不限场次；AI 语音面试每月 15 场（阿里云按分钟计费，试用期含 1 场），超出可买语音点数包加场（1 场 = 1 点）。
+            </span>
+          </p>
+          <p className="flex items-start gap-2">
+            <Check className="mt-0.5 size-3.5 shrink-0 text-primary" />
+            <span>
+              点数包即时到账、长期有效；语音场次正常结束后自动归档，可随时查看转写与 AI 复盘（未接通 / 极短无发言会自动退还点数）。
             </span>
           </p>
         </CardContent>

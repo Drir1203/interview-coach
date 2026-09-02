@@ -2,21 +2,47 @@
 // v1 只有 MockProvider；域名+资质就绪后各写一个 Provider 文件（wechat/alipay），业务层零改动。
 // 与项目 AI 多模型链（DeepSeek→Qwen→Claude→Mock）同一套模式。
 
-export type PlanId = "month" | "quarter" | "year"
+export type PlanId = "month" | "quarter" | "year" | "voice10" | "voice30" | "voice100"
+export type PlanKind = "subscription" | "voice" // 订阅=续会员时长；voice=充值语音点数
 
 export interface PlanInfo {
   id: PlanId
   label: string
   priceYuan: number
   amount: number // 分
-  durationDays: number
-  status: "available" | "soon" // v1 只开月卡
+  status: "available" | "soon" // v1 只开月卡 + 三档点数包
+  kind: PlanKind
+  durationDays?: number // kind=subscription：续费叠加时长
+  credits?: number // kind=voice：充值场数（每场 1 点）
 }
 
 export const PLANS: Record<PlanId, PlanInfo> = {
-  month: { id: "month", label: "月卡", priceYuan: 29, amount: 2900, durationDays: 30, status: "available" },
-  quarter: { id: "quarter", label: "季卡", priceYuan: 79, amount: 7900, durationDays: 90, status: "soon" },
-  year: { id: "year", label: "年卡", priceYuan: 249, amount: 24900, durationDays: 365, status: "soon" },
+  // Pro 订阅（文字 AI 全解锁 + 语音月度额度见 VOICE_MONTHLY_PRO_QUOTA）
+  month: {
+    id: "month", label: "月度 Pro", priceYuan: 29, amount: 2900,
+    durationDays: 30, status: "available", kind: "subscription",
+  },
+  quarter: {
+    id: "quarter", label: "季度 Pro", priceYuan: 79, amount: 7900,
+    durationDays: 90, status: "soon", kind: "subscription",
+  },
+  year: {
+    id: "year", label: "年度 Pro", priceYuan: 249, amount: 24900,
+    durationDays: 365, status: "soon", kind: "subscription",
+  },
+  // AI 语音点数包（超额语音 / 免费用户按量用，每场 1 点）
+  voice10: {
+    id: "voice10", label: "语音 10 场", priceYuan: 29, amount: 2900,
+    status: "available", kind: "voice", credits: 10,
+  },
+  voice30: {
+    id: "voice30", label: "语音 30 场", priceYuan: 69, amount: 6900,
+    status: "available", kind: "voice", credits: 30,
+  },
+  voice100: {
+    id: "voice100", label: "语音 100 场", priceYuan: 199, amount: 19900,
+    status: "available", kind: "voice", credits: 100,
+  },
 }
 
 export interface CreatePaymentResult {

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { User, Info, Database, CheckCircle2, Lock, Loader2, Settings, Crown } from "lucide-react"
+import { User, Info, Database, CheckCircle2, Lock, Loader2, Settings, Crown, Sparkles } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { Badge } from "@/components/ui/badge"
@@ -117,8 +117,28 @@ export default function SettingsPage() {
             <span className="text-muted-foreground">面试记录</span>
             <span>{info ? `${info.interviewCount}/${info.freeLimit}` : "—"}</span>
           </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">AI 语音 · 本月</span>
+            <span>
+              {info?.tier === "pro"
+                ? `${info.voiceUsedThisMonth}/${info.voiceMonthlyQuota} 场`
+                : "需 Pro 或点数包"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">语音点数（场）</span>
+            <span className="font-medium">{info ? info.voiceCredits : "—"}</span>
+          </div>
           <Separator />
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => router.push("/pricing")}
+            >
+              <Sparkles className="mr-1 size-3" />
+              加购语音点数
+            </Button>
             <Button
               size="sm"
               variant={info?.tier === "pro" ? "outline" : "default"}

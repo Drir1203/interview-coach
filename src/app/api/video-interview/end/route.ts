@@ -2,6 +2,7 @@ import { NextRequest } from "next/server"
 import { auth } from "@/auth"
 import { resolveProvider } from "@/lib/ai-interview/service"
 import { persistVideoInterview } from "@/lib/video-persist"
+import { isVideoNoShow, refundNoShowCredit } from "@/lib/voice-credit"
 
 // 通话时长（秒）防伪上限：阿里云单次智能体最长约 10 分钟，两小时封顶足够真实场景。
 const MAX_DURATION_SEC = 7200
@@ -35,18 +36,29 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await provider.end(sessionId, imsSessionId)
+  const transcript = result.transcript ?? ""
+  const safeDurationSec = clampDuration(durationSec)
 
-  // 转写落库；空转写（通话失败/异常）→ persist 返回 null，不消耗场次，用户可重开
+  // no-show（空转写/极短且候选人未开口）：credit 通道退 1 点（确有 consume 流水才退、每会话至多一次），
+  // 且空跑不落库——用户可重开而不白耗场次/点数。
+  const noShow = isVideoNoShow(transcript, safeDurationSec)
+  if (noShow) {
+    await refundNoShowCredit(userId, imsSessionId).catch((err) => {
+      console.error("[video-interview] no-show 退点失败", err)
+    })
+  }
+
+  // 非空跑：转写落库（type="video", status="draft"），打通「面试记录 → 复盘 → 能力画像」闭环
   let interviewId: string | null = null
-  if (company && position) {
+  if (!noShow && company && position) {
     interviewId = await persistVideoInterview(userId, {
       company,
       position,
       roundType: roundType || "first",
-      transcript: result.transcript ?? "",
-      durationSec: clampDuration(durationSec),
+      transcript,
+      durationSec: safeDurationSec,
     })
   }
 
-  return Response.json({ sessionId: result.sessionId, transcript: result.transcript, interviewId })
+  return Response.json({ sessionId: result.sessionId, transcript, interviewId })
 }

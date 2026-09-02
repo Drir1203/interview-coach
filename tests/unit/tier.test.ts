@@ -24,7 +24,9 @@ import {
   assertVideoQuota,
   ensureTrialOnRegister,
   FREE_INTERVIEW_LIMIT,
-  VIDEO_DAILY_LIMIT,
+  VOICE_MONTHLY_PRO_QUOTA,
+  VOICE_TRIAL_QUOTA,
+  VOICE_NEEDS_CREDITS,
   ANON_USER_IDS,
 } from "@/lib/tier"
 
@@ -199,52 +201,118 @@ describe("assertInterviewQuota", () => {
 })
 
 describe("assertVideoQuota", () => {
-  it(`pro + 今日视频 < ${VIDEO_DAILY_LIMIT} 场 → 放行 + remaining`, async () => {
-    mockDb.user.findUnique.mockResolvedValue({
-      proExpiresAt: new Date(NOW.getTime() + DAY),
-      trialClaimedAt: null,
-    })
+  function paidProUser(voiceCredits = 0) {
+    return { proExpiresAt: new Date(NOW.getTime() + DAY), trialClaimedAt: null, voiceCredits }
+  }
+  function trialProUser(voiceCredits = 0) {
+    return { proExpiresAt: new Date(NOW.getTime() + DAY), trialClaimedAt: NOW, voiceCredits }
+  }
+
+  it(`付费 Pro + 当月视频 < ${VOICE_MONTHLY_PRO_QUOTA} 场 → pro_monthly + remaining`, async () => {
+    mockDb.user.findUnique.mockResolvedValue(paidProUser())
     mockDb.subscriptionOrder.findFirst.mockResolvedValue({ source: "mock" })
-    mockDb.interview.count.mockResolvedValue(VIDEO_DAILY_LIMIT - 1)
+    mockDb.interview.count.mockResolvedValue(VOICE_MONTHLY_PRO_QUOTA - 2)
 
     const res = await assertVideoQuota("u1")
     expect(res.ok).toBe(true)
-    if (res.ok) expect(res.remaining).toBe(1)
-    // 只统计今日 type=video 的场次（todayStart = 本地时区当日零点）
+    if (res.ok) {
+      expect(res.channel).toBe("pro_monthly")
+      expect(res.remaining).toBe(2)
+    }
+    // 只统计当月（本地当月 1 日 0 点）type=video 的场次
     const where = mockDb.interview.count.mock.calls[0][0].where
     expect(where.type).toBe("video")
     expect(where.createdAt.gte).toBeInstanceOf(Date)
-    const expectedTodayStart = new Date()
-    expectedTodayStart.setHours(0, 0, 0, 0)
-    expect(where.createdAt.gte.toISOString()).toBe(expectedTodayStart.toISOString())
+    const expectedMonthStart = new Date()
+    expectedMonthStart.setDate(1)
+    expectedMonthStart.setHours(0, 0, 0, 0)
+    expect(where.createdAt.gte.toISOString()).toBe(expectedMonthStart.toISOString())
   })
 
-  it(`pro + 今日视频达 ${VIDEO_DAILY_LIMIT} 场 → 拦截 VIDEO_DAILY_LIMIT`, async () => {
-    mockDb.user.findUnique.mockResolvedValue({
-      proExpiresAt: new Date(NOW.getTime() + DAY),
-      trialClaimedAt: null,
-    })
+  it(`付费 Pro 当月视频达 ${VOICE_MONTHLY_PRO_QUOTA} 场 + 有语音点数 → 走 credit 通道`, async () => {
+    mockDb.user.findUnique.mockResolvedValue(paidProUser(5))
     mockDb.subscriptionOrder.findFirst.mockResolvedValue({ source: "mock" })
-    mockDb.interview.count.mockResolvedValue(VIDEO_DAILY_LIMIT)
+    mockDb.interview.count.mockResolvedValue(VOICE_MONTHLY_PRO_QUOTA)
+
+    const res = await assertVideoQuota("u1")
+    expect(res.ok).toBe(true)
+    if (res.ok) {
+      expect(res.channel).toBe("credit")
+      expect(res.remaining).toBe(5)
+    }
+  })
+
+  it(`付费 Pro 当月视频达 ${VOICE_MONTHLY_PRO_QUOTA} 场且无点数 → 拦截 VOICE_NEEDS_CREDITS`, async () => {
+    mockDb.user.findUnique.mockResolvedValue(paidProUser(0))
+    mockDb.subscriptionOrder.findFirst.mockResolvedValue({ source: "mock" })
+    mockDb.interview.count.mockResolvedValue(VOICE_MONTHLY_PRO_QUOTA)
 
     const res = await assertVideoQuota("u1")
     expect(res.ok).toBe(false)
     if (!res.ok) {
-      expect(res.code).toBe("VIDEO_DAILY_LIMIT")
-      expect(res.error).toContain(`${VIDEO_DAILY_LIMIT} 场`)
+      expect(res.code).toBe(VOICE_NEEDS_CREDITS)
+      expect(res.error).toContain(`${VOICE_MONTHLY_PRO_QUOTA} 场 AI 语音面试已用完`)
     }
   })
 
-  it("free → 走 assertInterviewQuota 5 场总限额（视频计入同一计数）", async () => {
-    mockDb.user.findUnique.mockResolvedValue({ proExpiresAt: null, trialClaimedAt: null })
-    mockDb.subscriptionOrder.findFirst.mockResolvedValue(null)
-    mockDb.interview.count.mockResolvedValue(FREE_INTERVIEW_LIMIT - 1)
+  it(`试用 Pro：试用额度 ${VOICE_TRIAL_QUOTA} 场（非月额度），用满后无点数 → 拦截`, async () => {
+    mockDb.user.findUnique.mockResolvedValue(trialProUser(0))
+    mockDb.subscriptionOrder.findFirst.mockResolvedValue({ source: "trial" })
+    mockDb.interview.count.mockResolvedValue(VOICE_TRIAL_QUOTA)
+
+    const res = await assertVideoQuota("u1")
+    expect(res.ok).toBe(false)
+    if (!res.ok) {
+      expect(res.code).toBe(VOICE_NEEDS_CREDITS)
+      expect(res.error).toContain(`试用期含 ${VOICE_TRIAL_QUOTA} 场`)
+    }
+  })
+
+  it(`试用 Pro：当月视频未达试用额度 1 场 → 放行 pro_monthly（remaining=1）`, async () => {
+    mockDb.user.findUnique.mockResolvedValue(trialProUser(0))
+    mockDb.subscriptionOrder.findFirst.mockResolvedValue({ source: "trial" })
+    mockDb.interview.count.mockResolvedValue(0)
 
     const res = await assertVideoQuota("u1")
     expect(res.ok).toBe(true)
-    // 免费分支不筛 type —— 与真实/模拟面试同表计数
-    const where = mockDb.interview.count.mock.calls[0][0].where
-    expect(where.type).toBeUndefined()
+    if (res.ok) {
+      expect(res.channel).toBe("pro_monthly")
+      expect(res.remaining).toBe(VOICE_TRIAL_QUOTA)
+    }
+  })
+
+  it("免费用户（无 pro）+ 有语音点数 → 放行 credit（不再走 5 场总限额）", async () => {
+    mockDb.user.findUnique.mockResolvedValue({
+      proExpiresAt: null,
+      trialClaimedAt: null,
+      voiceCredits: 3,
+    })
+    mockDb.subscriptionOrder.findFirst.mockResolvedValue(null)
+
+    const res = await assertVideoQuota("u1")
+    expect(res.ok).toBe(true)
+    if (res.ok) {
+      expect(res.channel).toBe("credit")
+      expect(res.remaining).toBe(3)
+    }
+    // free 不查 interview.count（点数通道直接放行）
+    expect(mockDb.interview.count).not.toHaveBeenCalled()
+  })
+
+  it("免费用户无点数 → 拦截 VOICE_NEEDS_CREDITS，提示需 Pro 或点数包", async () => {
+    mockDb.user.findUnique.mockResolvedValue({
+      proExpiresAt: null,
+      trialClaimedAt: null,
+      voiceCredits: 0,
+    })
+    mockDb.subscriptionOrder.findFirst.mockResolvedValue(null)
+
+    const res = await assertVideoQuota("u1")
+    expect(res.ok).toBe(false)
+    if (!res.ok) {
+      expect(res.code).toBe(VOICE_NEEDS_CREDITS)
+      expect(res.error).toContain("Pro 会员或语音点数包")
+    }
   })
 
   it("匿名桶 → 豁免，不查库", async () => {
@@ -314,12 +382,12 @@ describe("所有者白名单豁免（OWNER_EMAILS）", () => {
     expect(mockDb.interview.count).not.toHaveBeenCalled()
   })
 
-  it("assertVideoQuota：owner 不设每日语音上限 → 放行且不查 count", async () => {
+  it("assertVideoQuota：owner 不设语音上限 → 放行 channel=owner 且不查 count", async () => {
     mockDb.user.findUnique.mockResolvedValue(ownerUser())
     mockDb.subscriptionOrder.findFirst.mockResolvedValue(null)
 
     const res = await assertVideoQuota("u1")
-    expect(res).toEqual({ ok: true })
+    expect(res).toEqual({ ok: true, channel: "owner" })
     expect(mockDb.interview.count).not.toHaveBeenCalled()
   })
 })

@@ -55,6 +55,7 @@ function SessionInner() {
   const [phase, setPhase] = useState<SessionPhase>("answering")
   const [summary, setSummary] = useState<Summary | null>(null)
   const [error, setError] = useState("")
+  const [errorCode, setErrorCode] = useState<string | null>(null) // 配额拦截码（VOICE_NEEDS_CREDITS → 显示购买 CTA）
   const [isRecording, setIsRecording] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [recordError, setRecordError] = useState("")
@@ -97,9 +98,13 @@ function SessionInner() {
           })
           if (!vres.ok) {
             const vbody = await vres.json().catch(() => null)
-            // 配额拦截（402 免费 5 场 / 429 Pro 每日 3 场）→ 直出原因，不静默降级文字 mock
+            // 配额拦截（402：免费场次 / Pro 月度语音额度用完 / 需点数包）→ 直出原因，不静默降级文字 mock
             if (vres.status === 402 || vres.status === 429) {
-              throw new Error(vbody?.error || "AI 语音面试次数已用完")
+              const err: Error & { code?: string | null } = new Error(
+                vbody?.error || "AI 语音面试次数已用完"
+              )
+              err.code = vbody?.code ?? null // VOICE_NEEDS_CREDITS → 错误页引导去购买
+              throw err
             }
             setDegraded(true) // 401 未登录 / 503 未开通等 → 降级文字模式（C4）
           } else {
@@ -151,6 +156,7 @@ function SessionInner() {
         setPhase("answering")
       } catch (err: any) {
         setError(err.message)
+        setErrorCode(err?.code ?? null)
         setPhase("error")
       }
     }
@@ -431,9 +437,19 @@ function SessionInner() {
       <div className="mx-auto max-w-2xl space-y-4 py-16 text-center">
         <AlertCircle className="mx-auto size-10 text-destructive" />
         <p className="text-muted-foreground">启动面试失败：{error}</p>
-        <Link href="/practice">
-          <Button variant="outline">返回</Button>
-        </Link>
+        <div className="flex justify-center gap-3">
+          {errorCode === "VOICE_NEEDS_CREDITS" ? (
+            <Link href="/pricing">
+              <Button className="gap-2">
+                <Sparkles className="size-4" />
+                升级 Pro / 购买点数包
+              </Button>
+            </Link>
+          ) : null}
+          <Link href="/practice">
+            <Button variant="outline">返回</Button>
+          </Link>
+        </div>
       </div>
     )
   }

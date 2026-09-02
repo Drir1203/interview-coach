@@ -38,6 +38,8 @@ export async function POST(req: NextRequest) {
     {
       orderId: order.id,
       amount: order.amount,
+      planKind: plan.kind,
+      credits: plan.kind === "voice" ? plan.credits : null,
       mockAction: payment.mockAction ?? "manual",
       mockToken: payment.mockToken,
       payUrl: payment.payUrl,

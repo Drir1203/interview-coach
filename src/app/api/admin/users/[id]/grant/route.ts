@@ -18,6 +18,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!plan.ok) {
     return Response.json({ error: plan.error }, { status: 400 })
   }
+  if (plan.plan.kind !== "subscription") {
+    return Response.json({ error: "点数包不走开通 Pro 流程（请走订单 mock/approve）" }, { status: 400 })
+  }
 
   const user = await prisma.user.findUnique({ where: { id } })
   if (!user) {
@@ -25,7 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const now = new Date()
-  const expiresAt = computeExpiry(user.proExpiresAt, now, plan.plan.durationDays)
+  const expiresAt = computeExpiry(user.proExpiresAt, now, plan.plan.durationDays ?? 0)
   const grant = buildAdminGrant(plan.plan, expiresAt, now)
   if (!grant.ok) {
     return Response.json({ error: grant.error }, { status: 400 })

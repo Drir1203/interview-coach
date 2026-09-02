@@ -6,8 +6,13 @@ import type { PrismaClient } from "../generated/prisma"
 
 export const FREE_INTERVIEW_LIMIT = 5
 export const TRIAL_DAYS = 7
-// AI 语音面试成本护栏：阿里云按分钟计费（纯语音 ≈¥1.5-2/场），Pro 会员也不放开，每日上限场次。
-export const VIDEO_DAILY_LIMIT = 3
+// AI 语音面试成本护栏（阿里云按实例时长计费 ≈¥1.5-2/场）：
+// - Pro 付费：每月免费 VOICE_MONTHLY_PRO_QUOTA 场（超出走点数包）
+// - 试用 7 天：独立 VOICE_TRIAL_QUOTA 场（防试用刷成本）
+// - 其它/超额度：需语音点数包（voiceCredits > 0）
+export const VOICE_MONTHLY_PRO_QUOTA = 15
+export const VOICE_TRIAL_QUOTA = 1
+export const VOICE_NEEDS_CREDITS = "VOICE_NEEDS_CREDITS"
 
 // 未登录用户桶（匿名写走 __anon__；历史 default）。付费墙豁免，保持门禁匿名链路可用。
 export const ANON_USER_IDS = new Set(["__anon__", "default"])
@@ -25,10 +30,16 @@ export interface TierInfo {
   source: string | null // 最近一条 paid/trial 订单来源
   daysLeft: number | null // pro 剩余天数（非 pro 为 null）
   isOwner: boolean // 是否所有者白名单账号（免配额门禁，见 OWNER_EMAILS）
+  voiceCredits: number // AI 语音点数余额（另购点数包）
 }
 
 export type QuotaResult =
   | { ok: true; remaining?: number }
+  | { ok: false; error: string; code: string }
+
+// AI 语音面试配额判定结果：channel 标明本次放行来源（扣点只对 credit 通道生效）。
+export type VideoQuotaResult =
+  | { ok: true; channel: "owner" | "pro_monthly" | "credit"; remaining?: number }
   | { ok: false; error: string; code: string }
 
 // 会员状态：单次查询 user 会员字段 + 最近一条 paid/trial 订单的 source
@@ -36,7 +47,7 @@ export async function getTier(userId: string, db: PrismaClient = prisma): Promis
   const [user, lastOrder] = await Promise.all([
     db.user.findUnique({
       where: { id: userId },
-      select: { proExpiresAt: true, trialClaimedAt: true, email: true },
+      select: { proExpiresAt: true, trialClaimedAt: true, email: true, voiceCredits: true },
     }),
     db.subscriptionOrder.findFirst({
       where: { userId, status: { in: ["paid", "trial"] } },
@@ -59,6 +70,7 @@ export async function getTier(userId: string, db: PrismaClient = prisma): Promis
     source: lastOrder?.source ?? null,
     daysLeft: isPro && proExpiresAt ? Math.ceil((proExpiresAt.getTime() - now.getTime()) / 86400000) : null,
     isOwner,
+    voiceCredits: user?.voiceCredits ?? 0,
   }
 }
 
@@ -118,7 +130,8 @@ export async function ensureTrialOnRegister(userId: string): Promise<void> {
   }
 }
 
-// 面试场次限额（免费用户最多 5 场）。pro 不限；未登录桶豁免。
+// 面试场次限额（免费用户最多 5 场「真实/文字模拟」，AI 语音视频不计入——语音单独按点数/Pro 月度额计算）。
+// pro 不限；未登录桶豁免。
 export async function assertInterviewQuota(
   userId: string,
   db: PrismaClient = prisma
@@ -127,7 +140,7 @@ export async function assertInterviewQuota(
   const info = await getTier(userId, db)
   if (info.tier === "pro" || info.isOwner) return { ok: true }
 
-  const count = await db.interview.count({ where: { userId } })
+  const count = await db.interview.count({ where: { userId, type: { not: "video" } } })
   if (count >= FREE_INTERVIEW_LIMIT) {
     return {
       ok: false,
@@ -138,29 +151,43 @@ export async function assertInterviewQuota(
   return { ok: true, remaining: FREE_INTERVIEW_LIMIT - count }
 }
 
-// AI 语音面试配额（阿里云按分钟计费，免费/Pro 都要成本护栏）：
-// - 免费用户沿用 5 场总限额（assertInterviewQuota，视频计入同一计数）
-// - Pro 会员「不限场次」只对文字 mock 成立；视频面试每日最多 VIDEO_DAILY_LIMIT 场
+// AI 语音面试配额（阿里云按分钟计费）判定序：
+//   匿名桶 → 豁免；owner 白名单 → 豁免（成本自担）
+//   Pro（含试用期）→ 当月 type=video 落库场次 < 额度（试用 1 场/付费 15 场/自然月）→ pro_monthly
+//   Pro 月额度用尽 或 非 Pro → 有 voiceCredits 点数 → credit（route 侧原子扣点）
+//   都无 → VOICE_NEEDS_CREDITS（前端引导购买点数包/升级 Pro）
 export async function assertVideoQuota(
   userId: string,
   db: PrismaClient = prisma
-): Promise<QuotaResult> {
-  if (ANON_USER_IDS.has(userId)) return { ok: true }
+): Promise<VideoQuotaResult> {
+  if (ANON_USER_IDS.has(userId)) return { ok: true, channel: "owner" } // start 路由已强制登录，此处为防御性豁免
   const info = await getTier(userId, db)
-  if (info.isOwner) return { ok: true } // 所有者自用不设每日语音上限（成本自担）
-  if (info.tier !== "pro") return assertInterviewQuota(userId, db)
+  if (info.isOwner) return { ok: true, channel: "owner" }
 
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-  const count = await db.interview.count({
-    where: { userId, type: "video", createdAt: { gte: todayStart } },
-  })
-  if (count >= VIDEO_DAILY_LIMIT) {
-    return {
-      ok: false,
-      error: `今日 AI 语音面试已达上限（${VIDEO_DAILY_LIMIT} 场），明日再来`,
-      code: "VIDEO_DAILY_LIMIT",
-    }
+  const isPro = info.tier === "pro"
+  // 试用中 = pro + 最近订单来源 trial（7 天试用额度独立 1 场，防试用刷成本）
+  const inTrial = isPro && info.source === "trial"
+  const quota = inTrial ? VOICE_TRIAL_QUOTA : VOICE_MONTHLY_PRO_QUOTA
+
+  if (isPro) {
+    const monthStart = new Date()
+    monthStart.setDate(1)
+    monthStart.setHours(0, 0, 0, 0)
+    const used = await db.interview.count({
+      where: { userId, type: "video", createdAt: { gte: monthStart } },
+    })
+    if (used < quota) return { ok: true, channel: "pro_monthly", remaining: quota - used }
   }
-  return { ok: true, remaining: VIDEO_DAILY_LIMIT - count }
+
+  // Pro 月额度已尽 / 非 Pro（含已过期未续费）→ 点数通道
+  if (info.voiceCredits > 0) {
+    return { ok: true, channel: "credit", remaining: info.voiceCredits }
+  }
+
+  const error = inTrial
+    ? `试用期含 ${VOICE_TRIAL_QUOTA} 场 AI 语音面试，已用完，可购买语音点数包加场`
+    : isPro
+      ? `Pro 每月 ${VOICE_MONTHLY_PRO_QUOTA} 场 AI 语音面试已用完，请购买语音点数包加场`
+      : "AI 语音面试需 Pro 会员或语音点数包，去升级/购买"
+  return { ok: false, error, code: VOICE_NEEDS_CREDITS }
 }

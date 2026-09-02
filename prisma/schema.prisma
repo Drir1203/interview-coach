@@ -66,6 +66,9 @@ model User {
   proExpiresAt   DateTime?  // 会员/试用到期时间
   trialClaimedAt DateTime?  // 试用领取时间（防重复，每账号一次）
 
+  // AI 语音点数（另购点数包入账；消费/退款见 VoiceCreditLog 审计）
+  voiceCredits Int @default(0)
+
   accounts           Account[]
   sessions           Session[]
   interviews         Interview[]
@@ -75,6 +78,7 @@ model User {
   coachConversations CoachConversation[]
   subscriptionOrders SubscriptionOrder[]
   questionBanks      QuestionBank[]
+  voiceCreditLogs    VoiceCreditLog[]
 }
 
 // ────────── 订阅订单（付费墙，v1 仅 Mock 渠道） ──────────
@@ -95,6 +99,21 @@ model SubscriptionOrder {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
+}
+
+// ────────── AI 语音点数流水（购买/赠送/消费/退款审计） ──────────
+model VoiceCreditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  delta     Int      // 正=入账（purchase/grant/refund），负=扣点（consume）
+  reason    String   // purchase | grant | consume | refund | adjust
+  orderId   String?  // 点数包订单关联（purchase）
+  refId     String?  // 消费/退款关联的 IMS 会话标识（防重复退款）
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 // ────────── 公司 ──────────
