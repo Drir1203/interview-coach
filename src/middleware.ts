@@ -14,12 +14,6 @@ export default async function middleware(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.AUTH_SECRET, secureCookie })
   const basePath = req.nextUrl.basePath || ""
 
-  // 独立营销首页：已登录 → 进总览；未登录 → 放行看营销页
-  if (req.nextUrl.pathname === "/") {
-    if (token) return NextResponse.redirect(new URL(`${basePath}/dashboard`, req.url))
-    return NextResponse.next()
-  }
-
   if (token) return NextResponse.next()
 
   // 未登录：直达登录页，callbackUrl 指向原功能页（登录后自动回跳对应功能页）
@@ -30,9 +24,9 @@ export default async function middleware(req: NextRequest) {
 
 export const config = {
   // 需登录的功能页（登录墙）。含子路由的用 :path* 一并覆盖。
+  // `/` 营销首页不在此列 → 对所有人（含已登录）都渲染营销页，不再自动跳总览。
   // 注意：matcher 必须内联字面量，Next.js 无法静态分析外部常量引用会退化为匹配所有路径。
   matcher: [
-    "/",
     "/dashboard",
     "/question-bank",
     "/coach",

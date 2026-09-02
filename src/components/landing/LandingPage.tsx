@@ -19,6 +19,7 @@ import {
 import type { LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/Logo"
+import { useAuth } from "@/hooks/useAuth"
 
 interface FeatureItem {
   icon: LucideIcon
@@ -101,9 +102,12 @@ function HeroVisual() {
 }
 
 export function LandingPage() {
+  const { status } = useAuth()
+  const authenticated = status === "authenticated"
+
   return (
     <div className="animate-fade-up">
-      {/* 顶部导航：sticky，已登录 / 未登录都可看 */}
+      {/* 顶部导航：sticky，已登录 / 未登录都可看；已登录显示「进入应用」 */}
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2">
@@ -118,16 +122,27 @@ export function LandingPage() {
             </Link>
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/auth/login">
-              <Button variant="ghost" size="sm" className="px-3">
-                登录
-              </Button>
-            </Link>
-            <Link href="/auth/register">
-              <Button size="sm" className="px-3">
-                免费开始
-              </Button>
-            </Link>
+            {authenticated ? (
+              <Link href="/dashboard">
+                <Button size="sm" className="gap-1.5 px-3">
+                  进入应用
+                  <ArrowRight className="size-3.5" />
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/auth/login">
+                  <Button variant="ghost" size="sm" className="px-3">
+                    登录
+                  </Button>
+                </Link>
+                <Link href="/auth/register">
+                  <Button size="sm" className="px-3">
+                    免费开始
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -143,9 +158,9 @@ export function LandingPage() {
             一个平台，让每一次面试都成为你更强的理由。
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link href="/auth/register">
+            <Link href={authenticated ? "/dashboard" : "/auth/register"}>
               <Button size="lg" className="gap-2 px-5">
-                免费开始
+                {authenticated ? "进入总览" : "免费开始"}
                 <ArrowRight className="size-4" />
               </Button>
             </Link>
@@ -215,13 +230,15 @@ export function LandingPage() {
       <section className="mx-auto max-w-6xl px-4 py-16">
         <div className="rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#a5b4fc] px-6 py-14 text-center text-white">
           <h2 className="text-2xl font-bold md:text-3xl">开始你的面试提升之旅</h2>
-          <p className="mt-2 text-white/90">免费开始，第一场复盘很快就来</p>
-          <Link href="/auth/register" className="mt-6 inline-block">
+          <p className="mt-2 text-white/90">
+            {authenticated ? "回到总览，继续你的求职节奏" : "免费开始，第一场复盘很快就来"}
+          </p>
+          <Link href={authenticated ? "/dashboard" : "/auth/register"} className="mt-6 inline-block">
             <Button
               size="lg"
               className="gap-2 bg-white px-6 text-indigo-600 hover:bg-indigo-50"
             >
-              免费开始
+              {authenticated ? "进入总览" : "免费开始"}
               <ArrowRight className="size-4" />
             </Button>
           </Link>
