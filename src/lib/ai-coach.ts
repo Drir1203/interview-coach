@@ -285,29 +285,31 @@ async function meterAndCall(
     throw new AiQuotaError("RATE_LIMITED", "操作太频繁，请稍后再试")
   }
 
-  // 分层（D4）：Pro = Claude 优先链；免费 = 仅廉价链，永不触 Claude
-  const { tier } = await getTier(userId)
-  const chain = buildProviderChain(tier, {
+  // 分层（D4）：Pro/所有者 = Claude 优先链；免费 = 仅廉价链，永不触 Claude
+  const { tier, isOwner } = await getTier(userId)
+  const effectiveTier = isOwner ? "pro" : tier
+  const chain = buildProviderChain(effectiveTier, {
     deepseek: !!process.env.DEEPSEEK_API_KEY,
     qwen: !!process.env.DASHSCOPE_API_KEY,
     anthropic: !!process.env.ANTHROPIC_API_KEY,
   })
 
-  // CP2 当日累计限额
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-  const agg = await prisma.aiUsage.aggregate({
-    where: { userId, createdAt: { gte: todayStart } },
-    _sum: { inputTokens: true, outputTokens: true },
-  })
-  const usedToday = (agg._sum.inputTokens ?? 0) + (agg._sum.outputTokens ?? 0)
-  const daily = checkDailyQuota(usedToday, AI_DAILY_TOKEN_LIMIT[tier])
-  if (!daily.ok) throw new AiQuotaError(daily.code, daily.error)
+  // CP2 当日累计限额 + CP3 单次预估限额（所有者豁免 —— 自担成本，不设配额上限）
+  if (!isOwner) {
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const agg = await prisma.aiUsage.aggregate({
+      where: { userId, createdAt: { gte: todayStart } },
+      _sum: { inputTokens: true, outputTokens: true },
+    })
+    const usedToday = (agg._sum.inputTokens ?? 0) + (agg._sum.outputTokens ?? 0)
+    const daily = checkDailyQuota(usedToday, AI_DAILY_TOKEN_LIMIT[tier])
+    if (!daily.ok) throw new AiQuotaError(daily.code, daily.error)
 
-  // CP3 单次预估限额（事前护栏）
-  const estimated = estimateMessagesTokens(messages, system)
-  const single = checkSingleQuota(estimated, AI_SINGLE_REQUEST_TOKEN_LIMIT[tier])
-  if (!single.ok) throw new AiQuotaError(single.code, single.error)
+    const estimated = estimateMessagesTokens(messages, system)
+    const single = checkSingleQuota(estimated, AI_SINGLE_REQUEST_TOKEN_LIMIT[tier])
+    if (!single.ok) throw new AiQuotaError(single.code, single.error)
+  }
 
   // 调用分层链 + 写入计量（best-effort：计量是旁路副作用，失败不阻断已成功的回复）
   const result = await runChain(system, messages, mockFn, chain)

@@ -261,3 +261,65 @@ describe("ensureTrialOnRegister", () => {
     await expect(ensureTrialOnRegister("u1")).resolves.toBeUndefined()
   })
 })
+
+describe("所有者白名单豁免（OWNER_EMAILS）", () => {
+  const OWNER_EMAIL = "felix@test.com"
+
+  function ownerUser() {
+    return { proExpiresAt: null, trialClaimedAt: null, email: OWNER_EMAIL }
+  }
+
+  it("getTier：白名单 email（即使 free）→ isOwner true", async () => {
+    mockDb.user.findUnique.mockResolvedValue(ownerUser())
+    mockDb.subscriptionOrder.findFirst.mockResolvedValue(null)
+
+    const info = await getTier("u1")
+    expect(info.isOwner).toBe(true)
+    expect(info.tier).toBe("free")
+  })
+
+  it("getTier：普通邮箱 → isOwner false", async () => {
+    mockDb.user.findUnique.mockResolvedValue({
+      proExpiresAt: null,
+      trialClaimedAt: null,
+      email: "other@test.com",
+    })
+    mockDb.subscriptionOrder.findFirst.mockResolvedValue(null)
+
+    const info = await getTier("u1")
+    expect(info.isOwner).toBe(false)
+  })
+
+  it("getTier：用户无 email / 不存在 → isOwner false（防御）", async () => {
+    mockDb.user.findUnique.mockResolvedValue({ proExpiresAt: null, trialClaimedAt: null })
+    mockDb.subscriptionOrder.findFirst.mockResolvedValue(null)
+
+    const info = await getTier("u1")
+    expect(info.isOwner).toBe(false)
+  })
+
+  it("requirePro：owner（非 pro）→ 放行 ok:true", async () => {
+    mockDb.user.findUnique.mockResolvedValue(ownerUser())
+    mockDb.subscriptionOrder.findFirst.mockResolvedValue(null)
+
+    await expect(requirePro("u1")).resolves.toEqual({ ok: true })
+  })
+
+  it("assertInterviewQuota：owner 即使超过免费 5 场上限 → 放行且不查 interview.count", async () => {
+    mockDb.user.findUnique.mockResolvedValue(ownerUser())
+    mockDb.subscriptionOrder.findFirst.mockResolvedValue(null)
+
+    const res = await assertInterviewQuota("u1")
+    expect(res).toEqual({ ok: true })
+    expect(mockDb.interview.count).not.toHaveBeenCalled()
+  })
+
+  it("assertVideoQuota：owner 不设每日语音上限 → 放行且不查 count", async () => {
+    mockDb.user.findUnique.mockResolvedValue(ownerUser())
+    mockDb.subscriptionOrder.findFirst.mockResolvedValue(null)
+
+    const res = await assertVideoQuota("u1")
+    expect(res).toEqual({ ok: true })
+    expect(mockDb.interview.count).not.toHaveBeenCalled()
+  })
+})

@@ -12,6 +12,9 @@ export const VIDEO_DAILY_LIMIT = 3
 // 未登录用户桶（匿名写走 __anon__；历史 default）。付费墙豁免，保持门禁匿名链路可用。
 export const ANON_USER_IDS = new Set(["__anon__", "default"])
 
+// 所有者白名单：owner 自用账号（felix@test.com）全功能免配额（AI 语音面试/场次/AI 用量，成本自担）。
+export const OWNER_EMAILS = new Set(["felix@test.com"])
+
 export type Tier = "free" | "pro"
 
 export interface TierInfo {
@@ -21,6 +24,7 @@ export interface TierInfo {
   trialActive: boolean // trialClaimedAt 存在（与是否过期无关）
   source: string | null // 最近一条 paid/trial 订单来源
   daysLeft: number | null // pro 剩余天数（非 pro 为 null）
+  isOwner: boolean // 是否所有者白名单账号（免配额门禁，见 OWNER_EMAILS）
 }
 
 export type QuotaResult =
@@ -32,7 +36,7 @@ export async function getTier(userId: string, db: PrismaClient = prisma): Promis
   const [user, lastOrder] = await Promise.all([
     db.user.findUnique({
       where: { id: userId },
-      select: { proExpiresAt: true, trialClaimedAt: true },
+      select: { proExpiresAt: true, trialClaimedAt: true, email: true },
     }),
     db.subscriptionOrder.findFirst({
       where: { userId, status: { in: ["paid", "trial"] } },
@@ -45,6 +49,7 @@ export async function getTier(userId: string, db: PrismaClient = prisma): Promis
   const proExpiresAt = user?.proExpiresAt ?? null
   const trialClaimedAt = user?.trialClaimedAt ?? null
   const isPro = !!proExpiresAt && proExpiresAt > now
+  const isOwner = !!user?.email && OWNER_EMAILS.has(user.email.toLowerCase())
 
   return {
     tier: isPro ? "pro" : "free",
@@ -53,6 +58,7 @@ export async function getTier(userId: string, db: PrismaClient = prisma): Promis
     trialActive: !!trialClaimedAt,
     source: lastOrder?.source ?? null,
     daysLeft: isPro && proExpiresAt ? Math.ceil((proExpiresAt.getTime() - now.getTime()) / 86400000) : null,
+    isOwner,
   }
 }
 
@@ -63,7 +69,7 @@ export async function requirePro(
 ): Promise<{ ok: true } | { ok: false; error: string; code: string }> {
   if (ANON_USER_IDS.has(userId)) return { ok: true }
   const info = await getTier(userId, db)
-  if (info.tier === "pro") return { ok: true }
+  if (info.tier === "pro" || info.isOwner) return { ok: true }
   return { ok: false, error: "该功能仅 Pro 会员可用，请升级", code: "PAYMENT_REQUIRED" }
 }
 
@@ -119,7 +125,7 @@ export async function assertInterviewQuota(
 ): Promise<QuotaResult> {
   if (ANON_USER_IDS.has(userId)) return { ok: true }
   const info = await getTier(userId, db)
-  if (info.tier === "pro") return { ok: true }
+  if (info.tier === "pro" || info.isOwner) return { ok: true }
 
   const count = await db.interview.count({ where: { userId } })
   if (count >= FREE_INTERVIEW_LIMIT) {
@@ -141,6 +147,7 @@ export async function assertVideoQuota(
 ): Promise<QuotaResult> {
   if (ANON_USER_IDS.has(userId)) return { ok: true }
   const info = await getTier(userId, db)
+  if (info.isOwner) return { ok: true } // 所有者自用不设每日语音上限（成本自担）
   if (info.tier !== "pro") return assertInterviewQuota(userId, db)
 
   const todayStart = new Date()
