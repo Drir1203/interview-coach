@@ -13,6 +13,8 @@ import {
   Trash2,
   Pencil,
   X,
+  History,
+  MessageSquare,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -84,6 +86,8 @@ export default function CoachPage() {
   const [attachment, setAttachment] = useState<Attachment | null>(null)
   const [renaming, setRenaming] = useState<ConversationItem | null>(null)
   const [renameValue, setRenameValue] = useState("")
+  // 移动端：true=显示历史列表，false=显示聊天（桌面端两侧并排不受影响）
+  const [mobileListOpen, setMobileListOpen] = useState(false)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -142,6 +146,7 @@ export default function CoachPage() {
       setMessages(data.messages.length > 0 ? data.messages : [GREETING])
       setAttachment(null)
       setError("")
+      setMobileListOpen(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载对话失败")
     }
@@ -155,6 +160,7 @@ export default function CoachPage() {
     setAttachment(null)
     setError("")
     setInput("")
+    setMobileListOpen(false)
   }
 
   // 发送消息
@@ -270,9 +276,37 @@ export default function CoachPage() {
         />
       </div>
 
-      <div className="animate-fade-up flex items-stretch gap-4" style={{ animationDelay: "50ms" }}>
+      <div
+        className="animate-fade-up flex flex-col gap-4 md:flex-row md:items-stretch"
+        style={{ animationDelay: "50ms" }}
+      >
+        {/* 移动端：对话 / 历史对话 切换（桌面端 md:flex-row 两侧并排，此条隐藏） */}
+        <div className="flex items-center gap-2 md:hidden">
+          <Button
+            variant={!mobileListOpen ? "default" : "outline"}
+            size="sm"
+            className="flex-1 gap-1.5"
+            onClick={() => setMobileListOpen(false)}
+          >
+            <MessageSquare className="size-4" /> 对话
+          </Button>
+          <Button
+            variant={mobileListOpen ? "default" : "outline"}
+            size="sm"
+            className="flex-1 gap-1.5"
+            onClick={() => setMobileListOpen(true)}
+          >
+            <History className="size-4" /> 历史对话
+          </Button>
+        </div>
+
         {/* 左侧历史列表 */}
-        <Card className="flex h-[calc(100vh-140px)] min-h-[560px] w-[240px] shrink-0 flex-col">
+        <Card
+          className={cn(
+            "h-[calc(100dvh-240px)] min-h-[400px] flex-col md:h-[calc(100vh-140px)] md:min-h-[560px] md:w-[240px] md:shrink-0",
+            mobileListOpen ? "flex" : "hidden md:flex"
+          )}
+        >
           <CardHeader className="border-b pb-3">
             <div className="space-y-2">
               <Button variant="outline" size="sm" className="w-full justify-start" onClick={startNewConversation}>
@@ -313,7 +347,7 @@ export default function CoachPage() {
                         <p className={cn("truncate text-sm font-medium", active && "text-primary")}>
                           {c.title || "新对话"}
                         </p>
-                        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                        <div className="flex shrink-0 items-center gap-0.5 opacity-60 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                           <button
                             type="button"
                             className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -351,7 +385,12 @@ export default function CoachPage() {
         </Card>
 
         {/* 右侧聊天 */}
-        <Card className="flex h-[calc(100vh-140px)] min-h-[560px] flex-1 flex-col">
+        <Card
+          className={cn(
+            "h-[calc(100dvh-240px)] min-h-[400px] flex-1 flex-col md:h-[calc(100vh-140px)] md:min-h-[560px]",
+            mobileListOpen ? "hidden md:flex" : "flex"
+          )}
+        >
           <CardHeader className="border-b pb-3">
             <div className="flex items-center gap-3">
               <div className="flex size-9 items-center justify-center rounded-full bg-primary/10">

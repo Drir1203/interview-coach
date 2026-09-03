@@ -383,15 +383,15 @@ export default function InterviewDetail() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 items-center gap-4">
           <Link href="/interviews">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="size-4" />
             </Button>
           </Link>
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold tracking-tight">
                 {interview.company.name}
               </h1>
@@ -407,7 +407,7 @@ export default function InterviewDetail() {
               {formatDate(interview.date)}
             </p>
             {/* 面试结果标注 */}
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="text-xs text-muted-foreground">面试结果：</span>
               {INTERVIEW_RESULTS.map((r) => (
                 <Badge
@@ -423,7 +423,7 @@ export default function InterviewDetail() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={exporting}>
             {exporting ? (
               <Loader2 className="mr-1 size-3 animate-spin" />

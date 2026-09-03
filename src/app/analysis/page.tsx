@@ -359,8 +359,8 @@ export default function AnalysisPage() {
               <CardContent>
                 <div className="space-y-2">
                   {filteredTrend.slice().reverse().map((t, i) => (
-                    <div key={i} className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm">
-                      <div className="flex items-center gap-3">
+                    <div key={i} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md bg-muted/50 px-3 py-2 text-sm">
+                      <div className="flex flex-wrap items-center gap-3">
                         <span className="text-muted-foreground">{t.date}</span>
                         <span className="font-medium">{t.company}</span>
                         <span className="text-muted-foreground">{t.position}</span>
@@ -387,7 +387,7 @@ export default function AnalysisPage() {
           <div
             ref={certRef}
             style={{
-              width: 340,
+              width: "min(340px, 86vw)",
               boxSizing: "border-box",
               background: "#ffffff",
               border: "2px solid #6366f1",
@@ -402,7 +402,7 @@ export default function AnalysisPage() {
             <div style={{ fontSize: 18, fontWeight: 700, color: "#6366f1" }}>AI 面师 · 能力认证</div>
             <div style={{ fontSize: 15, fontWeight: 600, color: "#111827", marginTop: 6 }}>{certName}</div>
 
-            <div style={{ width: 260, height: 220, margin: "12px auto 0" }}>
+            <div style={{ width: "min(260px, 74vw)", height: 220, margin: "12px auto 0" }}>
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={certChartData} outerRadius="72%">
                   <PolarGrid stroke="#e5e7eb" />

@@ -1,0 +1,31 @@
+{
+  "name": "AI 面师 - AI 面试教练",
+  "short_name": "AI 面师",
+  "description": "真实面试自动 AI 复盘 · AI 面试官随时模拟 · 考前智能押题备战",
+  "lang": "zh-CN",
+  "start_url": "/interview/dashboard",
+  "scope": "/interview/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#6366f1",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/interview/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/interview/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/interview/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
