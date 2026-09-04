@@ -234,8 +234,8 @@ export function LandingPage() {
       <section className="relative">
         {/* 氛围光斑（纯装饰，不影响可读性） */}
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -right-24 -top-24 size-96 rounded-full bg-gradient-to-br from-indigo-200/60 to-violet-200/40 blur-3xl dark:from-indigo-500/20 dark:to-violet-500/10" />
-          <div className="absolute -left-32 top-40 size-80 rounded-full bg-gradient-to-br from-violet-200/40 to-indigo-100/40 blur-3xl dark:from-violet-500/10 dark:to-indigo-500/10" />
+          <div className="absolute -right-24 -top-24 size-[26rem] rounded-full bg-indigo-200/25 blur-3xl dark:bg-indigo-400/10" />
+          <div className="absolute -left-32 top-40 size-80 rounded-full bg-violet-200/20 blur-3xl dark:bg-violet-400/10" />
         </div>
 
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:py-24 lg:grid-cols-2">
@@ -251,8 +251,8 @@ export function LandingPage() {
               </span>
             </h1>
             <p className="mt-4 max-w-lg text-lg leading-relaxed text-muted-foreground">
-              真实面试自动 AI 复盘 · AI 面试官随时模拟 · 考前智能押题备战。
-              一个平台，让每一次面试都成为你更强的理由。
+              AI Agent 逐题复盘每一场真实面试，陪你随时模拟、考前押题。
+              把每一场面试，沉淀为下一次的从容。
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link href={homeHref}>
@@ -286,10 +286,11 @@ export function LandingPage() {
       <section id="how" className="border-y bg-muted/40">
         <div className="mx-auto max-w-6xl px-4 py-16">
           <h2 className="text-center text-2xl font-bold md:text-3xl">
-            把每一次面试，变成看得见的进步
+            面试结束，复盘才开始
           </h2>
           <p className="mx-auto mt-2 max-w-2xl text-center text-muted-foreground">
-            不是练习完就结束——你的每一场面试都会被 AI 记住，复盘与准备越用越准
+            真实面试或 AI 模拟，每一场都会被 AI 逐题拆解并沉淀进能力画像；
+            积累得越久，下一次越有把握
           </p>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((s, i) => {

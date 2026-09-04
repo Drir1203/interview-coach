@@ -1,0 +1,274 @@
+<title>AI面师品牌重塑档案</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+<style>
+  :root{
+    --bg:#f8fafc; --surface:#ffffff; --ink:#0f172a; --ink-soft:#475569; --ink-faint:#94a3b8;
+    --line:rgba(15,23,42,.1); --line-soft:rgba(15,23,42,.06);
+    --indigo:#6366f1; --indigo-deep:#4338ca; --indigo-soft:#eef2ff;
+    --violet:#8b5cf6; --ok:#059669; --warn:#d97706; --bad:#dc2626;
+    --serif:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0b1220; --surface:#111a2e; --ink:#eef2ff; --ink-soft:#c7d2e8; --ink-faint:#7c8db0;
+      --line:rgba(226,232,255,.12); --line-soft:rgba(226,232,255,.07);
+      --indigo:#818cf8; --indigo-deep:#a5b4fc; --indigo-soft:rgba(99,102,241,.16);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b1220; --surface:#111a2e; --ink:#eef2ff; --ink-soft:#c7d2e8; --ink-faint:#7c8db0;
+    --line:rgba(226,232,255,.12); --line-soft:rgba(226,232,255,.07);
+    --indigo:#818cf8; --indigo-deep:#a5b4fc; --indigo-soft:rgba(99,102,241,.16);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:0 24px}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--indigo);font-weight:700;display:flex;align-items:center;gap:10px}
+  .eyebrow::before{content:"";width:22px;height:2px;background:var(--indigo);border-radius:2px}
+  h1{font-size:clamp(26px,4vw,38px);line-height:1.25;font-weight:900;letter-spacing:.01em;margin:14px 0 10px;text-wrap:balance}
+  h2{font-size:20px;font-weight:800;margin:0 0 6px;letter-spacing:.01em}
+  .sub{color:var(--ink-soft);max-width:60ch}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:var(--ink-faint);font-size:12.5px;margin:16px 0 0}
+  section{padding:44px 0 8px}
+  .num{font-family:var(--mono);font-size:12px;color:var(--ink-faint);letter-spacing:.08em}
+  .grid{display:grid;gap:14px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px}
+  .card h3{margin:0 0 4px;font-size:15.5px;font-weight:700}
+  .card p{margin:0;color:var(--ink-soft);font-size:13.5px;line-height:1.7}
+  .lead{color:var(--ink-soft);font-size:14px}
+  ul.tight{margin:8px 0 0;padding-left:18px;color:var(--ink-soft);font-size:13.5px}
+  ul.tight li{margin:4px 0}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+  .sev-CRITICAL{background:#fee2e2;color:var(--bad)} .sev-HIGH{background:#fef3c7;color:var(--warn)} .sev-MED{background:var(--indigo-soft);color:var(--indigo-deep)}
+  .chip{display:inline-block;width:16px;height:16px;border-radius:5px;border:1px solid rgba(127,127,127,.25);vertical-align:-3px;margin-right:6px}
+  .sw{font-family:var(--mono);font-size:12px}
+  table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  th{font-weight:700;color:var(--ink-faint);font-size:12px;letter-spacing:.04em}
+  td:first-child{white-space:nowrap;font-family:var(--mono);font-size:12.5px}
+  .split2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+  .tag{font-size:11.5px;letter-spacing:.06em;color:var(--ink-faint);font-weight:700;text-transform:uppercase;margin:0 0 8px}
+  /* concept marks */
+  .concept{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:22px;margin:18px 0}
+  .concept-head{display:flex;align-items:baseline;gap:10px;margin-bottom:2px}
+  .letter{width:34px;height:34px;border-radius:10px;background:var(--indigo);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;flex:none;transform:translateY(6px)}
+  .concept-head h3{margin:0;font-size:20px;font-weight:900}
+  .cname{color:var(--indigo);font-weight:700;font-size:15px}
+  .show{display:flex;flex-wrap:wrap;align-items:center;gap:26px;margin:18px 0 6px}
+  .mk{display:block;width:100%;height:100%}
+  .tile{width:104px;height:104px;border-radius:22px;display:block;background:#6366f1;color:#fff;padding:14px;flex:none}
+  .tile.big{width:128px;height:128px;border-radius:26px}
+  .tile.light{background:#fff;border:1px solid var(--line);color:#6366f1}
+  .tile.small{width:40px;height:40px;border-radius:9px;padding:6px}
+  .rowcap{display:flex;flex-direction:column;gap:14px}
+  .lock{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:900;color:var(--ink);letter-spacing:.02em}
+  .lock .dotmark{width:34px;height:34px;color:#6366f1;flex:none}
+  .steps{display:flex;gap:14px;align-items:flex-end;margin-top:4px}
+  .step{text-align:center}
+  .step .cap{font-size:11px;color:var(--ink-faint);margin-top:5px;display:block}
+  .pros{display:grid;gap:4px;font-size:13px;color:var(--ink-soft)}
+  .pros b{color:var(--ink);font-weight:700}
+  .note{background:var(--indigo-soft);border-radius:12px;padding:12px 16px;font-size:13.5px;color:var(--ink-soft)}
+  .tagline{color:var(--indigo);font-weight:700}
+  .divider{height:1px;background:var(--line);margin:34px 0 0}
+  footer{padding:30px 0 60px;color:var(--ink-faint);font-size:12.5px}
+  a{color:var(--indigo)}
+  .bf{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}
+  .bf>div{padding:18px;display:flex;flex-direction:column;gap:8px}
+  .bf>div+div{border-left:1px solid var(--line)}
+  .bf .lab{font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--ink-faint)}
+  .bf .mkrow{display:flex;align-items:center;gap:12px}
+  .minitile{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none}
+  code,.mono{font-family:var(--mono)}
+  .files{font-family:var(--mono);font-size:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;line-height:1.9;overflow-x:auto}
+  @media (max-width:640px){ .show{gap:16px}.tile.big{width:96px;height:96px} }
+</style>
+
+<header class="wrap" style="padding-top:52px">
+  <p class="eyebrow">Brand Audit · 2026-09</p>
+  <h1>AI 面师品牌重塑档案</h1>
+  <p class="sub">面向商业化的视觉诊断与 Logo 方向探索。包含竞品语境下的主题 / 背景 / Logo 评估、Step 1 一致性修复记录，以及 A/B/C 三个候选 logo 方向。</p>
+  <div class="meta">
+    <span>范围：Web · PWA · 微信小程序「AI 面师」</span>
+    <span>状态：诊断完成 · Step 1 已执行 · 已选定 A（逐级对话）并落地全套资产 ✓</span>
+    <span>生产：mianshi.pro/interview</span>
+  </div>
+</header>
+
+<section class="wrap">
+  <p class="num">01 — 诊断摘要</p>
+  <h2>核心判断：问题不在“丑”，在于<b style="color:var(--indigo)">自相矛盾 + 无记忆点</b></h2>
+  <p class="sub">商业化平台的第一观感不由单一元素决定，而是<b>系统一致性</b>。当前最大风险不是某个设计不好看，而是同一品牌在不同触点呈现彼此矛盾的面貌。</p>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:16px">
+    <div class="card"><h3><span class="pill sev-CRITICAL" style="margin-right:6px">CRITICAL</span>Logo 两套并轨</h3>
+      <p>浏览器标签页 favicon（<span class="mono">public/logo.svg</span>）是<b>黑色</b> <span class="sw"><span class="chip" style="background:#18181b"></span>#18181b</span>；而产品内 Logo 与 PWA 图标是<b>靛蓝</b> <span class="sw"><span class="chip" style="background:#6366f1"></span>#6366f1</span>。逐像素采样确认 PNG 图标均为 indigo 系，仅 SVG favicon 回归黑色。标签页是商业化首屏，等于品牌自己先穿帮。</p></div>
+    <div class="card"><h3><span class="pill sev-HIGH">HIGH</span>模板化背景噪声</h3>
+      <p>营销 Hero 与登录页使用「indigo→violet 双色渐变 + <span class="mono">blur-3xl</span> 光斑」，是当前 AI 生成式 SaaS 的默认配方，辨识度低、廉价感强，与“教练”的信任感相悖。</p></div>
+    <div class="card"><h3><span class="pill sev-MED">MED</span>缺一个“独占符号”</h3>
+      <p>对话泡 + 对勾的通用组合，在满屏 chat-AI 产品里没有排他性。用户记不住“AI 面师”，只记得“又一个蓝色对话机器人”。</p></div>
+    <div class="card"><h3><span class="pill sev-MED">MED</span>主题色本身是健康的</h3>
+      <p>靛蓝 <span class="sw">#6366f1</span> 在暗色下转 <span class="sw">#818cf8</span>，配浅 slate 中性色——底子是好的，接近 Linear / Notion 的克制方向。修复重点是<b>守住它</b>，而不是推翻它。</p></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <p class="num">02 — 竞品语境</p>
+  <h2>生产级平台怎么处理“工具 + AI + 教练”</h2>
+  <table>
+    <tr><th>参照</th><th>做法</th><th>可借鉴</th></tr>
+    <tr><td>Linear</td><td>极简几何 monogram，字距收紧，几乎不用渐变</td><td>符号的克制与自信</td></tr>
+    <tr><td>Stripe</td><td>一色识别 + 大规模留白，图标在彩底/白底都可读</td><td>图标系统的双态一致性</td></tr>
+    <tr><td>Notion / Raycast</td><td>黑白中性字标为主，AI 能力靠排版语言而非霓虹</td><td>降低“AI 感”反而更可信</td></tr>
+    <tr><td>多邻国 / 得到 / 扇贝</td><td>用<b>拟人角色或中文字</b>建立情感记忆</td><td>教练品类的温度与陪伴</td></tr>
+    <tr><td>Cursor / v0</td><td>高饱和单一强调色 + 去装饰化背景</td><td>背景让位给内容</td></tr>
+  </table>
+  <p class="lead" style="margin-top:10px">结论：竞品都在“减法”。我们的 Step 1 也应是减法——先止血矛盾，再重画符号。</p>
+</section>
+
+<section class="wrap">
+  <p class="num">03 — Step 1 一致性止血（已执行）</p>
+  <h2>先让品牌“自洽”，再谈“好看”</h2>
+  <div class="bf">
+    <div>
+      <span class="lab">Before · favicon 黑色 #18181b</span>
+      <div class="mkrow"><span class="minitile" style="background:#fff;border:1px solid #e2e8f0"><svg class="mk" viewBox="0 0 120 120"><circle cx="60" cy="60" r="60" fill="#18181b"/><path d="M30 75V45C30 41.7 32.7 39 36 39H84c3.3 0 6 2.7 6 6v22.5c0 3.3-2.7 6-6 6H52.5L37.5 86.3V73.5H30Z" fill="#fafafa" fill-opacity=".9"/><path d="M48.75 60 56.25 67.5 71.25 48.75" stroke="#18181b" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="60" cy="33.75" r="5.25" fill="#fafafa"/></svg></span><span>浏览器标签页显示黑圆，与全站靛蓝主题冲突。</span></div>
+    </div>
+    <div>
+      <span class="lab">After · 与产品内 Logo 同源</span>
+      <div class="mkrow"><span class="minitile" style="background:#6366f1"><svg class="mk" viewBox="0 0 120 120"><path d="M30 75V45C30 41.7 32.7 39 36 39H84c3.3 0 6 2.7 6 6v22.5c0 3.3-2.7 6-6 6H52.5L37.5 86.3V73.5H30Z" fill="#fff" fill-opacity=".92"/><path d="M48.75 60 56.25 67.5 71.25 48.75" stroke="#6366f1" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="60" cy="33.75" r="5.25" fill="#fff"/></svg></span><span><span class="mono">#6366f1</span> 靛蓝圆 + 白对话泡 + 靛蓝勾 + 白点，与 <span class="mono">Logo.tsx</span> 的 <span class="mono">fill-primary</span> 一致。</span></div>
+    </div>
+  </div>
+
+  <div class="split2" style="margin-top:14px">
+    <div class="card"><h3>文件变更</h3>
+      <div class="files">
+public/logo.svg&nbsp;&nbsp;← 改色（#18181b→#6366f1，泡/点 #fafafa→#fff）<br>
+landing/LandingPage.tsx ← Hero 光斑双色渐变→单色淡雾，透明度减半<br>
+auth/AuthShell.tsx&nbsp;&nbsp;&nbsp;← 登录氛围光斑同规则降噪
+      </div>
+      <p style="margin-top:8px">PWA PNG（icon-192/512、maskable、apple-touch）采样确认<b>已是 indigo</b>，本次不动，避免无谓的二进制重生成。</p></div>
+    <div class="card"><h3>背景降噪规则</h3>
+      <ul class="tight">
+        <li>去掉 <span class="mono">indigo→violet</span> 双色渐变光斑</li>
+        <li>改为单色极淡雾（<span class="mono">indigo-100/45</span> 量级），透明度约减半</li>
+        <li>暗色模式同规则（<span class="mono">indigo-400/10</span>）</li>
+      </ul></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <p class="num">04 — Logo 方向 · A / B / C</p>
+  <h2>三个候选，代表三种取舍</h2>
+  <p class="sub">以下为概念稿，非最终图形；用于确认<b>方向</b>后再精修。</p>
+
+  <!-- ============ A ============ -->
+  <div class="concept">
+    <div class="concept-head"><span class="letter">A</span><h3>逐级对话</h3><span class="cname">Stairline</span></div>
+    <p class="lead" style="margin-top:6px">两个对话泡错落上升——<span class="tagline">每一次对话，都让下一次站得更高。</span>把“聊天”与“进阶”焊进同一个手势。</p>
+
+    <div class="show">
+      <div class="rowcap">
+        <span class="tile big"><svg class="mk" viewBox="0 0 120 120"><rect x="58" y="2" width="56" height="56" rx="19" fill="none" stroke="currentColor" stroke-width="8"/><rect x="6" y="52" width="82" height="62" rx="24" fill="currentColor"/><path d="M16 114h14l-9 9Z" fill="currentColor"/></svg></span>
+        <span style="color:var(--ink-faint);font-size:12px">App 图标位</span>
+      </div>
+      <div class="lock"><span style="width:38px;height:38px;color:#6366f1;display:inline-flex;flex:none"><svg class="mk" viewBox="0 0 120 120"><rect x="58" y="2" width="56" height="56" rx="19" fill="none" stroke="currentColor" stroke-width="8"/><rect x="6" y="52" width="82" height="62" rx="24" fill="currentColor"/><path d="M16 114h14l-9 9Z" fill="currentColor"/></svg></span>AI 面师</div>
+      <div class="rowcap">
+        <div class="steps">
+          <span class="step"><span class="tile small light"><svg class="mk" viewBox="0 0 120 120"><rect x="58" y="2" width="56" height="56" rx="19" fill="none" stroke="currentColor" stroke-width="9"/><rect x="6" y="52" width="82" height="62" rx="24" fill="currentColor"/></svg></span><span class="cap">favicon 16</span></span>
+          <span class="step"><span class="tile small"><svg class="mk" viewBox="0 0 120 120"><rect x="58" y="2" width="56" height="56" rx="19" fill="none" stroke="currentColor" stroke-width="9"/><rect x="6" y="52" width="82" height="62" rx="24" fill="currentColor"/></svg></span><span class="cap">彩底 32</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="split2">
+      <div class="card"><h3>为什么是它</h3>
+        <p>对话 = 品类（陪练是对话产品）；阶梯 = 价值（越练越强）。一个图形同时回答“你是做什么的”和“你带给我什么”，叙事最完整。</p></div>
+      <div class="card"><h3>风险与代价</h3>
+        <ul class="tight">
+          <li>双泡造型偏常见，需在比例/切角上做出差异</li>
+          <li>放弃了对勾这一既有资产，等于换新叙事</li>
+          <li>负空间需要精细打磨</li>
+        </ul></div>
+    </div>
+  </div>
+
+  <!-- ============ B ============ -->
+  <div class="concept">
+    <div class="concept-head"><span class="letter">B</span><h3>中文「面」字标</h3><span class="cname">Mian · Letterform</span></div>
+    <p class="lead" style="margin-top:6px">用<b>一个汉字</b>当图腾：面试是“面对面”，教练是“当面指点”，复盘是“面面俱到”。<span class="tagline">字即品牌，天然独占、天然跨端一致。</span></p>
+
+    <div class="show">
+      <div class="rowcap">
+        <span class="tile big"><svg class="mk" viewBox="0 0 120 120"><rect x="4" y="4" width="112" height="112" rx="30" fill="currentColor"/><circle cx="101" cy="19" r="7" fill="#fff" opacity=".85"/><text x="60" y="84" font-size="74" font-weight="900" text-anchor="middle" fill="#fff" font-family="Noto Sans SC,sans-serif">面</text></svg></span>
+        <span style="color:var(--ink-faint);font-size:12px">圆角方窗版</span>
+      </div>
+      <div class="lock"><span style="width:40px;height:40px;color:#0f172a;display:inline-flex;flex:none"><svg class="mk" viewBox="0 0 120 120"><text x="60" y="92" font-size="96" font-weight="900" text-anchor="middle" fill="currentColor" font-family="Noto Sans SC,sans-serif">面</text></svg></span>师 · AI 面师</div>
+      <div class="rowcap">
+        <div class="steps">
+          <span class="step"><span class="tile small"><svg class="mk" viewBox="0 0 120 120"><text x="60" y="86" font-size="76" font-weight="900" text-anchor="middle" fill="#fff" font-family="Noto Sans SC,sans-serif">面</text></svg></span><span class="cap">字标 32</span></span>
+          <span class="step"><span class="tile small light"><svg class="mk" viewBox="0 0 120 120"><text x="60" y="90" font-size="84" font-weight="900" text-anchor="middle" fill="currentColor" font-family="Noto Sans SC,sans-serif">面</text></svg></span><span class="cap">浅底版本</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="split2">
+      <div class="card"><h3>为什么是它</h3>
+        <p>中国市场的“独占捷径”：英文 chat-bubble 符号全球同质，中文单字却能一句话讲清品类。<span class="mono">面</span>字又自带“认真对待”的仪式感，贴合<b>教练</b>而非<b>玩具</b>。</p></div>
+      <div class="card"><h3>风险与代价</h3>
+        <ul class="tight">
+          <li>需定制字型或重绘字形，直接套系统字体反而显廉价</li>
+          <li>汉字笔画在 16px favicon 下的可读性需专项测试</li>
+          <li>「AI 面师」与单字「面」的关联要靠字标组合建立</li>
+        </ul></div>
+    </div>
+  </div>
+
+  <!-- ============ C ============ -->
+  <div class="concept">
+    <div class="concept-head"><span class="letter">C</span><h3>回声对勾</h3><span class="cname">Echo Check</span></div>
+    <p class="lead" style="margin-top:6px">把既有“对勾”资产极简化为<b>两次复沓的回声</b>——每场复盘，都为同一种能力再落下一个勾。<span class="tagline">保留资产，做最小几何进化。</span></p>
+
+    <div class="show">
+      <div class="rowcap">
+        <span class="tile big"><svg class="mk" viewBox="0 0 120 120"><rect x="4" y="4" width="112" height="112" rx="28" fill="currentColor"/><g stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".55"><path d="M22 62 44 84 78 40" transform="translate(8 -4)"/></g><g stroke="#fff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M22 62 46 86 90 32"/></g></svg></span>
+        <span style="color:var(--ink-faint);font-size:12px">双勾回声 · App 图标位</span>
+      </div>
+      <div class="lock"><span style="width:38px;height:38px;color:#6366f1;display:inline-flex;flex:none"><svg class="mk" viewBox="0 0 120 120"><g stroke="currentColor" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".45"><path d="M22 62 44 84 72 40" transform="translate(16 -18)"/></g><g stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M22 62 46 86 92 32"/></g></svg></span>AI 面师</div>
+      <div class="rowcap">
+        <div class="steps">
+          <span class="step"><span class="tile small"><svg class="mk" viewBox="0 0 120 120"><path d="M24 64 44 86 84 36" stroke="#fff" stroke-width="15" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M36 50 48 64 70 38" stroke="#fff" stroke-width="15" fill="none" stroke-linecap="round" opacity=".5" transform="translate(2 -2)"/></svg></span><span class="cap">彩底 32</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="split2">
+      <div class="card"><h3>为什么是它</h3>
+        <p>风险最低：用户对“打勾”已有心理账户（答对、掌握、通过），不推翻既有认知。<b>回声 / 复沓</b>把“复盘 + 反复训练”的动态价值装进静态符号，极简、可延展、16–512px 都稳。</p></div>
+      <div class="card"><h3>风险与代价</h3>
+        <ul class="tight">
+          <li>与“满屏 AI 对勾图标”仍有几分神似，差异靠比例与切角</li>
+          <li>叙事密度低于 A，偏“好看的安全牌”</li>
+        </ul></div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap">
+  <p class="num">05 — 决策建议</p>
+  <h2>给创始人一句实话</h2>
+  <div class="note">
+    推荐在 <b>A（逐级对话）与 B（中文面字标）之间选</b>：C 是最安全的止损，但止损不等于建品牌。商业化平台需要<b>只有你能用</b>的符号——A 给“练得越多越强”的成长叙事，B 给“面师 = 面对面”的中文独占。若短期靠增长、需极致克制，选 C 无妨；若目标是“被记住”，优先 A 或 B。
+  </div>
+  <p class="sub" style="margin-top:14px">选定方向后：完整 SVG 源文件 → favicon / PWA / apple-touch 全套生成 → 深浅双态与 16–512px 可读性验证 → 字标组合与规范。</p>
+</section>
+
+<div class="wrap divider"></div>
+<footer class="wrap">
+  档案编号 #BRAND-2026-09 · AI 面师设计诊断输出 · 概念稿未经最终确认，请勿直接用于生产。<br>
+  关联生产路径：public/logo.svg · src/components/Logo.tsx · src/app/layout.tsx（themeColor #6366f1）
+</footer>

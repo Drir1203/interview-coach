@@ -1,7 +1,8 @@
-// 生成 PWA 图标（纯 Node，零依赖）：AI 面师 —— 靛蓝圆角底 + 白色对话气泡 + 三个点
+// 生成 PWA 图标（纯 Node，零依赖）：AI 面师 —— 靛蓝圆角底 + 双对话泡错落上升（A 方向「逐级对话」）
 // 用法：node scripts/gen-pwa-icons.js
 // 输出到 public/：icon-192.png icon-512.png icon-maskable-512.png apple-touch-icon.png
 // PNG 用 zlib 手写编码（IHDR/IDAT/IEND + CRC32），无需 sharp/canvas。
+// 几何与 src/components/Logo.tsx、public/logo.svg 保持同一 100 网格（unit 值见 SHAPES）。
 
 const fs = require("fs");
 const path = require("path");
@@ -53,8 +54,21 @@ function encodePNG(width, height, rgba) {
   return Buffer.concat([sig, chunk("IHDR", ihdr), chunk("IDAT", idat), chunk("IEND", Buffer.alloc(0))]);
 }
 
+// ---------- 几何（归一化 100 网格，unit 值直接与 Logo.tsx / logo.svg 换算）----------
+const SHAPES = {
+  // 主泡（下左，你/当前场）：带左下尾
+  main: { x0: 0.1, y0: 0.47, x1: 0.72, y1: 0.88, r: 0.16 },
+  tail: [
+    { x: 0.3, y: 0.88 },
+    { x: 0.46, y: 0.88 },
+    { x: 0.24, y: 0.97 },
+  ],
+  // 次级泡（上右，AI/下一级）——与主泡斜向错开成上升阶梯
+  reply: { x0: 0.54, y0: 0.1, x1: 0.9, y1: 0.38, r: 0.13 },
+};
+
 // ---------- 绘制 ----------
-// 形状判定（坐标以 size 归一化的浮点，0..size）
+// 形状判定（坐标以 unit 0..1）
 
 function inRoundedRect(px, py, x0, y0, x1, y1, r) {
   if (px < x0 || px > x1 || py < y0 || py > y1) return false;
@@ -74,30 +88,49 @@ function inTri(px, py, ax, ay, bx, by, cx, cy) {
   return !(hasNeg && hasPos);
 }
 
+// 缩放 unit 值到安全区（maskable inset）：绕画布中心 (0.5,0.5) 等比内缩
+function scaleUnit(v, inset) {
+  return 0.5 + (v - 0.5) * inset;
+}
+
+// 生成返回「unit 命中测试」的闭包
+function makeRr(spec, inset) {
+  const x0 = scaleUnit(spec.x0, inset);
+  const x1 = scaleUnit(spec.x1, inset);
+  const y0 = scaleUnit(spec.y0, inset);
+  const y1 = scaleUnit(spec.y1, inset);
+  const r = spec.r * inset;
+  return (ux, uy) => inRoundedRect(ux, uy, x0, y0, x1, y1, r);
+}
+
+function makeTri(spec, inset) {
+  return (ux, uy) =>
+    inTri(
+      ux,
+      uy,
+      scaleUnit(spec[0].x, inset),
+      scaleUnit(spec[0].y, inset),
+      scaleUnit(spec[1].x, inset),
+      scaleUnit(spec[1].y, inset),
+      scaleUnit(spec[2].x, inset),
+      scaleUnit(spec[2].y, inset)
+    );
+}
+
 // 采样一个亚像素点，返回颜色 [r,g,b]；null=形状外（透明）
 // cfg.round=false → 满幅背景（maskable）；true → 圆角矩形背景，圆角外透明
 function sample(cfg, sx, sy) {
   const s = cfg.size;
   const bg = cfg.bg; // [r,g,b]
-  const dot = cfg.dot;
   const white = [255, 255, 255];
 
   const outer = cfg.round
-    ? inRoundedRect(sx, sy, 0, 0, s, s, cfg.radius)
+    ? inRoundedRect(sx / s, sy / s, 0, 0, 1, 1, cfg.radius / s)
     : sx >= 0 && sx <= s && sy >= 0 && sy <= s;
   if (!outer) return null;
 
-  const b = cfg.bubble; // {x0,y0,x1,y1,r}
-  const inBubble = inRoundedRect(sx, sy, b.x0 * s, b.y0 * s, b.x1 * s, b.y1 * s, b.r * s);
-  const t = cfg.tail;
-  const inTail = inTri(sx, sy, t[0].x * s, t[0].y * s, t[1].x * s, t[1].y * s, t[2].x * s, t[2].y * s);
-  if (inBubble || inTail) {
-    for (const d of cfg.dots) {
-      const dx = sx - d.x * s;
-      const dy = sy - d.y * s;
-      if (dx * dx + dy * dy <= (d.r * s) * (d.r * s)) return dot;
-    }
-    return white;
+  for (const hit of cfg.whites) {
+    if (hit(sx / s, sy / s)) return white;
   }
   return bg;
 }
@@ -143,40 +176,17 @@ function render(cfg) {
 
 // ---------- 配置 ----------
 const INDIGO = [99, 102, 241]; // #6366f1
-const INDIGO_DARK = [67, 56, 202]; // #4338ca 三个点
 
 function baseConfig(size, round) {
   // maskable 用更内缩版式保证安全区（round=false → inset 0.82）
   const inset = round ? 1 : 0.82;
-  const bw = 0.58 * inset;
-  const bh = 0.44 * inset;
-  const b = {
-    x0: 0.5 - bw / 2,
-    x1: 0.5 + bw / 2,
-    y0: 0.53 - bh / 2,
-    y1: 0.53 + bh / 2,
-    r: 0.1 * inset,
-  };
-  const tail = [
-    { x: b.x0 + 0.1, y: b.y1 },
-    { x: b.x0 + 0.24, y: b.y1 },
-    { x: b.x0 + 0.12, y: b.y1 + 0.14 * inset },
-  ];
-  const dy = (b.y0 + b.y1) / 2;
-  const dots = [-0.13, 0, 0.13].map((off) => ({
-    x: 0.5 + off * 0.62,
-    y: dy,
-    r: 0.032 * inset,
-  }));
+  const whites = [makeRr(SHAPES.main, inset), makeTri(SHAPES.tail, inset), makeRr(SHAPES.reply, inset)];
   return {
     size,
     round,
     radius: 0.225 * size,
     bg: INDIGO,
-    dot: INDIGO_DARK,
-    bubble: b,
-    tail,
-    dots,
+    whites,
   };
 }
 

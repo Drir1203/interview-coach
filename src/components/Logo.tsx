@@ -1,3 +1,29 @@
+import type { CSSProperties } from "react"
+
+interface LogoMarkProps {
+  className?: string
+  style?: CSSProperties
+}
+
+// 品牌图标（仅图形，A 方向「逐级对话」）：靛蓝圆角底 + 两个白对话泡错落上升。
+// 大主泡在下左（你/当前场，带尾），次级泡在上右（AI/下一级）——双泡成斜向阶梯，
+// 既表对话又表逐级进阶。坐标与 public/logo.svg、scripts/gen-pwa-icons.js 保持一致
+// （同一 100 网格，可在三处直接换算）。
+export function LogoMark({ className = "", style }: LogoMarkProps) {
+  return (
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={`block ${className}`} style={style} aria-hidden>
+      {/* 靛蓝圆角底 */}
+      <rect x="0" y="0" width="100" height="100" rx="23" className="fill-primary" />
+      {/* 次级泡（上右） */}
+      <rect x="54" y="10" width="36" height="28" rx="13" className="fill-primary-foreground" />
+      {/* 主泡（下左） */}
+      <rect x="10" y="47" width="62" height="41" rx="16" className="fill-primary-foreground" />
+      {/* 主泡尾 */}
+      <path d="M30 88 46 88 24 97Z" className="fill-primary-foreground" />
+    </svg>
+  )
+}
+
 interface LogoProps {
   className?: string
   size?: "sm" | "md" | "lg"
@@ -15,35 +41,7 @@ export function Logo({ className = "", size = "md", showSlogan = false }: LogoPr
 
   return (
     <div className={`inline-flex items-center gap-2.5 ${className}`}>
-      {/* Logo 图标 */}
-      <svg
-        width={s.icon}
-        height={s.icon}
-        viewBox="0 0 32 32"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="shrink-0"
-      >
-        {/* 背景圆 */}
-        <circle cx="16" cy="16" r="16" className="fill-primary" />
-        {/* 对话框 */}
-        <path
-          d="M8 20V12C8 10.8954 8.89543 10 10 10H22C23.1046 10 24 10.8954 24 12V18C24 19.1046 23.1046 20 22 20H14L10 23V20H8Z"
-          className="fill-primary-foreground"
-          opacity="0.9"
-        />
-        {/* 对勾 */}
-        <path
-          d="M13 16L15 18L19 13"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="stroke-primary"
-        />
-        {/* i 字母的点 */}
-        <circle cx="16" cy="9" r="1.5" className="fill-primary-foreground" />
-      </svg>
+      <LogoMark className="h-auto shrink-0" style={{ width: s.icon, height: s.icon }} />
 
       {/* 文字 */}
       <div className="flex flex-col">

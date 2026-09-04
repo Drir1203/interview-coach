@@ -4,10 +4,9 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { signIn } from "next-auth/react"
-import { Loader2, AlertCircle } from "lucide-react"
-import { Logo } from "@/components/Logo"
+import { Loader2, AlertCircle, Gift } from "lucide-react"
+import { AuthShell } from "@/components/auth/AuthShell"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
 export default function RegisterPage() {
@@ -65,71 +64,69 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <div className="mb-2 flex justify-center">
-            <Logo size="md" />
-          </div>
-          <CardTitle className="text-xl">注册</CardTitle>
-          <CardDescription>创建账号，多设备同步面试数据</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">昵称</label>
-              <Input
-                id="name"
-                placeholder="你的昵称"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">邮箱</label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">密码</label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="至少 6 位"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
+    <AuthShell title="注册" description="创建账号，让 AI 教练陪你复盘每一场">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="name" className="text-sm font-medium text-foreground">昵称</label>
+          <Input
+            id="name"
+            placeholder="你的昵称"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoComplete="nickname"
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="email" className="text-sm font-medium text-foreground">邮箱</label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="your@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="password" className="text-sm font-medium text-foreground">密码</label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="至少 6 位"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            required
+            minLength={6}
+          />
+        </div>
 
-            {error && (
-              <p className="flex items-center gap-1 text-sm text-destructive">
-                <AlertCircle className="size-3" />
-                {error}
-              </p>
-            )}
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
-              注册
-            </Button>
-          </form>
-
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            已有账号？{" "}
-            <Link href="/auth/login" className="text-primary hover:underline">
-              登录
-            </Link>
+        {error && (
+          <p className="flex items-center gap-1 text-sm text-destructive">
+            <AlertCircle className="size-3" />
+            {error}
           </p>
-        </CardContent>
-      </Card>
-    </div>
+        )}
+
+        <Button type="submit" className="w-full" size="lg" disabled={loading}>
+          {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
+          注册
+        </Button>
+      </form>
+
+      <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+        <Gift className="size-3.5 text-primary" />
+        注册即享 <span className="font-medium text-foreground">7 天 Pro 试用</span>
+        <span className="text-muted-foreground">· 含 AI 语音 1 场</span>
+      </p>
+
+      <p className="mt-3 text-center text-sm text-muted-foreground">
+        已有账号？{" "}
+        <Link href="/auth/login" className="font-medium text-primary hover:underline">
+          登录
+        </Link>
+      </p>
+    </AuthShell>
   )
 }

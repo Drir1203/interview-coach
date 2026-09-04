@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     default: "AI 面师 - 你的 AI 面试教练",
     template: "%s | AI 面师",
   },
-  description: "真实面试自动 AI 复盘 · AI 面试官随时模拟 · 考前智能押题备战 —— 一个平台，让每一次面试都成为你更强的理由",
+  description: "AI Agent 逐题复盘真实面试 · AI 面试官随时模拟 · 考前智能押题备战 —— 把每一场面试，沉淀为下一次的从容",
   manifest: "/interview/manifest.webmanifest",
   icons: {
     icon: [{ url: "/interview/logo.svg", type: "image/svg+xml" }],
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "AI 面师 - 你的 AI 面试教练",
-    description: "真实面试自动 AI 复盘 · AI 面试官随时模拟 · 考前智能押题备战，让每一次面试都成为你更强的理由",
+    description: "AI Agent 逐题复盘真实面试 · AI 面试官随时模拟 · 考前智能押题备战，把每一场面试沉淀为下一次的从容",
     type: "website",
     siteName: "AI 面师",
   },

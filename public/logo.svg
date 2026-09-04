@@ -1,6 +1,7 @@
-<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="60" cy="60" r="60" fill="#18181b"/>
-  <path d="M30 75V45C30 41.6863 32.6863 39 36 39H84C87.3137 39 90 41.6863 90 45V67.5C90 70.8137 87.3137 73.5 84 73.5H52.5L37.5 86.25V73.5H30Z" fill="#fafafa" fill-opacity="0.9"/>
-  <path d="M48.75 60L56.25 67.5L71.25 48.75" stroke="#18181b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="60" cy="33.75" r="5.25" fill="#fafafa"/>
+<svg width="120" height="120" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- A 方向「逐级对话」：靛蓝圆角底 + 两个白对话泡错落上升（与 Logo.tsx / gen-pwa-icons.js 同坐标） -->
+  <rect x="0" y="0" width="100" height="100" rx="23" fill="#6366f1"/>
+  <rect x="54" y="10" width="36" height="28" rx="13" fill="#ffffff"/>
+  <rect x="10" y="47" width="62" height="41" rx="16" fill="#ffffff"/>
+  <path d="M30 88 46 88 24 97Z" fill="#ffffff"/>
 </svg>
