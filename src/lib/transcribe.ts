@@ -1,5 +1,8 @@
-// 录音转写 + QA 提取
-// 浏览器端用 FFmpeg.wasm 压缩后，服务端 base64 → DashScope
+// 录音转写（ASR）
+// 浏览器端用 FFmpeg.wasm 压缩后，服务端 base64 → DashScope ASR。
+// 转写与「问答抽取」解耦：/api/transcribe 默认顺手抽（兼容小程序/单次上传），
+// Web 端长录音分段场景传 extractQa=0 只取转写，拼完整稿后走 /api/transcribe/qa
+// 统一做带上下文的整稿抽取（见 qa-extract.ts）。
 
 import { execFile } from "child_process"
 import { promisify } from "util"
@@ -7,12 +10,13 @@ import fs from "fs"
 import os from "os"
 import path from "path"
 import ffmpegStatic from "ffmpeg-static"
+import { extractQAsFromTranscript, type QAPair } from "./qa-extract"
 
 const execFileP = promisify(execFile)
 
-export interface QAPair {
-  questionText: string
-  userAnswer: string
+export interface TranscribeOptions {
+  /** 是否在单次转写后即抽取问答对（默认 true）。分段长录音应传 false 以省去碎片抽取。 */
+  extractQa?: boolean
 }
 
 // Web MediaRecorder 输出 webm，DashScope ASR 可能不认 → 服务端转 mp3
@@ -32,7 +36,8 @@ async function convertWebmToMp3(buffer: Buffer): Promise<Buffer> {
 export async function transcribeAudio(
   audioBlob: Blob,
   duration: number,
-  mimeType?: string
+  mimeType?: string,
+  opts: TranscribeOptions = {}
 ): Promise<{ transcript: string; qas: QAPair[] }> {
   const apiKey = process.env.DASHSCOPE_API_KEY
 
@@ -83,39 +88,9 @@ export async function transcribeAudio(
   }
 
   const data = await response.json()
-  const transcript = data?.choices?.[0]?.message?.content || ""
+  const transcript: string = data?.choices?.[0]?.message?.content || ""
 
-  const qas = await extractQAFromTranscript(transcript)
+  // 默认顺手在整份（本次）转写上抽问答；extractQa=false 时只返回转写文本
+  const qas = opts.extractQa === false ? [] : await extractQAsFromTranscript(transcript)
   return { transcript, qas }
-}
-
-async function extractQAFromTranscript(transcript: string): Promise<QAPair[]> {
-  if (!transcript || transcript.trim().length < 20) return []
-
-  const keys = [
-    { key: process.env.DEEPSEEK_API_KEY, url: "https://api.deepseek.com/v1", model: "deepseek-chat" },
-    { key: process.env.DASHSCOPE_API_KEY, url: "https://dashscope.aliyuncs.com/compatible-mode/v1", model: "qwen-max" },
-  ]
-
-  const prompt = `从以下面试对话中提取问答对，返回 JSON [{"questionText":"问题","userAnswer":"回答"}]，无法分离返回[]。\n\n${transcript}`
-
-  for (const { key, url, model } of keys) {
-    if (!key) continue
-    try {
-      const res = await fetch(`${url}/chat/completions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-        body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], max_tokens: 2048 }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        const content = data?.choices?.[0]?.message?.content
-        if (content) {
-          const m = content.match(/\[[\s\S]*?\]/)
-          if (m) return JSON.parse(m[0]) as QAPair[]
-        }
-      }
-    } catch {}
-  }
-  return []
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback } from "react"
-import { Mic, Square, Upload, Loader2, CheckCircle2, AlertCircle, FileAudio, X } from "lucide-react"
+import { Mic, Square, Upload, Loader2, CheckCircle2, AlertCircle, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface AudioRecorderProps {
@@ -75,16 +75,47 @@ async function compressAndSplitAudio(file: Blob): Promise<Blob[]> {
   }
 }
 
-async function transcribeAudio(blob: Blob, filename: string, duration: number, signal?: AbortSignal) {
+interface TranscribeResult {
+  transcript?: string
+  qas?: { questionText: string; userAnswer: string }[]
+}
+
+// 单段转写。extractQa=false 时跳过该 60s 碎片上的问答抽取（长录音拼接完整稿后再统一抽）。
+async function transcribeAudio(
+  blob: Blob,
+  filename: string,
+  duration: number,
+  signal?: AbortSignal,
+  extractQa: boolean = true
+): Promise<TranscribeResult> {
   const formData = new FormData()
   formData.append("audio", blob, filename)
   formData.append("duration", String(duration))
+  if (!extractQa) formData.append("extractQa", "0")
   const res = await fetch("/interview/api/transcribe", { method: "POST", body: formData, signal })
   if (!res.ok) {
     const err = await res.json()
     throw new Error(err.error || "转写失败")
   }
   return res.json()
+}
+
+// 完整稿问答抽取：把多段转写拼成的整份对话交给服务端统一抽问答
+async function extractFullQaFromTranscript(transcript: string, signal?: AbortSignal) {
+  if (!transcript.trim()) return []
+  const res = await fetch("/interview/api/transcribe/qa", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ transcript }),
+    signal,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || "问答提取失败")
+  }
+  const data = (await res.json()) as { qas?: { questionText?: string; userAnswer?: string }[] }
+  const qas = Array.isArray(data?.qas) ? data.qas : []
+  return qas.map((q) => ({ questionText: q.questionText || "", userAnswer: q.userAnswer || "" }))
 }
 
 export function AudioRecorder({ onTranscribed, disabled }: AudioRecorderProps) {
@@ -110,6 +141,36 @@ export function AudioRecorder({ onTranscribed, disabled }: AudioRecorderProps) {
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
+  // 处理一段或多段音频：
+  // - 单段（<60s）：直接转写 + 抽取问答，与旧行为一致；
+  // - 多段：每段只取转写文本（extractQa=false），拼完整稿后统一抽问答，
+  //   避免在每个 60s 碎片上独立抽（无上下文 → 丢题/空题）。
+  const runTranscription = useCallback(
+    async (segments: Blob[], singleLabel: string, signal?: AbortSignal) => {
+      const multi = segments.length > 1
+      if (!multi) {
+        setFileName(singleLabel)
+        const data = await transcribeAudio(segments[0], "recording.mp3", 60, signal)
+        onTranscribed(data?.qas || [])
+        return
+      }
+
+      const transcripts: string[] = []
+      for (let i = 0; i < segments.length; i++) {
+        if (signal?.aborted) return
+        setFileName(`第${i + 1}/${segments.length}段...`)
+        const data = await transcribeAudio(segments[i], "recording.mp3", 60, signal, false)
+        const text = ((data?.transcript) || "").trim()
+        if (text) transcripts.push(text)
+      }
+      if (signal?.aborted) return
+      setFileName("正在从完整录音提取问答...")
+      const qas = await extractFullQaFromTranscript(transcripts.join("\n"), signal)
+      onTranscribed(qas)
+    },
+    [onTranscribed]
+  )
+
   const startRecording = async () => {
     try {
       setError(""); setDuration(0); setFileName(""); chunks.current = []
@@ -125,14 +186,7 @@ export function AudioRecorder({ onTranscribed, disabled }: AudioRecorderProps) {
         abortRef.current = new AbortController()
         try {
           const segments = await compressAndSplitAudio(blob)
-          let allQAs: { questionText: string; userAnswer: string }[] = []
-          for (let i = 0; i < segments.length; i++) {
-            if (abortRef.current?.signal.aborted) return
-            setFileName(segments.length > 1 ? `第${i+1}/${segments.length}段...` : "")
-            const data = await transcribeAudio(segments[i], "recording.mp3", 60, abortRef.current?.signal)
-            if (data?.qas) allQAs = allQAs.concat(data.qas)
-          }
-          onTranscribed(allQAs)
+          await runTranscription(segments, "", abortRef.current?.signal)
           setState("done")
         } catch (err: any) {
           if (err.name === "AbortError") return
@@ -166,14 +220,7 @@ export function AudioRecorder({ onTranscribed, disabled }: AudioRecorderProps) {
     abortRef.current = new AbortController()
     try {
       const segments = await compressAndSplitAudio(file)
-      let allQAs: { questionText: string; userAnswer: string }[] = []
-      for (let i = 0; i < segments.length; i++) {
-        if (abortRef.current?.signal.aborted) return
-        setFileName(segments.length > 1 ? `第${i+1}/${segments.length}段...` : file.name)
-        const data = await transcribeAudio(segments[i], "audio.mp3", 60, abortRef.current?.signal)
-        if (data?.qas) allQAs = allQAs.concat(data.qas)
-      }
-      onTranscribed(allQAs)
+      await runTranscription(segments, file.name, abortRef.current?.signal)
       setState("done")
     } catch (err: any) {
       if (err.name === "AbortError") return
