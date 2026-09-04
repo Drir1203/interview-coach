@@ -111,6 +111,10 @@ export default function InterviewDetail() {
   const [draftEntries, setDraftEntries] = useState<DraftEntry[]>([])
   // AI 语音面试原始转写是否展开（默认收起，转写可能很长）
   const [showTranscript, setShowTranscript] = useState(false)
+  // 「我的备注」：复盘后可随手记录自己的想法（如：下次该怎么答）
+  const [notesEditing, setNotesEditing] = useState(false)
+  const [notesDraft, setNotesDraft] = useState("")
+  const [notesSaving, setNotesSaving] = useState(false)
 
   useEffect(() => {
     fetch(`/interview/api/interviews/${params.id}`)
@@ -239,6 +243,69 @@ export default function InterviewDetail() {
       body: JSON.stringify({ result }),
     })
     setInterview((prev) => prev ? { ...prev, result } : prev)
+  }
+
+  // 「我的备注」：进入编辑态（把已有内容带入草稿）
+  const startEditNotes = () => {
+    if (!interview) return
+    setNotesDraft(interview.userNotes || "")
+    setNotesEditing(true)
+  }
+
+  const cancelEditNotes = () => {
+    setNotesEditing(false)
+    setNotesDraft("")
+  }
+
+  // 保存/清空备注：与后端 PUT 部分更新合并；空串即清空（route 用 ?? 保留 null 语义，故清空发 ""）
+  const saveNotes = async () => {
+    if (!interview || notesSaving) return
+    setNotesSaving(true)
+    try {
+      const res = await fetch(`/interview/api/interviews/${params.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userNotes: notesDraft.trim() }),
+      })
+      if (!res.ok) throw new Error("保存失败")
+      const updated = await res.json()
+      setInterview(updated)
+      setNotesEditing(false)
+      toast.add({ title: "备注已保存" })
+    } catch (err) {
+      toast.add({
+        title: "备注保存失败",
+        description: err instanceof Error ? err.message : "请稍后重试",
+        type: "error",
+      })
+    } finally {
+      setNotesSaving(false)
+    }
+  }
+
+  const clearNotes = async () => {
+    if (!interview || !interview.userNotes || notesSaving) return
+    if (!confirm("清空这条备注？")) return
+    setNotesSaving(true)
+    try {
+      const res = await fetch(`/interview/api/interviews/${params.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userNotes: "" }),
+      })
+      if (!res.ok) throw new Error("清空失败")
+      const updated = await res.json()
+      setInterview(updated)
+      toast.add({ title: "备注已清空" })
+    } catch (err) {
+      toast.add({
+        title: "清空失败",
+        description: err instanceof Error ? err.message : "请稍后重试",
+        type: "error",
+      })
+    } finally {
+      setNotesSaving(false)
+    }
   }
 
   const handleExportPdf = async () => {
@@ -749,19 +816,80 @@ export default function InterviewDetail() {
         </CardContent>
       </Card>
 
-      {/* 备注 */}
-      {interview.userNotes && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">备注</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+      {/* 我的备注：复盘后可随手记录自己的想法（如：下次该怎么答） */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between text-base">
+            我的备注
+            {!notesEditing &&
+              (interview.userNotes ? (
+                <span className="flex shrink-0 items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto px-2 py-1"
+                    onClick={startEditNotes}
+                  >
+                    <Edit3 className="mr-1 size-3.5" /> 编辑
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto px-2 py-1 text-destructive hover:text-destructive"
+                    onClick={clearNotes}
+                  >
+                    <Trash2 className="mr-1 size-3.5" /> 清空
+                  </Button>
+                </span>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto px-2 py-1"
+                  onClick={startEditNotes}
+                >
+                  <Edit3 className="mr-1 size-3.5" /> 写备注
+                </Button>
+              ))}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {notesEditing ? (
+            <div className="space-y-2">
+              <textarea
+                value={notesDraft}
+                onChange={(e) => setNotesDraft(e.target.value)}
+                placeholder="记下复盘后的新想法，比如：这类问题下次先讲结论，再用 STAR 结构补一个数据例子…"
+                rows={4}
+                maxLength={2000}
+                className="w-full resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="outline" onClick={cancelEditNotes}>
+                  取消
+                </Button>
+                <Button size="sm" disabled={notesSaving} onClick={saveNotes}>
+                  {notesSaving && <Loader2 className="mr-1 size-3 animate-spin" />}
+                  保存备注
+                </Button>
+              </div>
+            </div>
+          ) : interview.userNotes ? (
+            <p className="whitespace-pre-wrap text-sm text-muted-foreground">
               {interview.userNotes}
             </p>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <button
+              type="button"
+              onClick={startEditNotes}
+              className="flex w-full items-center justify-center gap-1 rounded-lg border border-dashed px-4 py-5 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              <Edit3 className="size-3.5" />
+              复盘后有新想法？点这里随手记下，比如下次该怎么回答
+            </button>
+          )}
+        </CardContent>
+      </Card>
 
       {/* AI 语音面试：原始转写（与逐题问答并存，解析失败也不丢原文） */}
       {interview.transcript && (
