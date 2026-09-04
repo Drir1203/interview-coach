@@ -1,0 +1,192 @@
+/* 面经库页 */
+.banner-btn .van-button__text {
+  color: #6366f1;
+  font-weight: 600;
+  font-size: 26rpx;
+}
+
+/* 搜索 */
+.search-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.search-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 8rpx;
+}
+
+.load-error {
+  text-align: center;
+  padding: 60rpx 24rpx;
+  color: var(--brand-danger);
+  font-size: 26rpx;
+}
+
+/* 面经卡片 */
+.exp-card {
+  background: var(--brand-card);
+  border-radius: var(--brand-radius-lg);
+  padding: 28rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(30, 41, 59, 0.04);
+}
+
+.exp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.chip {
+  display: inline-block;
+  padding: 4rpx 20rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+}
+
+.chip-company {
+  background: var(--brand-primary);
+  color: #ffffff;
+}
+
+.chip-position {
+  background: var(--brand-muted);
+  color: var(--brand-muted-text);
+}
+
+.chip-round {
+  background: var(--brand-primary-light);
+  color: var(--brand-primary);
+}
+
+.exp-question {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--brand-text);
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.exp-answer-area {
+  margin-top: 16rpx;
+  background: var(--brand-muted);
+  border-radius: var(--brand-radius-sm);
+  padding: 20rpx;
+}
+
+.exp-answer-title {
+  display: block;
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+  margin-bottom: 8rpx;
+}
+
+.exp-answer-text {
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.exp-toggle {
+  display: inline-block;
+  font-size: 24rpx;
+  color: var(--brand-primary);
+  margin-top: 16rpx;
+}
+
+.exp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 2rpx solid var(--brand-border);
+}
+
+.exp-time {
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+}
+
+.exp-delete {
+  font-size: 24rpx;
+  color: var(--brand-danger);
+}
+
+/* 写面经弹窗 */
+.editor-popup {
+  border-radius: var(--brand-radius-lg) var(--brand-radius-lg) 0 0;
+}
+
+.editor-wrap {
+  padding: 32rpx 28rpx 48rpx;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.editor-title {
+  display: block;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.editor-desc {
+  display: block;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+  margin: 8rpx 0 20rpx;
+}
+
+.editor-round-row {
+  display: flex;
+  align-items: flex-start;
+  padding: 20rpx 0;
+  border-bottom: 2rpx solid var(--brand-border);
+}
+
+.editor-label {
+  width: 140rpx;
+  font-size: 28rpx;
+  color: var(--brand-text);
+  line-height: 52rpx;
+}
+
+.editor-round-chips {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.round-chip {
+  padding: 8rpx 24rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  background: var(--brand-muted);
+  color: var(--brand-muted-text);
+}
+
+.round-chip-on {
+  background: var(--brand-primary-light);
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+
+.editor-error {
+  display: block;
+  font-size: 24rpx;
+  color: var(--brand-danger);
+  margin-top: 16rpx;
+}

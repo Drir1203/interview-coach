@@ -56,3 +56,86 @@
   color: var(--brand-muted-text);
   margin-top: 4rpx;
 }
+
+/* 我的题库：选择题库区 */
+.bank-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bank-manage {
+  font-size: 24rpx;
+  color: var(--brand-primary);
+}
+
+.bank-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 2rpx solid var(--brand-border);
+  border-radius: var(--brand-radius-md);
+  padding: 20rpx 24rpx;
+  margin-bottom: 16rpx;
+}
+
+.bank-option-active {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary-light);
+}
+
+.bank-option-info {
+  flex: 1;
+  min-width: 0;
+  margin-right: 16rpx;
+}
+
+.bank-name {
+  display: block;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--brand-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bank-count {
+  display: block;
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+  margin-top: 4rpx;
+}
+
+.bank-radio {
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 50%;
+  border: 2rpx solid var(--brand-border);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.bank-radio-on {
+  border: 10rpx solid var(--brand-primary);
+}
+
+.bank-hint {
+  display: block;
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+  margin-top: 4rpx;
+}
+
+.bank-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx 0 8rpx;
+}
+
+.bank-empty-text {
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+}

@@ -29,13 +29,52 @@
     <view class="grill-toggle">
       <view class="grill-info">
         <text class="grill-title">简历深挖模式</text>
-        <text class="grill-desc">{{ hasResume ? 'AI 盯着你简历的漏洞和矛盾点拷打' : '需先在「我的」页填写简历才能使用' }}</text>
+        <text class="grill-desc">{{ selectedBankId ? '已选「我的题库」，面试按你的题目进行' : (hasResume ? 'AI 盯着你简历的漏洞和矛盾点拷打' : '需先在「我的」页填写简历才能使用') }}</text>
       </view>
-      <switch checked="{{ grillMode }}" disabled="{{ !hasResume }}" bindchange="onGrillToggle" color="#6366f1" />
+      <switch checked="{{ grillMode }}" disabled="{{ !hasResume || selectedBankId }}" bindchange="onGrillToggle" color="#6366f1" />
     </view>
     <van-button type="primary" round block loading="{{ starting }}" bind:click="startMock" class="start-btn">
       {{ starting ? '准备中...' : '开始模拟面试' }}
     </van-button>
+  </view>
+
+  <!-- 我的题库：可选指定题库按题练习 -->
+  <view class="card">
+    <view class="bank-head">
+      <text class="card-title">选择面试题库（可选）</text>
+      <text class="bank-manage" bindtap="goQuestionBank">管理题库</text>
+    </view>
+    <text class="card-desc">上传面试题文档后，AI 面试官按你的题目顺序提问</text>
+
+    <block wx:if="{{ banksLoading }}">
+      <view class="loading">
+        <van-loading color="#6366f1" size="24px">加载题库中...</van-loading>
+      </view>
+    </block>
+
+    <block wx:elif="{{ banks.length > 0 }}">
+      <view
+        wx:for="{{ banks }}"
+        wx:key="id"
+        class="bank-option {{ selectedBankId === item.id ? 'bank-option-active' : '' }}"
+        data-id="{{ item.id }}"
+        bindtap="selectBank"
+      >
+        <view class="bank-option-info">
+          <text class="bank-name">{{ item.name }}</text>
+          <text class="bank-count">{{ item.questionCount }} 题</text>
+        </view>
+        <view class="bank-radio {{ selectedBankId === item.id ? 'bank-radio-on' : '' }}"></view>
+      </view>
+      <text class="bank-hint">{{ selectedBankId ? '已选择「' + selectedBankName + '」，AI 将按题库顺序提问，再次点击可取消' : '不选则 AI 按岗位自动出题' }}</text>
+    </block>
+
+    <block wx:else>
+      <view class="bank-empty">
+        <text class="bank-empty-text">还没有题库，可上传面试题文档按题库练习</text>
+        <van-button size="small" plain type="primary" bind:click="goQuestionBank">去上传题库</van-button>
+      </view>
+    </block>
   </view>
 
   <van-popup show="{{ showRoundPicker }}" position="bottom" bind:close="closeRoundPicker">

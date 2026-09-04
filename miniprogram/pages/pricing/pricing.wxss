@@ -1,0 +1,290 @@
+/* 定价 / 会员页样式（品牌 token 见 app.wxss） */
+
+/* ===== 当前会员状态卡 ===== */
+.member-card {
+  padding-bottom: 24rpx;
+}
+
+.member-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.member-badge {
+  display: inline-block;
+  padding: 6rpx 22rpx;
+  border-radius: 999rpx;
+  font-size: 26rpx;
+  font-weight: 700;
+  background: var(--brand-muted);
+  color: var(--brand-muted-text);
+}
+
+.member-badge.is-pro {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.trial-tag {
+  background: var(--brand-primary-light);
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+
+.member-desc {
+  width: 100%;
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+}
+
+.member-stats {
+  display: flex;
+  margin-top: 24rpx;
+  background: var(--brand-muted);
+  border-radius: var(--brand-radius-md);
+  padding: 20rpx 0;
+}
+
+.member-stat {
+  flex: 1;
+  text-align: center;
+  border-right: 2rpx solid var(--brand-border);
+}
+
+.member-stat:last-child {
+  border-right: none;
+}
+
+.member-stat-label {
+  display: block;
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+}
+
+.member-stat-value {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--brand-primary);
+}
+
+/* ===== 套餐卡 / 点数包卡 ===== */
+.plan-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.plan-pro {
+  border: 2rpx solid var(--brand-primary);
+}
+
+.pack-hot {
+  border: 2rpx solid var(--brand-primary);
+}
+
+.plan-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.plan-name {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.plan-tagline {
+  display: block;
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+  margin-top: 6rpx;
+}
+
+.plan-price-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 6rpx;
+  flex-shrink: 0;
+}
+
+.plan-price {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: var(--brand-primary);
+}
+
+.plan-price-per {
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+}
+
+.plan-features {
+  margin: 20rpx 0 24rpx;
+  padding: 20rpx 24rpx;
+  background: var(--brand-muted);
+  border-radius: var(--brand-radius-sm);
+}
+
+.plan-feature {
+  position: relative;
+  font-size: 24rpx;
+  color: var(--brand-text);
+  padding-left: 24rpx;
+  margin-top: 6rpx;
+}
+
+.plan-feature:first-child {
+  margin-top: 0;
+}
+
+.plan-feature::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--brand-primary);
+  font-weight: 700;
+}
+
+.plan-cta {
+  margin-top: auto;
+}
+
+.plan-current {
+  font-size: 26rpx;
+  color: var(--brand-muted-text);
+}
+
+/* 点数包说明 */
+.section-title {
+  margin-bottom: 8rpx;
+}
+
+.pack-hint {
+  display: block;
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+  margin: 0 4rpx 16rpx;
+}
+
+/* ===== 订单区 ===== */
+.order-title {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.order-desc {
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+  margin-top: 8rpx;
+}
+
+.order-hint {
+  margin: 20rpx 0;
+  padding: 20rpx 24rpx;
+  background: var(--brand-muted);
+  border-radius: var(--brand-radius-sm);
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+}
+
+.qr-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 24rpx;
+}
+
+.qr-box {
+  width: 400rpx;
+  height: 400rpx;
+  border: 2rpx solid var(--brand-border);
+  border-radius: var(--brand-radius-md);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.qr-img {
+  width: 400rpx;
+  height: 400rpx;
+}
+
+.qr-placeholder {
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+}
+
+.qr-tip {
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+  margin-top: 12rpx;
+}
+
+.channel-row {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.channel-btn {
+  padding: 10rpx 28rpx;
+  border-radius: 999rpx;
+  border: 2rpx solid var(--brand-border);
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+  background: var(--brand-card);
+}
+
+.channel-btn.on {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.order-guide {
+  margin: 20rpx 0 24rpx;
+}
+
+.guide-main {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.guide-sub {
+  display: block;
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+  margin-top: 6rpx;
+}
+
+/* ===== 计费说明 ===== */
+.note-row {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+
+.note-row:first-child {
+  margin-top: 0;
+}
+
+.note-dot {
+  color: var(--brand-primary);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.note-text {
+  font-size: 24rpx;
+  color: var(--brand-muted-text);
+  line-height: 1.6;
+}

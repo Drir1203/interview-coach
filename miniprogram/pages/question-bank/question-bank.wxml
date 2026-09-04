@@ -1,0 +1,48 @@
+<view class="page">
+  <view class="banner">
+    <view>
+      <text class="banner-title">我的题库</text>
+      <text class="banner-subtitle">上传面试题文档，AI 面试官按你的题目提问</text>
+    </view>
+  </view>
+
+  <!-- 上传区 -->
+  <view class="card">
+    <text class="card-title">上传面试题文档</text>
+    <text class="card-desc">支持 PDF / txt，AI 自动识别其中的面试题目（仅解析前 6000 字符）</text>
+    <view class="upload-box {{ uploading ? 'upload-box-disabled' : '' }}" bindtap="chooseUpload">
+      <text class="upload-icon">{{ uploading ? '⏳' : '📄' }}</text>
+      <text class="upload-text">{{ uploading ? 'AI 识别中，请稍候...' : '点击选择面试题文档（PDF / txt）' }}</text>
+    </view>
+  </view>
+
+  <!-- 列表 -->
+  <view class="card">
+    <view class="bank-list-head">
+      <text class="card-title">我的题库（{{ banks.length }}）</text>
+      <text class="bank-go-practice" bindtap="goPractice">去模拟面试 ›</text>
+    </view>
+
+    <block wx:if="{{ loading }}">
+      <view class="loading">
+        <van-loading color="#6366f1" size="24px">加载中...</van-loading>
+      </view>
+    </block>
+
+    <block wx:elif="{{ banks.length === 0 }}">
+      <view class="empty-state">
+        <text>还没有题库，上传一份面试题文档开始吧</text>
+      </view>
+    </block>
+
+    <block wx:else>
+      <view class="bank-item" wx:for="{{ banks }}" wx:key="id">
+        <view class="bank-item-info">
+          <text class="bank-item-name">{{ item.name }}</text>
+          <text class="bank-item-meta">{{ item.questionCount }} 题 · 更新于 {{ item.dateText }}</text>
+        </view>
+        <van-button size="small" plain type="danger" data-id="{{ item.id }}" bind:click="deleteBank">删除</van-button>
+      </view>
+    </block>
+  </view>
+</view>

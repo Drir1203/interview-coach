@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "会员与定价",
+  "usingComponents": {
+    "van-button": "@vant/weapp/button/index"
+  }
+}

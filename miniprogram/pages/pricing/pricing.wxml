@@ -1,0 +1,184 @@
+<view class="page">
+  <view class="banner">
+    <view>
+      <text class="banner-title">升级 Pro</text>
+      <text class="banner-subtitle">无限面试记录 + AI 深度复盘，让每一次面试都有反馈</text>
+    </view>
+  </view>
+
+  <!-- 当前会员状态 -->
+  <view class="card member-card" wx:if="{{ member }}">
+    <view class="member-head">
+      <view class="member-badge {{ member.isPro ? 'is-pro' : '' }}">{{ member.tierLabel }}</view>
+      <text class="tag trial-tag" wx:if="{{ member.isTrial }}">试用中</text>
+      <text class="member-desc">{{ member.tierDesc }}</text>
+    </view>
+    <view class="member-stats">
+      <view class="member-stat">
+        <text class="member-stat-label">AI 语音 · 本月</text>
+        <text class="member-stat-value">{{ member.voiceUsageText }}</text>
+      </view>
+      <view class="member-stat">
+        <text class="member-stat-label">语音点数</text>
+        <text class="member-stat-value">{{ member.voiceCreditsText }} 场</text>
+      </view>
+    </view>
+    <van-button wx:if="{{ !member.loggedIn }}" type="primary" round block size="small" bind:click="goLogin" class="mt-24">
+      登录后开通
+    </van-button>
+  </view>
+
+  <!-- 免费方案 -->
+  <view class="card plan-card">
+    <view class="plan-head">
+      <view>
+        <text class="plan-name">免费版</text>
+        <text class="plan-tagline">体验基础记录与文字 AI 能力</text>
+      </view>
+      <view class="plan-price-wrap">
+        <text class="plan-price">¥0</text>
+        <text class="plan-price-per">/ 永久</text>
+      </view>
+    </view>
+    <view class="plan-features">
+      <view class="plan-feature">真实 / 文字模拟面试合计最多 5 场</view>
+      <view class="plan-feature">文字 AI 基础额度（复盘 / 押题 / 教练）</view>
+      <view class="plan-feature">AI 语音面试按量计费，需购买点数包</view>
+    </view>
+    <view class="plan-cta">
+      <text class="plan-current" wx:if="{{ member && member.loggedIn && !member.isPro }}">当前方案</text>
+    </view>
+  </view>
+
+  <!-- Pro 订阅 -->
+  <view class="card plan-card plan-pro">
+    <view class="plan-head">
+      <view>
+        <text class="plan-name">Pro 会员</text>
+        <text class="plan-tagline">文字 AI 全解锁 + 语音月度额度</text>
+      </view>
+      <view class="plan-price-wrap">
+        <text class="plan-price">¥29</text>
+        <text class="plan-price-per">/ 月</text>
+      </view>
+    </view>
+    <view class="plan-features">
+      <view class="plan-feature">真实 / 模拟面试不限场次</view>
+      <view class="plan-feature">AI 语音面试每月 15 场（试用期含 1 场）</view>
+      <view class="plan-feature">AI 深度复盘 + 逐题重新生成</view>
+      <view class="plan-feature">AI 教练 / 押题 / 成长报告全功能</view>
+    </view>
+    <view class="plan-cta">
+      <van-button
+        wx:if="{{ member && member.isPro }}"
+        round block disabled
+      >已是 Pro</van-button>
+      <van-button
+        wx:else
+        type="primary"
+        round block
+        loading="{{ ordering === 'month' }}"
+        disabled="{{ orderActive }}"
+        data-plan="month"
+        bind:click="onBuy"
+      >开通 Pro · ¥29/月</van-button>
+    </view>
+  </view>
+
+  <!-- AI 语音点数包 -->
+  <view class="section-title">AI 语音点数包</view>
+  <text class="pack-hint">1 场 AI 语音面试 = 1 点 · 即时到账 · 长期有效 · 免费用户也可购买</text>
+  <view class="card pack-card {{ pack.hot ? 'pack-hot' : '' }}" wx:for="{{ voicePacks }}" wx:for-item="pack" wx:key="id">
+    <view class="plan-head">
+      <view>
+        <text class="plan-name">{{ pack.name }}</text>
+        <text class="plan-tagline">{{ pack.note }}</text>
+      </view>
+      <view class="plan-price-wrap">
+        <text class="plan-price">{{ pack.price }}</text>
+        <text class="plan-price-per">{{ pack.unit }}</text>
+      </view>
+    </view>
+    <view class="plan-features">
+      <view class="plan-feature">超出月度额度时自动扣点</view>
+      <view class="plan-feature">真实 AI 面试官语音对练</view>
+      <view class="plan-feature">生成后可看转写与 AI 复盘</view>
+    </view>
+    <view class="plan-cta">
+      <van-button
+        type="primary"
+        plain
+        round
+        block
+        loading="{{ ordering === pack.id }}"
+        disabled="{{ orderActive }}"
+        data-plan="{{ pack.id }}"
+        bind:click="onBuy"
+      >购买点数 · {{ pack.price }}</van-button>
+    </view>
+  </view>
+
+  <!-- 订单操作区 -->
+  <view class="card order-card" wx:if="{{ order }}">
+    <view class="order-title">订单 #{{ order.orderIdTail }}</view>
+    <view class="order-desc">应付 ¥{{ order.amountYuan }} · {{ order.desc }}</view>
+
+    <!-- 本地/测试：模拟支付 -->
+    <block wx:if="{{ order.mockAction === 'auto' }}">
+      <view class="order-hint">本地 / 测试模式：点击下方按钮模拟支付成功并立即开通。</view>
+      <van-button type="primary" round block loading="{{ acting }}" bind:click="onMockPay">模拟支付成功</van-button>
+    </block>
+
+    <!-- 生产手动：展示收款码 -->
+    <block wx:elif="{{ order.hasQr }}">
+      <view class="qr-area">
+        <view class="qr-box" bindtap="previewQr">
+          <image wx:if="{{ order.activeQrUrl }}" class="qr-img" src="{{ order.activeQrUrl }}" mode="aspectFit" />
+          <view wx:else class="qr-placeholder">收款码待配置</view>
+        </view>
+        <view class="qr-tip">点击收款码可放大查看</view>
+        <view wx:if="{{ order.showChannelSwitch }}" class="channel-row">
+          <text class="channel-btn {{ order.qrChannel === 'wechat' ? 'on' : '' }}" data-channel="wechat" bindtap="switchQr">微信收款</text>
+          <text class="channel-btn {{ order.qrChannel === 'alipay' ? 'on' : '' }}" data-channel="alipay" bindtap="switchQr">支付宝收款</text>
+        </view>
+      </view>
+      <view class="order-guide">
+        <text class="guide-main">扫码转账 ¥{{ order.amountYuan }} 后，点击下方按钮通知平台</text>
+        <text class="guide-sub">订单号：{{ order.orderIdTail }} · 请转账后截图留证，方便核对</text>
+        <text wx:if="{{ order.accountHint }}" class="guide-sub">{{ order.accountHint }}</text>
+      </view>
+      <van-button
+        wx:if="{{ notified }}"
+        round block disabled
+      >已通知平台，等待管理员确认到账</van-button>
+      <van-button
+        wx:else
+        type="primary"
+        round block
+        loading="{{ acting }}"
+        bind:click="onNotify"
+      >我已转账，等待确认</van-button>
+    </block>
+
+    <!-- 生产手动：未配置收款码 -->
+    <block wx:else>
+      <view class="order-hint">订单已提交，等待管理员开通。开通后页面将自动刷新，无需重复下单，也可直接联系平台。</view>
+    </block>
+  </view>
+
+  <!-- 计费说明 -->
+  <view class="card note-card">
+    <view class="note-row">
+      <text class="note-dot">·</text>
+      <text class="note-text">免费用户：真实 / 文字模拟面试合计最多 5 场；AI 语音面试按量计费，需购买点数包。</text>
+    </view>
+    <view class="note-row">
+      <text class="note-dot">·</text>
+      <text class="note-text">Pro 会员：面试不限场次；AI 语音每月 15 场（试用期含 1 场），超出可买点数包加场（1 场 = 1 点）。</text>
+    </view>
+    <view class="note-row">
+      <text class="note-dot">·</text>
+      <text class="note-text">点数包即时到账、长期有效；语音场次正常结束后自动归档，可查看转写与 AI 复盘（未接通 / 极短无发言自动退还点数）。</text>
+    </view>
+  </view>
+</view>

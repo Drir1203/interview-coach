@@ -99,3 +99,75 @@
   color: #6b7280;
   margin-bottom: 16rpx;
 }
+
+/* 会员卡 */
+.member-card {
+  padding-bottom: 24rpx;
+}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14rpx 0;
+  border-bottom: 2rpx solid var(--brand-border);
+}
+
+.member-row:last-of-type {
+  border-bottom: none;
+}
+
+.member-label {
+  font-size: 26rpx;
+  color: var(--brand-muted-text);
+}
+
+.member-value {
+  font-size: 26rpx;
+  color: var(--brand-text);
+}
+
+.member-value.strong {
+  font-weight: 700;
+  color: var(--brand-primary);
+}
+
+.member-badges {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.member-tier {
+  display: inline-block;
+  padding: 4rpx 20rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  background: var(--brand-muted);
+  color: var(--brand-muted-text);
+}
+
+.member-tier.is-pro {
+  background: #f59e0b;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.trial-tag {
+  background: var(--brand-primary-light);
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+
+.member-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.member-loading {
+  font-size: 26rpx;
+  color: var(--brand-muted-text);
+  padding: 16rpx 0;
+}

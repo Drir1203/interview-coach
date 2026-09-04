@@ -22,11 +22,47 @@
     </view>
   </block>
 
+  <!-- 会员卡：展示会员档位 / 语音月度用量 / 语音点数，升级与加购跳转定价页 -->
+  <view class="card mt-24 member-card">
+    <text class="card-title">会员 / 我的点数</text>
+    <block wx:if="{{ sub }}">
+      <view class="member-row">
+        <text class="member-label">当前档位</text>
+        <view class="member-badges">
+          <text class="member-tier {{ sub.isPro ? 'is-pro' : '' }}">{{ sub.tierLabel }}</text>
+          <text wx:if="{{ sub.isTrial }}" class="tag trial-tag">试用中</text>
+        </view>
+      </view>
+      <view class="member-row">
+        <text class="member-label">有效期</text>
+        <text class="member-value">{{ sub.proExpires }}</text>
+      </view>
+      <view class="member-row">
+        <text class="member-label">面试记录</text>
+        <text class="member-value">{{ sub.recordText }}</text>
+      </view>
+      <view class="member-row">
+        <text class="member-label">AI 语音 · 本月</text>
+        <text class="member-value">{{ sub.voiceUsageText }}</text>
+      </view>
+      <view class="member-row">
+        <text class="member-label">语音点数</text>
+        <text class="member-value strong">{{ sub.voiceCreditsText }}</text>
+      </view>
+      <view class="member-actions" wx:if="{{ sub.loggedIn }}">
+        <van-button size="small" round plain type="primary" bind:click="goPricing">加购语音点数</van-button>
+        <van-button size="small" round type="{{ sub.isPro ? 'default' : 'primary' }}" bind:click="goPricing">{{ sub.isPro ? '管理会员' : '升级 Pro' }}</van-button>
+      </view>
+      <van-button wx:else round block type="primary" size="small" bind:click="goLogin">登录 / 查看会员</van-button>
+    </block>
+    <view wx:elif="{{ subLoading }}" class="member-loading">加载中…</view>
+  </view>
+
   <!-- 功能菜单 -->
   <van-cell-group inset class="mt-24">
     <van-cell title="修改昵称" value="{{ user.name || '' }}" is-link bind:click="openNameEdit" />
     <van-cell title="修改密码" is-link bind:click="openPwdEdit" />
-    <van-cell title="服务状态" label="AI 复盘已配置 · 语音转写即将上线 · 云端存储" />
+    <van-cell title="服务状态" label="AI 复盘已上线 · 录音转写已上线 · 数据云端存储" />
     <van-cell title="关于 AI 面师" label="v1.0 · 你的 AI 面试教练" />
   </van-cell-group>
 

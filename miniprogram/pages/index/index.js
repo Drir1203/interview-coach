@@ -95,4 +95,12 @@ Page({
   goCompanies() {
     wx.navigateTo({ url: "/pages/companies/companies" })
   },
+
+  goQuestionBank() {
+    wx.navigateTo({ url: "/pages/question-bank/question-bank" })
+  },
+
+  goExperiences() {
+    wx.navigateTo({ url: "/pages/experiences/experiences" })
+  },
 })

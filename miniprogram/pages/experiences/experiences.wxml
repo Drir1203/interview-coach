@@ -1,0 +1,130 @@
+<view class="page">
+  <view class="banner">
+    <view>
+      <text class="banner-title">面经库</text>
+      <text class="banner-subtitle">真实面试题脱敏分享，帮助更多候选人</text>
+    </view>
+    <van-button custom-class="banner-btn" round bind:click="openEditor">+ 写面经</van-button>
+  </view>
+
+  <!-- 搜索 -->
+  <view class="card">
+    <text class="card-title">搜索面经</text>
+    <view class="search-row">
+      <van-field
+        label="公司"
+        placeholder="如：字节跳动"
+        value="{{ searchCompany }}"
+        bind:input="onSearchCompanyInput"
+        custom-class="search-field"
+      />
+      <van-field
+        label="岗位"
+        placeholder="如：前端开发"
+        value="{{ searchPosition }}"
+        bind:input="onSearchPositionInput"
+        custom-class="search-field"
+      />
+    </view>
+    <view class="search-actions">
+      <van-button size="small" plain type="primary" bind:click="handleSearch">查询</van-button>
+      <van-button size="small" plain bind:click="resetSearch">重置</van-button>
+    </view>
+  </view>
+
+  <!-- 列表 -->
+  <block wx:if="{{ loadError }}">
+    <view class="load-error">
+      <text>{{ loadError }}</text>
+    </view>
+  </block>
+
+  <block wx:elif="{{ loading }}">
+    <view class="loading">
+      <van-loading color="#6366f1" size="24px">加载中...</van-loading>
+    </view>
+  </block>
+
+  <block wx:elif="{{ experiences.length === 0 }}">
+    <view class="card">
+      <view class="empty-state">
+        <text>还没有相关面经，来贡献第一条吧</text>
+        <van-button size="small" round type="primary" bind:click="openEditor" class="mt-24">写面经</van-button>
+      </view>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="exp-card" wx:for="{{ experiences }}" wx:key="id">
+      <view class="exp-chips">
+        <text class="chip chip-company">{{ item.company }}</text>
+        <text class="chip chip-position">{{ item.position }}</text>
+        <text class="chip chip-round">{{ item.roundLabel }}</text>
+      </view>
+
+      <view class="exp-question">{{ item.question }}</view>
+
+      <block wx:if="{{ item.answer }}">
+        <view class="exp-answer-area" wx:if="{{ item.answerOpen }}">
+          <text class="exp-answer-title">参考答案</text>
+          <text class="exp-answer-text">{{ item.answer }}</text>
+        </view>
+        <text class="exp-toggle" data-id="{{ item.id }}" bindtap="toggleAnswer">
+          {{ item.answerOpen ? '收起答案' : '查看参考答案' }}
+        </text>
+      </block>
+
+      <view class="exp-footer">
+        <text class="exp-time">{{ item.dateText }}</text>
+        <text wx:if="{{ item.canDelete }}" class="exp-delete" data-id="{{ item.id }}" bindtap="deleteExperience">撤回</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 写面经弹窗 -->
+  <van-popup show="{{ showEditor }}" position="bottom" custom-class="editor-popup" bind:close="closeEditor">
+    <view class="editor-wrap">
+      <text class="editor-title">贡献真实面经</text>
+      <text class="editor-desc">匿名提交，平台会脱敏后展示，帮助更多候选人备考</text>
+
+      <van-field label="公司" placeholder="例：字节跳动" value="{{ editorCompany }}" bind:input="onEditorCompanyInput" />
+      <van-field label="岗位" placeholder="例：后端开发工程师" value="{{ editorPosition }}" bind:input="onEditorPositionInput" />
+
+      <view class="editor-round-row">
+        <text class="editor-label">轮次</text>
+        <view class="editor-round-chips">
+          <text
+            wx:for="{{ roundTypes }}"
+            wx:key="value"
+            class="round-chip {{ editorRound === item.value ? 'round-chip-on' : '' }}"
+            data-value="{{ item.value }}"
+            bindtap="onEditorRound"
+          >{{ item.label }}</text>
+        </view>
+      </view>
+
+      <van-field
+        type="textarea"
+        autosize
+        maxlength="500"
+        label="题目"
+        placeholder="面试官问了什么问题？"
+        value="{{ editorQuestion }}"
+        bind:input="onEditorQuestionInput"
+      />
+      <van-field
+        type="textarea"
+        autosize
+        maxlength="2000"
+        label="回答（可选）"
+        placeholder="你是如何回答的？（可选，帮助其他人参考）"
+        value="{{ editorAnswer }}"
+        bind:input="onEditorAnswerInput"
+      />
+
+      <text wx:if="{{ editorError }}" class="editor-error">{{ editorError }}</text>
+
+      <van-button type="primary" round block loading="{{ saving }}" bind:click="submitExperience" class="mt-24">提交</van-button>
+    </view>
+  </van-popup>
+</view>

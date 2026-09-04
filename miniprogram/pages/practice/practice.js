@@ -15,6 +15,11 @@ Page({
     hasResume: false,
     showRoundPicker: false,
     roundColumns: [],
+    // 我的题库（可选，按题库练习）
+    banks: [],
+    banksLoading: false,
+    selectedBankId: "",
+    selectedBankName: "",
     roundTypes: [
       { value: "first", label: "一面" },
       { value: "second", label: "二面" },
@@ -31,6 +36,39 @@ Page({
 
   onShow() {
     this.checkResume()
+    this.loadBanks()
+  },
+
+  loadBanks() {
+    if (this.data.banksLoading) return
+    this.setData({ banksLoading: true })
+    api.getQuestionBanks().then((data) => {
+      const banks = (data && data.banks) || []
+      this.setData({ banks, banksLoading: false })
+      // 已选的题库被删时，自动取消选择
+      if (this.data.selectedBankId && !banks.some((b) => b.id === this.data.selectedBankId)) {
+        this.setData({ selectedBankId: "", selectedBankName: "" })
+      }
+    }).catch(() => {
+      this.setData({ banksLoading: false })
+    })
+  },
+
+  selectBank(e) {
+    const id = e.currentTarget.dataset.id
+    const bank = this.data.banks.find((b) => b.id === id)
+    if (!bank) return
+    const selecting = this.data.selectedBankId === id
+    this.setData({
+      selectedBankId: selecting ? "" : id,
+      selectedBankName: selecting ? "" : bank.name,
+      // 与 Web 一致：已选题库时按题库出题，简历深挖不再生效
+      grillMode: false,
+    })
+  },
+
+  goQuestionBank() {
+    wx.navigateTo({ url: "/pages/question-bank/question-bank" })
   },
 
   checkResume() {
@@ -76,14 +114,16 @@ Page({
       this.data.company.trim() || "未知公司",
       this.data.position.trim(),
       this.data.roundType,
-      this.data.grillMode
+      this.data.grillMode,
+      this.data.selectedBankId
     ).then((data) => {
       wx.navigateTo({
         url: `/pages/practice-session/practice-session?sessionId=${data.sessionId}&company=${encodeURIComponent(this.data.company || "未知公司")}&position=${encodeURIComponent(this.data.position)}`,
       })
       this.setData({ starting: false })
-    }).catch(() => {
-      wx.showToast({ title: "启动失败", icon: "none" })
+    }).catch((err) => {
+      const msg = (err && err.message) || "启动失败"
+      wx.showToast({ title: msg, icon: "none" })
       this.setData({ starting: false })
     })
   },

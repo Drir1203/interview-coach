@@ -1,5 +1,42 @@
 const app = getApp()
 const api = require("../../utils/api")
+const util = require("../../utils/util")
+
+// 会员状态 → 展示字段（/api/subscription 未登录也返回免费档默认值）
+function buildMember(s) {
+  if (!s) return null
+  const loggedIn = !!(s && s.user)
+  const isPro = s.tier === "pro"
+  const inTrial = isPro && s.source === "trial"
+  const used = s.voiceUsedThisMonth || 0
+  const quota = s.voiceMonthlyQuota || 0
+
+  let tierLabel = "免费用户"
+  if (!loggedIn) tierLabel = "未登录"
+  else if (isPro) tierLabel = "Pro"
+
+  let proExpires = "—"
+  if (loggedIn && isPro) {
+    proExpires = inTrial
+      ? `7 天试用 · 剩余 ${s.daysLeft || 0} 天`
+      : util.formatDate(s.proExpiresAt) || "—"
+  }
+
+  const recordText = loggedIn ? `${s.interviewCount || 0}/${s.freeLimit || 5} 场` : "—"
+  const voiceUsageText = !loggedIn ? "—" : isPro ? `${used}/${quota} 场` : "需 Pro 或点数包"
+  const voiceCreditsText = !loggedIn ? "—" : String(s.voiceCredits || 0)
+
+  return {
+    loggedIn,
+    isPro,
+    isTrial: inTrial,
+    tierLabel,
+    proExpires,
+    recordText,
+    voiceUsageText,
+    voiceCreditsText,
+  }
+}
 
 Page({
   data: {
@@ -14,6 +51,8 @@ Page({
     newPwd: "",
     confirmPwd: "",
     pwdSaving: false,
+    sub: null,
+    subLoading: false,
   },
 
   openPwdEdit() {
@@ -87,6 +126,21 @@ Page({
       avatarLetter: user && user.email ? user.email[0].toUpperCase() : "U",
     })
     this.loadResume()
+    this.loadMember()
+  },
+
+  // 拉取会员状态（tier / 语音用量 / 点数），字段缺失时优雅降级显示 "—"
+  loadMember() {
+    this.setData({ subLoading: true })
+    api.getSubscription().then((data) => {
+      this.setData({ sub: buildMember(data), subLoading: false })
+    }).catch(() => {
+      this.setData({ sub: null, subLoading: false })
+    })
+  },
+
+  goPricing() {
+    wx.navigateTo({ url: "/pages/pricing/pricing" })
   },
 
   loadResume() {

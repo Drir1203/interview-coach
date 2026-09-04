@@ -1,0 +1,70 @@
+/* 我的题库页 */
+.upload-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  border: 2rpx dashed var(--brand-border);
+  border-radius: var(--brand-radius-md);
+  padding: 48rpx 24rpx;
+  background: var(--brand-muted);
+}
+
+.upload-box-disabled {
+  opacity: 0.6;
+}
+
+.upload-icon {
+  font-size: 56rpx;
+}
+
+.upload-text {
+  font-size: 26rpx;
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+
+.bank-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bank-go-practice {
+  font-size: 24rpx;
+  color: var(--brand-primary);
+}
+
+.bank-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 2rpx solid var(--brand-border);
+  border-radius: var(--brand-radius-md);
+  padding: 20rpx 24rpx;
+  margin-bottom: 16rpx;
+}
+
+.bank-item-info {
+  flex: 1;
+  min-width: 0;
+  margin-right: 16rpx;
+}
+
+.bank-item-name {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--brand-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bank-item-meta {
+  display: block;
+  font-size: 22rpx;
+  color: var(--brand-muted-text);
+  margin-top: 6rpx;
+}

@@ -109,13 +109,47 @@ module.exports = {
   applicationStrategy: (id) =>
     request("/api/applications/" + id + "/strategy", "POST", {}),
 
-  // 模拟面试
-  mockStart: (company, position, roundType, resumeMode) =>
-    request("/api/mock", "POST", { action: "start", company, position, roundType, resumeMode }),
+  // 模拟面试（questionBankId 可选：指定我的题库按顺序出题，后端 action=start 用该字段）
+  mockStart: (company, position, roundType, resumeMode, questionBankId) =>
+    request("/api/mock", "POST", {
+      action: "start",
+      company,
+      position,
+      roundType,
+      resumeMode,
+      ...(questionBankId ? { questionBankId } : {}),
+    }),
 
   mockRespond: (sessionId, answer) =>
     request("/api/mock", "POST", { action: "respond", sessionId, answer }),
 
   mockEnd: (sessionId) =>
     request("/api/mock", "POST", { action: "end", sessionId }),
+
+  // 会员 / 支付：服务端走「收款码 + 管理员开通」手动模式，小程序轮询订单状态直到 paid
+  getSubscription: () => request("/api/subscription"),
+  createOrder: (plan) => request("/api/payment/order", "POST", { plan }),
+  getOrder: (orderId) => request("/api/payment/order/" + orderId),
+  notifyOrder: (orderId) =>
+    request("/api/payment/order/" + orderId + "/notify", "POST", {}),
+  mockApproveOrder: (orderId) =>
+    request("/api/payment/mock/approve", "POST", { orderId }),
+
+  // 我的题库（question-bank）
+  getQuestionBanks: () => request("/api/question-bank"),
+  deleteQuestionBank: (id) =>
+    request("/api/question-bank?id=" + encodeURIComponent(id), "DELETE"),
+
+  // 面经库（experiences）
+  getExperiences: (company, position) => {
+    const params = []
+    if (company) params.push("company=" + encodeURIComponent(company))
+    if (position) params.push("position=" + encodeURIComponent(position))
+    const qs = params.length ? "?" + params.join("&") : ""
+    return request("/api/experiences" + qs)
+  },
+  getMyExperiences: () => request("/api/experiences/mine"),
+  createExperience: (data) => request("/api/experiences", "POST", data),
+  deleteExperience: (id) =>
+    request("/api/experiences/" + encodeURIComponent(id), "DELETE"),
 }

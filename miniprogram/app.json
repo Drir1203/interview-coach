@@ -15,7 +15,10 @@
     "pages/transcribe/transcribe",
     "pages/calendar/calendar",
     "pages/applications/applications",
-    "pages/companies/companies"
+    "pages/companies/companies",
+    "pages/question-bank/question-bank",
+    "pages/experiences/experiences",
+    "pages/pricing/pricing"
   ],
   "window": {
     "navigationBarTitleText": "AI 面师",
