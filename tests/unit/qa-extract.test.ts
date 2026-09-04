@@ -99,6 +99,44 @@ describe("cleanQAs（空值过滤 + 兼容字段 + 去重）", () => {
     expect(out[0].userAnswer).toContain("非常完整")
     expect(out[1].questionText).toBe("为什么离职")
   })
+
+  it("窗口重叠产出的整条重复不拼接两遍，保留更完整的一份", () => {
+    const full = "这是一条完整且足够长的回答内容，用来验证重叠整条重复不会被拼接两遍"
+    const out = cleanQAs([
+      { questionText: "讲下你的项目", userAnswer: full },
+      { questionText: "讲下你的项目", userAnswer: full },
+    ])
+    expect(out).toHaveLength(1)
+    expect(out[0].userAnswer).toBe(full)
+  })
+
+  it("同一问答被切开的片段按顺序接回成一条（跨 60s/窗口切点，不新增记录）", () => {
+    const out = cleanQAs([
+      { questionText: "请讲下项目难点", userAnswer: "难点在于并发。……前半段回答" },
+      { questionText: "请讲下项目难点", userAnswer: "后半段回答……最终用消息队列解决。" },
+      { questionText: "为什么选消息队列", userAnswer: "因为削峰。" },
+    ])
+    expect(out).toHaveLength(2)
+    expect(out[0].questionText).toBe("请讲下项目难点")
+    expect(out[0].userAnswer).toContain("前半段回答")
+    expect(out[0].userAnswer).toContain("后半段回答")
+    expect(out[1].questionText).toBe("为什么选消息队列")
+  })
+
+  it("相隔很远再次问同一个问题：保留为两条（不是窗口残留）", () => {
+    const out = cleanQAs([
+      { questionText: "你为什么离职", userAnswer: "第一轮回答内容" },
+      { questionText: "介绍下现在的团队", userAnswer: "团队五人" },
+      { questionText: "怎么看待加班", userAnswer: "可以接受" },
+      { questionText: "为什么选择我们公司", userAnswer: "看好业务" },
+      { questionText: "期望薪资", userAnswer: "30k" },
+      { questionText: "你有什么问题问我们", userAnswer: "请问团队" },
+      { questionText: "你为什么离职", userAnswer: "第二轮又追问了更细的原因内容" },
+    ])
+    expect(out).toHaveLength(7)
+    expect(out[6].questionText).toBe("你为什么离职")
+    expect(out[6].userAnswer).toContain("第二轮")
+  })
 })
 
 describe("extractQAsFromTranscript（整稿窗口化抽取编排）", () => {
