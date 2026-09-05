@@ -42,7 +42,7 @@ export function AuthShell({ title, description, children }: AuthShellProps) {
       </div>
 
       {/* 单张浮层卡片 */}
-      <div className="relative w-full max-w-4xl overflow-hidden rounded-2xl border bg-card shadow-card ring-1 ring-foreground/5">
+      <div className="relative w-full max-w-4xl overflow-hidden rounded-2xl bg-card shadow-card">
         <div className="grid md:grid-cols-[1fr_1.15fr]">
           {/* 左：品牌引导（md+）。淡彩渐变收在卡片内，右侧细线过渡 */}
           <div className="hidden flex-col justify-between gap-10 border-b border-border bg-gradient-to-br from-indigo-50/90 to-violet-50/50 p-8 sm:p-10 md:flex md:border-b-0 md:border-r dark:from-indigo-500/10 dark:to-violet-500/10">

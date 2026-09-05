@@ -235,7 +235,7 @@ export function LandingPage() {
         {/* 氛围光斑（纯装饰，不影响可读性） */}
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -right-24 -top-24 size-[26rem] rounded-full bg-indigo-200/25 blur-3xl dark:bg-indigo-400/10" />
-          <div className="absolute -left-32 top-40 size-80 rounded-full bg-violet-200/20 blur-3xl dark:bg-violet-400/10" />
+          <div className="absolute -left-32 top-40 size-80 rounded-full bg-indigo-200/15 blur-3xl dark:bg-indigo-400/5" />
         </div>
 
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:py-24 lg:grid-cols-2">
@@ -246,7 +246,7 @@ export function LandingPage() {
             </div>
             <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-foreground md:text-5xl">
               AI 面师 — 你的{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-violet-400">
+              <span className="text-primary">
                 AI 面试教练
               </span>
             </h1>
